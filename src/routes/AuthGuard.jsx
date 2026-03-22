@@ -14,11 +14,9 @@ export default function AuthGuard({ children }) {
           withCredentials: true
         });
         
-        console.log('refreshResponse.data:', refreshResponse.data);//테스트용
         // 백엔드가 준 Access Token 꺼내기
         const accessToken = refreshResponse.data.data;
 
-        console.log('accessToken:', accessToken);//테스트용
         // 유저 정보 조회
         const response = await axios.get('https://test-fin.duckdns.org/user/me', {
           headers: { Authorization: `Bearer ${accessToken}` }
@@ -28,7 +26,7 @@ export default function AuthGuard({ children }) {
         
         // 권한 확인
         if (response.data.userRole === 'BEFORE_AGREED') {
-          setIsLoading(false); 
+          setIsLoading(false);
           navigate('/terms');
         } else {
           setIsLoading(false);

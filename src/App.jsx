@@ -1,25 +1,25 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import LoginPage from './pages/LoginPage';
-import MainPage from './pages/MainPage';
+import Login from './pages/Login';
+import Main from './pages/Main';
+import Agreement from './pages/Agreement';
 import AuthGuard from './routes/AuthGuard';
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/login" element={<LoginPage />} />
+        <Route path="/login" element={<Login />} />
         
         <Route
           path="/"
           element={
             <AuthGuard>
-              <MainPage />
+              <Main />
             </AuthGuard>
           }
         />
         
-        {/* 약관 동의 페이지 (추후 생성) */}
-        <Route path="/terms" element={<div>약관 동의 페이지</div>} />
+        <Route path="/terms" element={<Agreement />} />
       </Routes>
     </BrowserRouter>
   );
