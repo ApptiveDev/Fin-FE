@@ -1,10 +1,12 @@
+import React from 'react';
+import Agreement from './pages/Agreement';
+
 function App() {
   return (
-    <>
-      <h1>y-fin.com</h1>
-      <p>Hello World!</p>
-    </>
-  )
+    <div className="App">
+      <Agreement />
+    </div>
+  );
 }
 
-export default App
+export default App;

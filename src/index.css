@@ -1,0 +1,7 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Chonburi&family=Inter:wght@400;700&display=swap');
+
+@theme {
+  --font-chonburi: "Chonburi", serif;
+  --font-inter: "Inter", sans-serif;
+}
