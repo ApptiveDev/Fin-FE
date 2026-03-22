@@ -1,7 +1,9 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Abhaya+Libre:wght@400;500;600;700;800&family=Chonburi&display=swap');
+
 @import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=Chonburi&family=Inter:wght@400;700&display=swap');
 
 @theme {
-  --font-chonburi: "Chonburi", serif;
-  --font-inter: "Inter", sans-serif;
+  --font-inter: 'Inter', sans-serif;
+  --font-abhaya: 'Abhaya Libre', serif;
+  --font-chonburi: 'Chonburi', serif;
 }
