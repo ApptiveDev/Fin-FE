@@ -1,17 +1,28 @@
-import { useState } from 'react';
-
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
 import MainPage from './pages/MainPage';
+import AuthGuard from './routes/AuthGuard';
 
 function App() {
-  // 로그인 여부 확인
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-
   return (
-    <div>
-      {isLoggedIn ? <MainPage /> : <LoginPage />}
-    </div>
-  )
+    <BrowserRouter>
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        
+        <Route
+          path="/"
+          element={
+            <AuthGuard>
+              <MainPage />
+            </AuthGuard>
+          }
+        />
+        
+        {/* 약관 동의 페이지 (추후 생성) */}
+        <Route path="/terms" element={<div>약관 동의 페이지</div>} />
+      </Routes>
+    </BrowserRouter>
+  );
 }
 
-export default App
+export default App;
