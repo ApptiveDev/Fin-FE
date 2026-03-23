@@ -1,10 +1,10 @@
 import Header from '../components/Header'
 import bubbleBg from '../assets/background_bubble.png'
 import keyImg from '../assets/keyImg.png'
-import googleIcon from '../assets/googleIcon.png'
-import kakaoIcon from '../assets/kakaoIcon.png'
+import googleIcon from '../assets/GoogleIcon.png'
+import kakaoIcon from '../assets/KakaoIcon.png'
 
-export default function LoginPage() {
+export default function Login() {
   return (
     <div
       className="min-h-screen bg-cover bg-center bg-no-repeat flex flex-col"
