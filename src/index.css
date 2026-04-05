@@ -2,8 +2,20 @@
 
 @import "tailwindcss";
 
+@font-face {
+  font-family: 'GmarketSans';
+  src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.1/GmarketSansMedium.woff') format('woff');
+  font-weight: 500;
+}
+@font-face {
+  font-family: 'GmarketSans';
+  src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.1/GmarketSansBold.woff') format('woff');
+  font-weight: 700;
+}
+
 @theme {
   --font-inter: 'Inter', sans-serif;
   --font-abhaya: 'Abhaya Libre', serif;
   --font-chonburi: 'Chonburi', serif;
+  --font-gmarket: 'GmarketSans', sans-serif;
 }

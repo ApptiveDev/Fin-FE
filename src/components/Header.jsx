@@ -2,17 +2,17 @@ import logo from '../assets/logo.png'
 
 export default function Header() {
   return (
-    <header className="w-full h-20 flex items-center justify-between px-[3.5%] py-6 bg-white">
+    <header className="w-full h-22 flex items-center justify-between px-[3.5%] bg-white">
       <Logo />
       <NavMenu />
-      <UserIcon />
+      <UserButtons />
     </header>
   )
 }
 
 function Logo() {
   return (
-    <img src={logo} alt="Fin 로고" className="h-6" />
+    <img src={logo} alt="Fin 로고" className="h-7" />
   )
 }
 
@@ -20,9 +20,9 @@ const navItems = ['서비스 소개', '금융상품 추천', '정보 커뮤니�
 
 function NavMenu() {
   return (
-    <ul className="flex gap-50">
+    <ul className="flex justify-between flex-1 max-w-2xl mx-16">
       {navItems.map((item, i) => (
-        <li key={i} className="font-[Inter] font-medium text-base text-[#515151] hover:text-gray-400 cursor-pointer whitespace-nowrap transition-colors">
+        <li key={i} className="font-[Inter] font-medium text-[17px] text-[#515151] hover:text-gray-400 cursor-pointer whitespace-nowrap transition-colors">
           {item}
         </li>
       ))}
@@ -30,10 +30,10 @@ function NavMenu() {
   )
 }
 
-function UserIcon() {
+function UserButtons() {
   return (
     <div
-    className="">
+    className="flex items-center gap-3 font-inter text-[14.5px]">
       <LoginButton />
       <JoinButton />
     </div>
@@ -42,17 +42,16 @@ function UserIcon() {
 
 function LoginButton() {
   return (
-    <button
-    className="flex items-center justify-center gap-2 bg-[#FFFFFF] hover:bg-gray-200 rounded-xl py-2.5 px-3 transition-colors">
-      <span className="font-[Inter] text-[#515151] relative top-[1px]">로그인</span>
+    <button className="text-[#515151] border border-gray-300 rounded-lg h-9 w-19.5 hover:border-[#03BFA5] hover:text-[#03BFA5] transition-colors whitespace-nowrap">
+      로그인
     </button>
   )
 }
 
 function JoinButton() {
   return (
-    <button>
-
+    <button className="text-white bg-[#03BFA5] rounded-lg h-9 w-19.5 hover:bg-[#02a892] transition-colors whitespace-nowrap">
+      회원가입
     </button>
   )
 }
