@@ -3,6 +3,10 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import useScrollFadeIn from '../hooks/UseScrollFadeIn';
 import usePageScale from '../hooks/UsePageScale';
+import PhoneAnimation from '../components/phone_motion';
+import leftphone from '../assets/phone_left.png'
+import rightphone from '../assets/phone_right.png'
+import centerphone from '../assets/phone_center.png'
 
 export default function IntroducePage() {
   usePageScale(1400, 960);
@@ -35,7 +39,7 @@ function IntroduceSection() {
   const ref = useScrollFadeIn();
 
   return (
-    <div ref={ref} className="w-full h-screen bg-gradient-to-b from-[#EFFFFD] to-[#FFFFFF] flex flex-col items-center justify-center text-center px-6">
+    <div ref={ref} className="w-full h-screen bg-linear-to-b from-[#EFFFFD] to-[#FFFFFF] flex flex-col items-center justify-center text-center px-6">
       <h1
         data-fade="title"
         className="opacity-0 translate-y-6 transition-all duration-700 ease-out font-gmarket text-[45px] font-extrabold text-[#292929] mb-2 leading-tight tracking-tight"
@@ -48,6 +52,9 @@ function IntroduceSection() {
       >
         30초 만에 원하는 금융상품을 찾는 청년 금융 소울메이트, y-Fin.
       </p>
+      <div className="mt-10 w-full max-w-150">
+         <PhoneAnimation />
+      </div>
     </div>
   );
 }
@@ -441,7 +448,7 @@ function MyPageSection() {
   const ref = useScrollFadeIn();
 
   return (
-    <section ref={ref} className="w-full h-screen bg-gradient-to-b from-[#FFFFFF] to-[#EFFFFD] flex justify-center items-center">
+    <section ref={ref} className="w-full h-screen bg-linear-to-b from-[#FFFFFF] to-[#EFFFFD] flex justify-center items-center">
       <div className="text-center px-6">
         <h2
           data-fade="title"

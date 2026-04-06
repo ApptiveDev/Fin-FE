@@ -3,8 +3,8 @@
   "private": true,
   "version": "0.0.0",
   "engines": {
-  "node": "22.x",
-  "pnpm": "10.x" 
+    "node": "22.x",
+    "pnpm": "10.x"
   },
   "type": "module",
   "scripts": {
@@ -14,12 +14,14 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "axios": "^1.13.6",
     "@tailwindcss/postcss": "^4.2.1",
     "@tailwindcss/vite": "^4.2.1",
+    "axios": "^1.13.6",
+    "framer-motion": "^12.38.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "react-router-dom": "^7.13.1"
+    "react-router-dom": "^7.13.1",
+    "styled-components": "^6.3.12"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
