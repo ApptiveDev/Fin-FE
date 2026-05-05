@@ -13,7 +13,7 @@ export default function NavButtons({ onPrev, onNext, isFirst, isLast, disabled }
         type="button"
         onClick={onNext}
         disabled={disabled}
-        className="px-5 py-2 rounded-full bg-gray-800 text-white text-sm hover:bg-teal-500 disabled:opacity-40 transition-all"
+        className="px-5 py-2 rounded-full bg-[#03BFA5] text-white text-sm hover:bg-teal-500 disabled:opacity-40 transition-all"
       >
         {isLast ? "완료" : "다음 단계"}
       </button>
