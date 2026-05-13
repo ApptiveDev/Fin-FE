@@ -1,26 +1,19 @@
 import { useState, useEffect } from "react";
+import { useAuth } from "../context/AuthContext";
 
 export default function useRecommendForm() {
+  const { accessToken } = useAuth();
   const [step, setStep] = useState(0);
   const [formData, setFormData] = useState({});
   const [cats, setCats] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [accessToken, setAccessToken] = useState(null);
 
   useEffect(() => {
+    if (!accessToken) return; // 토큰 없으면 대기... 인데 백엔드에서 수정 시 바꿈
     const fetchCategories = async () => {
     try {
-      const refreshRes = await fetch("https://test-fin.duckdns.org/auth/refresh", {
-        method: "POST",
-        credentials: "include",
-      });
-
-      const refreshData = await refreshRes.json();
-      const token = refreshData.data;
-      setAccessToken(token);
-
       const res = await fetch("https://test-fin.duckdns.org/api/categories", {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${accessToken}` },
       });
 
       if (!res.ok) throw new Error("카테고리 요청 실패");
@@ -51,25 +44,27 @@ export default function useRecommendForm() {
   };
 
   fetchCategories();
-  }, []);
+  }, [accessToken]);
   
   // 서버에 보내기는 나중에...
   const handleSubmit = async () => {
     /*
     try {
-    const res = await fetch(“https://test-fin.duckdns.org/api/recommend”, {
-    method: “POST”,
-    headers: {
-    “Content-Type”: “application/json”,
-    Authorization: `Bearer ${accessToken}`,
-    },
-    body: JSON.stringify(formData),
-    });
-    if (!res.ok) throw new Error(“전송 실패”);
-    const result = await res.json();
-    console.log(“추천 결과:”, result);
+      const res = await fetch("https://test-fin.duckdns.org/api/recommend", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify(formData),
+      });
+      
+      if (!res.ok) throw new Error(“전송 실패”);
+      
+      const result = await res.json();
+      console.log("추천 결과:", result);
     } catch (e) {
-    console.error(e);
+      console.error(e);
     }
     */
   };

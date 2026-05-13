@@ -1,4 +1,3 @@
-import Header from "../components/Header";
 import useRecommendForm from "../hooks/UseRecommendFrom";
 import {
   StepSavingPlan,
@@ -17,12 +16,6 @@ export default function Recommend() {
   const { step, formData, setFormData, cats, loading, go, handleSubmit } = useRecommendForm();
   const [isOpen, setIsOpen] = useState(false);
 
-  if (loading) {
-    return (
-      <div> 로딩 중...임시 </div>
-    );
-  }
-
   const steps = [
     <StepSavingPlan      data={formData} setData={setFormData} cats={cats} onNext={go(1)} />,
     <StepBasicInfo       data={formData} setData={setFormData} cats={cats} onPrev={go(0)} onNext={go(2)} />,
@@ -37,8 +30,6 @@ export default function Recommend() {
 
   return (
     <div className="min-h-screen bg-teal-50/40 flex flex-col">
-      <Header />
-
       <div className="flex-1 flex flex-col items-center px-4 pt-16">
 
         {/* 타이틀 */}
@@ -82,8 +73,8 @@ export default function Recommend() {
 
           {/* 폼 */}
           {isOpen && (
-            <div className="px-8 pb-8 border-gray-100 pt-6">
-              {steps[step]}
+            <div className="px-8 pb-8 border-t border-gray-100 pt-6">
+              {!loading && steps[step]}
             </div>
           )}
 
