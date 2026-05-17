@@ -26,7 +26,12 @@ export default function useRecommendForm() {
         savingPeriod: data.find((c) => c.categoryName === "저축기간")?.options || [],
         benefits: data.find((c) => c.categoryName === "핵심혜택")?.options || [],
         bankRelation: data.find((c) => c.categoryName === "은행거래")?.options || [],
-        banks: ["은행임시1", "은행임시2", "은행임시3"],
+        bankCategories: [
+          { id: '시중', title: '시중은행', banks: ['KB국민', '신한', '하나', '우리', 'SC제일', 'iM뱅크'] },
+          { id: '인터넷', title: '인터넷은행', banks: ['카카오뱅크', '토스뱅크', '케이뱅크'] },
+          { id: '특수', title: '특수은행', banks: ['NH농협', 'Sh수협', 'IBK기업'] },
+          { id: '지방', title: '지방은행', banks: ['BNK부산', '광주은행', '제주은행', '전북은행', 'BNK경남은행'] }
+        ],
         incomeLevel: [
           { label: "중위소득 60%", amount: "월 154만원 이하" },
           { label: "중위소득 80%", amount: "월 205만원 이하" },

@@ -8,7 +8,7 @@ import {
   StepHouseholdIncome,
   StepHousing,
   StepEmployment,
-  StepMainBank,
+  StepTransaction,
 } from "../components/RecommendSteps";
 import { useState } from "react";
 
@@ -25,12 +25,12 @@ export default function Recommend() {
     <StepHouseholdIncome data={formData} setData={setFormData} cats={cats} onPrev={go(4)} onNext={go(6)} />,
     <StepHousing         data={formData} setData={setFormData}             onPrev={go(5)} onNext={go(7)} />,
     <StepEmployment      data={formData} setData={setFormData}             onPrev={go(6)} onNext={go(8)} />,
-    <StepMainBank        data={formData} setData={setFormData}             onPrev={go(7)} onSubmit={handleSubmit} />
+    <StepTransaction     data={formData} setData={setFormData} cats={cats} onPrev={go(7)} onSubmit={handleSubmit} />
   ];
 
   return (
     <div className="min-h-screen bg-teal-50/40 flex flex-col">
-      <div className="flex-1 flex flex-col items-center px-4 pt-16">
+      <div className="flex-1 flex flex-col items-center px-4 pt-16 pb-80">
 
         {/* 타이틀 */}
         <div className="bg-linear-to-b from-[#EFFFFD] to-[#FFFFFF] text-center mb-8">
@@ -45,7 +45,7 @@ export default function Recommend() {
         </div>
 
         {/* 검색바 + 폼 */}
-        <div className="w-full max-w-210 bg-white rounded-4xl shadow-lg">
+        <div className="w-full max-w-210 bg-white rounded-4xl shadow-xl">
 
           {/* 검색바 */}
           <button
