@@ -3,12 +3,13 @@ import NavButtons from "./NavButtons";
 import InfoBox from "./InfoBox";
 import Tag from "./Tag";
 import InfoIcon from "./InfoIcon";
+import KeywordAlertModal from "./KeywordAlertModal";
 import { FormInput, FormSelect } from "./FormFields";
 import { toggleField } from "../utils/toggleField";
 import { useState, useEffect } from "react";
 
 /*  1. 저축 계획 (Step 1-1) */
-export function StepSavingPlan({ data, setData, cats, onPrev, onNext }) {
+export function StepSavingPlan({ data, setData, onPrev, onNext }) {
   const amount = data.monthlyAmount || 1;
   return (
       <StepLayout step={1} title="기본 정보" sub="월 납입 희망액을 슬라이더로 조정하거나 직접 입력해주세요">
@@ -46,7 +47,17 @@ export function StepSavingPlan({ data, setData, cats, onPrev, onNext }) {
 
 /* 2. 현재 신분 + 희망 저축 기간 (Step 1-2) */
 export function StepBasicInfo({ data, setData, cats, onPrev, onNext }) {
+  const [showKeywordAlert, setShowKeywordAlert] = useState(false);
+  const handleNext = () => {
+    if (!data.savingPeriod?.length) {
+      setShowKeywordAlert(true);
+      return;
+    }
+    onNext();
+  };
+
   return (
+    <>
       <StepLayout step={1} title="기본 정보" sub="몇 가지 간단한 키워드 태그로 당신에게 Fin. 한 상품을 찾아드립니다.">
         <div className="mt-8 pl-4">
           <div className="flex items-center gap-2 mb-3">
@@ -64,7 +75,7 @@ export function StepBasicInfo({ data, setData, cats, onPrev, onNext }) {
 
           <div className="flex items-center gap-2 mb-5">
             <p className="text-[24px] text-[#454545] font-semibold tracking-tight">희망 저축 기간</p>
-            <InfoIcon text="목표 저축 금액에 맞는 상품을 추천해드립니다." />
+            <InfoIcon text="목표 저축 기간에 맞는 상품을 추천해드립니다." />
           </div>
           <div className="flex flex-wrap gap-2 mb-12">
             {cats.savingPeriod.map((p) => (
@@ -74,14 +85,28 @@ export function StepBasicInfo({ data, setData, cats, onPrev, onNext }) {
             ))}
           </div>
         </div>
-        <NavButtons onPrev={onPrev} onNext={onNext} isLast={false} disabled={!data.savingPeriod || data.savingPeriod.length === 0} />
+        <NavButtons onPrev={onPrev} onNext={handleNext} isLast={false} />
       </StepLayout>
+      {showKeywordAlert && (
+        <KeywordAlertModal onClose={() => setShowKeywordAlert(false)} />
+      )}
+    </>
   );
 }
 
 /* 3. 핵심 혜택 + 은행 거래 (Step 1-3) */
 export function StepBenefits({ data, setData, cats, onPrev, onNext }) {
+  const [showKeywordAlert, setShowKeywordAlert] = useState(false);
+  const handleNext = () => {
+    if (!data.benefits?.length) {
+      setShowKeywordAlert(true);
+      return;
+    }
+    onNext();
+  };
+
   return (
+    <>
       <StepLayout step={1} title="기본 정보" sub="몇 가지 간단한 키워드 태그로 당신에게 Fin. 한 상품을 찾아드립니다.">
         <div className="mt-8 pl-4">
           <div className="flex items-center gap-2 mb-4">
@@ -110,8 +135,12 @@ export function StepBenefits({ data, setData, cats, onPrev, onNext }) {
             ))}
           </div>
         </div>
-        <NavButtons onPrev={onPrev} onNext={onNext} isLast={false} disabled={!data.benefits || data.benefits.length === 0} />
+        <NavButtons onPrev={onPrev} onNext={handleNext} isLast={false} />
       </StepLayout>
+      {showKeywordAlert && (
+        <KeywordAlertModal onClose={() => setShowKeywordAlert(false)} />
+      )}
+    </>
   );
 }
 
@@ -130,8 +159,8 @@ export function StepPersonalInfo({ data, setData, onPrev, onNext }) {
           <div className="pl-2 mb-10">
             <div className="flex items-center gap-2 mb-4">
               <p className="text-[20px] text-[#454545] font-semibold mb-0">생년월일</p>
-              <InfoIcon text="법정 연령 요건은 가입의 첫 관문으로,
-군필자의 경우 복무 기간만큼 상한 연령이 확대됩니다." />
+              <InfoIcon text={`법정 연령 요건은 가입의 첫 관문으로, 군필자의 경우 복무
+기간만큼 상한 연령이 확대됩니다. (일부 정부 상품 해당)`} />
             </div>
             
             <div className="flex items-center gap-4 mb-2 flex-wrap">
@@ -448,12 +477,32 @@ const TABS = [
 ];
 
 const REGION_BANK_MAP = {
-  "reg_05": "BNK부산",       
-  "reg_06": "BNK경남은행",
-  "reg_07": "광주은행",
-  "reg_08": "전북은행",
-  "reg_09": "제주은행"
+  "reg_05": ["BNK부산"],
+  "reg_06": ["BNK경남은행"],
+  "reg_07": ["광주은행"],
+  "reg_08": ["전북은행"],
+  "reg_09": ["제주은행"],
 };
+
+const LOCAL_BANKS_BY_REGION_NAME = [
+  { regions: ["부산"], banks: ["BNK부산"] },
+  { regions: ["울산", "경남", "경상남도"], banks: ["BNK경남은행"] },
+  { regions: ["광주", "전남", "전라남도"], banks: ["광주은행"] },
+  { regions: ["전북", "전라북도", "전북특별자치도"], banks: ["전북은행"] },
+  { regions: ["제주", "제주특별자치도"], banks: ["제주은행"] },
+];
+
+function getLocalBanks(userRegion, regions = []) {
+  const selectedRegion = regions.find(
+    (region) => String(region.optionId) === String(userRegion)
+  );
+  const regionName = selectedRegion?.optionValue || "";
+  const matchedRegion = LOCAL_BANKS_BY_REGION_NAME.find(({ regions: names }) =>
+    names.some((name) => regionName.includes(name))
+  );
+
+  return matchedRegion?.banks || REGION_BANK_MAP[userRegion] || [];
+}
 
 function BankSelector({ 
   theme = 'mint', 
@@ -480,21 +529,23 @@ function BankSelector({
   };
   const themeColor = colors[theme];
   const categoriesToUse = cats?.bankCategories || [];
+  const localBanks = getLocalBanks(userRegion, cats?.regions);
 
-  const displayedCategories = categoriesToUse.map(category => {
-    if (category.id === '지방') {
-      if (activeTab === '전체') {
-        const myLocalBank = REGION_BANK_MAP[userRegion];
-        return { ...category, banks: category.banks.filter(b => b === myLocalBank) };
+  const displayedCategories = categoriesToUse
+    .filter((category) => activeTab === '전체' || category.id === activeTab)
+    .map((category) => {
+      // 전체 탭에서는 사용자의 거주지역에 해당하는 지방은행만 노출한다.
+      // 지방 탭에서는 거주지역과 관계없이 모든 지방은행을 노출한다.
+      if (activeTab === '전체' && category.id === '지방') {
+        return {
+          ...category,
+          banks: category.banks.filter((bank) => localBanks.includes(bank)),
+        };
       }
+
       return category;
-    }
-    return category;
-  }).filter(category => {
-    if (activeTab !== '전체' && category.id !== activeTab) return false;
-    if (category.banks.length === 0) return false;
-    return true;
-  });
+    })
+    .filter((category) => category.banks.length > 0);
 
   const toggleBank = (bank) => {
     if (disabledBanks.includes(bank)) return; 
