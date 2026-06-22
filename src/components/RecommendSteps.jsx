@@ -159,8 +159,8 @@ export function StepPersonalInfo({ data, setData, onPrev, onNext }) {
           <div className="pl-2 mb-10">
             <div className="flex items-center gap-2 mb-4">
               <p className="text-[20px] text-[#454545] font-semibold mb-0">생년월일</p>
-              <InfoIcon text={`법정 연령 요건은 가입의 첫 관문으로, 군필자의 경우 복무
-기간만큼 상한 연령이 확대됩니다. (일부 정부 상품 해당)`} />
+              <InfoIcon text="법정 연령 요건은 가입의 첫 관문으로, 군필자의 경우 복무
+기간만큼 상한 연령이 확대됩니다. (일부 정부 상품 해당)" />
             </div>
             
             <div className="flex items-center gap-4 mb-2 flex-wrap">
@@ -477,32 +477,12 @@ const TABS = [
 ];
 
 const REGION_BANK_MAP = {
-  "reg_05": ["BNK부산"],
-  "reg_06": ["BNK경남은행"],
-  "reg_07": ["광주은행"],
-  "reg_08": ["전북은행"],
-  "reg_09": ["제주은행"],
+  "reg_05": "BNK부산",
+  "reg_06": "BNK경남은행",
+  "reg_07": "광주은행",
+  "reg_08": "전북은행",
+  "reg_09": "제주은행"
 };
-
-const LOCAL_BANKS_BY_REGION_NAME = [
-  { regions: ["부산"], banks: ["BNK부산"] },
-  { regions: ["울산", "경남", "경상남도"], banks: ["BNK경남은행"] },
-  { regions: ["광주", "전남", "전라남도"], banks: ["광주은행"] },
-  { regions: ["전북", "전라북도", "전북특별자치도"], banks: ["전북은행"] },
-  { regions: ["제주", "제주특별자치도"], banks: ["제주은행"] },
-];
-
-function getLocalBanks(userRegion, regions = []) {
-  const selectedRegion = regions.find(
-    (region) => String(region.optionId) === String(userRegion)
-  );
-  const regionName = selectedRegion?.optionValue || "";
-  const matchedRegion = LOCAL_BANKS_BY_REGION_NAME.find(({ regions: names }) =>
-    names.some((name) => regionName.includes(name))
-  );
-
-  return matchedRegion?.banks || REGION_BANK_MAP[userRegion] || [];
-}
 
 function BankSelector({ 
   theme = 'mint', 
@@ -529,23 +509,21 @@ function BankSelector({
   };
   const themeColor = colors[theme];
   const categoriesToUse = cats?.bankCategories || [];
-  const localBanks = getLocalBanks(userRegion, cats?.regions);
 
-  const displayedCategories = categoriesToUse
-    .filter((category) => activeTab === '전체' || category.id === activeTab)
-    .map((category) => {
-      // 전체 탭에서는 사용자의 거주지역에 해당하는 지방은행만 노출한다.
-      // 지방 탭에서는 거주지역과 관계없이 모든 지방은행을 노출한다.
-      if (activeTab === '전체' && category.id === '지방') {
-        return {
-          ...category,
-          banks: category.banks.filter((bank) => localBanks.includes(bank)),
-        };
+  const displayedCategories = categoriesToUse.map(category => {
+    if (category.id === '지방') {
+      if (activeTab === '전체') {
+        const myLocalBank = REGION_BANK_MAP[userRegion];
+        return { ...category, banks: category.banks.filter(b => b === myLocalBank) };
       }
-
       return category;
-    })
-    .filter((category) => category.banks.length > 0);
+    }
+    return category;
+  }).filter(category => {
+    if (activeTab !== '전체' && category.id !== activeTab) return false;
+    if (category.banks.length === 0) return false;
+    return true;
+  });
 
   const toggleBank = (bank) => {
     if (disabledBanks.includes(bank)) return; 
@@ -649,19 +627,16 @@ function BankSelector({
 /* 9. 거래 이력 은행 (최종 페이지 - 1, 2페이지 분할) */
 export function StepTransaction({ data, setData, cats, onPrev, onSubmit }) {
   const [subStep, setSubStep] = useState(1); 
-  const [isLoading, setIsLoading] = useState(false);
 
   const firstBanks = data.firstBanks || [];
   const maturedBanks = data.maturedBanks || [];
 
   const handleFinalSubmit = () => {
-    setIsLoading(true); 
+    onSubmit?.();
   };
 
   return (
     <>
-      {isLoading && <LoadingScreen onAnimationComplete={onSubmit} />}
-      
       <StepLayout step={2} title="상세 정보" sub="Y-Fin.만의 정확한 적합도 분석과 예상 수익률 계산을 위해 필요한 정보입니다.">
         <div className="flex items-center gap-1.5 mb-4 pl-5">
           <p className="text-[24px] text-[#454545] font-semibold tracking-tight">거래 이력</p>
@@ -728,44 +703,53 @@ export function LoadingScreen({ onAnimationComplete }) {
   const isDone = progress === 100;
 
   return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center animate-fade-in backdrop-blur-[1px]">
-      <div className="w-[540px] bg-white rounded-[32px] shadow-2xl px-12 py-12 flex flex-col items-center border border-gray-100">
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-[#343A3A]/25"
+      role="dialog"
+      aria-modal="true"
+      aria-label={isDone ? "상품 분석 완료" : "상품 분석 중"}
+    >
+      <div className={`w-[586px] h-[418px] rounded-[26px] px-[50px] pt-[75px] pb-[38px] flex flex-col items-center transition-colors duration-300 ${
+        isDone ? "bg-[#EFFFFD]" : "bg-white"
+      }`}>
         
-        <div className="w-20 h-20 rounded-full border-2 border-[#03BFA5] flex items-center justify-center mb-8 bg-[#F0FFFE]/50 shadow-sm">
+        <div className="w-[88px] h-[88px] rounded-full border-2 border-[#03BFA5] flex items-center justify-center mb-[27px]">
           {isDone ? (
-            <svg className="w-10 h-10 text-[#03BFA5]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+            <svg className="w-[43px] h-[43px] text-[#03BFA5]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="8.5" strokeWidth="1.8" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.2" d="m7.8 12.2 2.7 2.7 5.9-6.1" />
             </svg>
           ) : (
-            <svg className="w-9 h-9 text-[#03BFA5] animate-spin [animation-duration:2.2s]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 11H19" />
+            <svg className="w-[42px] h-[42px] text-[#03BFA5] animate-spin [animation-duration:1.8s]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.2" d="M17.8 8.2V4.8m0 0-3.2 3.1m3.2-3.1A8.2 8.2 0 0 0 4.1 10" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.2" d="M6.2 15.8v3.4m0 0 3.2-3.1m-3.2 3.1A8.2 8.2 0 0 0 19.9 14" />
             </svg>
           )}
         </div>
 
         {isDone ? (
-          <div className="text-center mb-10">
-            <h2 className="text-[24px] font-semibold text-[#03BFA5] mb-2.5 tracking-tight">분석이 완료됐어요!</h2>
-            <p className="text-[15px] text-[#03BFA5] font-inter tracking-tight">총 50개의 상품 중 나에게 맞는 상품을 찾았어요.</p>
+          <div className="text-center mb-[33px]">
+            <h2 className="text-[22px] font-bold text-[#03BFA5] mb-[18px] tracking-[-0.03em]">분석이 완료됐어요!</h2>
+            <p className="text-[15px] text-[#03BFA5] tracking-[-0.03em]">총 50개의 상품 중 나에게 맞는 상품을 찾았어요.</p>
           </div>
         ) : (
-          <div className="text-center mb-9">
-            <h2 className="text-[22px] font-semibold text-[#03BFA5] mb-4 tracking-tight leading-snug">
+          <div className="text-center mb-[48px]">
+            <h2 className="text-[21px] font-bold text-[#03BFA5] mb-[19px] tracking-[-0.03em] leading-[1.45]">
               입력하신 정보를 바탕으로<br />
-              <span className="text-[#03BFA5] font-semibold">당신에게 Fin.한 상품을 분석 중이에요</span>
+              당신에게 Fin.한 상품을 분석 중이에요
             </h2>
-            <p className="text-[13px] text-[#03BFA5] font-inter tracking-tight bg-[#EFFFFD] px-4 py-1.5 rounded-full inline-block">
+            <p className="text-[14px] text-[#03BFA5] tracking-[-0.035em]">
               키워드 · 거래 이력 · 신분을 기반으로 최적의 상품을 계산하고 있어요.
             </p>
           </div>
         )}
 
-        <div className="w-full px-2">
-          <div className="w-full h-2 bg-[#CDF8F2] rounded-full overflow-hidden mb-2 shadow-inner">
-            <div className="h-full bg-[#03BFA5] rounded-full transition-all duration-300 ease-out" style={{ width: `${progress}%` }} />
+        <div className="w-full mt-auto">
+          <div className="w-full h-[8px] bg-[#CBF7F1] rounded-full overflow-hidden mb-[7px]">
+            <div className="h-full bg-[#03BFA5] rounded-full transition-[width] duration-100 ease-linear" style={{ width: `${progress}%` }} />
           </div>
           <div className="flex justify-end">
-            <span className="text-[15px] font-semibold text-[#03BFA5] tracking-tight">{progress}%</span>
+            <span className="text-[15px] text-[#03BFA5] tracking-[-0.03em]">{progress}%</span>
           </div>
         </div>
       </div>
