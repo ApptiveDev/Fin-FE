@@ -19,3 +19,60 @@
   --font-chonburi: 'Chonburi', serif;
   --font-gmarket: 'GmarketSans', sans-serif;
 }
+
+.recommend-range {
+  --range-progress: 0%;
+  --range-fill: #03BFA5;
+  --range-track: #D9D9D9;
+  appearance: none;
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    var(--range-fill) 0%,
+    var(--range-fill) var(--range-progress),
+    var(--range-track) var(--range-progress),
+    var(--range-track) 100%
+  );
+  cursor: pointer;
+}
+
+.recommend-range:focus {
+  outline: none;
+}
+
+.recommend-range::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 999px;
+  background: transparent;
+}
+
+.recommend-range::-webkit-slider-thumb {
+  appearance: none;
+  width: 21px;
+  height: 21px;
+  margin-top: -7.5px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--range-fill);
+}
+
+.recommend-range::-moz-range-track {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--range-track);
+}
+
+.recommend-range::-moz-range-progress {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--range-fill);
+}
+
+.recommend-range::-moz-range-thumb {
+  width: 21px;
+  height: 21px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--range-fill);
+}

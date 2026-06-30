@@ -1,8 +1,8 @@
 export default function InfoIcon({ text }) {
   if (!text) {
     return (
-      <div className="w-[16px] h-[16px] rounded-full border border-[#03BFA5] flex items-center justify-center shrink-0">
-        <span className="text-[#03BFA5] text-[10px] font-bold">i</span>
+      <div className="flex size-5 shrink-0 items-center justify-center rounded-[10px] border-2 border-[#03BFA5]">
+        <span className="text-[12px] font-bold text-[#03BFA5]">i</span>
       </div>
     );
   }
@@ -11,8 +11,8 @@ export default function InfoIcon({ text }) {
     <div className="relative inline-flex items-center group cursor-pointer ml-1">
       
       {/* 기본 느낌표/인포 아이콘 */}
-      <div className="w-[18px] h-[18px] rounded-full border-2 border-[#03BFA5] flex items-center justify-center bg-white shrink-0 transition-colors group-hover:bg-[#EFFFFD]">
-        <span className="text-[#03BFA5] text-[14px] font-bold">!</span>
+      <div className="flex size-5 shrink-0 items-center justify-center rounded-[10px] border-2 border-[#03BFA5] bg-white transition-colors group-hover:bg-[#EFFFFD]">
+        <span className="text-[14px] font-bold text-[#03BFA5]">!</span>
       </div>
 
         <div className="absolute left-6 top-1/2 -translate-y-1/2 hidden group-hover:flex items-center 

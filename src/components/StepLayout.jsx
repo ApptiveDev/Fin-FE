@@ -2,11 +2,11 @@ import StepBadge from "./StepBadge";
 
 export default function StepLayout({ step, title, sub, children }) {
   return (
-    <div className="w-full">
+    <div className="w-full min-h-[var(--step-layout-min-height,570px)] flex flex-col">
       <StepBadge step={step} />
-      <h2 className="text-[28px] font-bold text-[#454545] tracking-tight mb-1">{title}</h2>
-      <p className="text-[15px] font-regular text-[#7A7A7A] mb-8 leading-relaxed tracking-tight whitespace-pre-line">{sub}</p>
-      <div className="w-full">{children}</div>
+      <h2 className="text-[30px] font-semibold text-[#454545] mb-0">{title}</h2>
+      <p className="text-[18px] font-normal text-[#454545] leading-normal whitespace-pre-line">{sub}</p>
+      <div className="w-full flex flex-1 flex-col">{children}</div>
     </div>
   );
 }
