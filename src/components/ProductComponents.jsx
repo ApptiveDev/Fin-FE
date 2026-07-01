@@ -141,9 +141,9 @@ export function TopCard({
 
 function ListRateBlock({ label, value, accent = false }) {
   return (
-    <div className="flex w-[147px] flex-col items-start leading-[1.2]">
-      <span className="h-[26px] w-full text-left text-[20px] font-normal text-[#606060]">{label}</span>
-      <span className={`h-[52px] w-full whitespace-nowrap text-left text-[40px] font-bold ${accent ? "text-[#03BFA5]" : "text-[#454545]"}`}>
+    <div className="flex w-[126.67px] flex-col items-start leading-[1.2]">
+      <span className="h-[23px] w-full text-left text-[17.23px] font-normal text-[#606060]">{label}</span>
+      <span className={`h-[45px] w-full whitespace-nowrap text-left text-[34.47px] font-bold ${accent ? "text-[#03BFA5]" : "text-[#454545]"}`}>
         연 {value}%
       </span>
     </div>
@@ -155,8 +155,8 @@ function ContributionMetric({ label, value, accent = false, className = "", valu
 
   return (
     <div className={`flex h-[75px] flex-col items-start justify-center gap-[8px] leading-[1.2] ${className}`}>
-      <p className="h-[26px] whitespace-nowrap text-left text-[20px] font-normal text-[#606060]">{label}</p>
-      <p className={`h-[52px] w-full whitespace-nowrap ${valueAlignClass} text-[40px] font-bold ${accent ? "text-[#03BFA5]" : "text-[#454545]"}`}>
+      <p className="h-[23px] whitespace-nowrap text-left text-[17.23px] font-normal text-[#606060]">{label}</p>
+      <p className={`h-[45px] w-full whitespace-nowrap ${valueAlignClass} text-[34.47px] font-bold ${accent ? "text-[#03BFA5]" : "text-[#454545]"}`}>
         {value}
       </p>
     </div>
@@ -165,9 +165,9 @@ function ContributionMetric({ label, value, accent = false, className = "", valu
 
 function RatePill({ isLoggedIn, myRate }) {
   return (
-    <div className="flex items-center gap-[10px] rounded-[164px] border border-[#03BFA5] bg-[#EFFFFD] px-[15px] py-[6px] leading-[1.2] text-[#03BFA5]">
-      <span className="h-[22px] w-[170px] text-center text-[18px] font-normal">내가 받을 수 있는 금리</span>
-      <span className="h-[22px] w-[80px] text-center text-[20px] font-semibold">
+    <div className="flex h-[31px] w-[326px] max-w-full items-center justify-start gap-[15.5px] rounded-[164px] border border-[#03BFA5] bg-[#EFFFFD] pl-[50px] pr-[12px] leading-[1.2] text-[#03BFA5]">
+      <span className="h-[19px] w-[150px] whitespace-nowrap text-center text-[15.51px] font-normal">내가 받을 수 있는 금리</span>
+      <span className="h-[21px] w-[69px] whitespace-nowrap text-center text-[17.23px] font-semibold">
         {isLoggedIn ? `연 ${myRate} %` : "연 ??? %"}
       </span>
     </div>
@@ -195,34 +195,34 @@ export function ListItem({
   return (
     <ProductCardShell
       onClick={onClick}
-      className={`flex min-h-[175px] w-full flex-col items-start gap-[24px] rounded-[10px] bg-white px-[40px] py-[24px] min-[1100px]:flex-row min-[1100px]:items-center min-[1100px]:justify-between ${
+      className={`flex min-h-[175px] w-full flex-col items-start gap-[24px] rounded-[10px] bg-white px-[40px] py-[24px] min-[900px]:flex-row min-[900px]:items-center min-[900px]:justify-between ${
         isHighlighted ? "border-2 border-[#03BFA5]" : `${isContribution ? "border" : "border-2"} border-[#D5D5D5]`
       }`}
     >
-      <div className={`${isContribution ? "w-full min-[1100px]:w-[550px]" : "w-full min-[1100px]:w-[695px]"} min-w-0`}>
-        <div className="mb-[13px] flex max-w-full flex-wrap gap-[9px]">
+      <div className={`${isContribution ? "w-full min-[900px]:w-[550px]" : "w-full min-[900px]:w-[695px]"} min-w-0`}>
+        <div className="mb-[13px] flex max-w-full flex-wrap gap-[9px] min-[900px]:flex-nowrap min-[900px]:overflow-hidden">
           {tags.slice(0, 4).map((tag) => (
             <ProductTag key={tag} tag={tag} />
           ))}
         </div>
-        <h3 className="mb-[10px] text-[36px] font-semibold leading-[1.2] text-[#454545]">{title}</h3>
-        <p className="text-[22px] font-medium leading-[1.2] text-[#333333]">{subtitle}</p>
+        <h3 className="mb-[10px] text-[36px] font-semibold leading-[1.2] text-[#454545] min-[900px]:overflow-hidden min-[900px]:text-ellipsis min-[900px]:whitespace-nowrap">{title}</h3>
+        <p className="text-[22px] font-medium leading-[1.2] text-[#333333] min-[900px]:overflow-hidden min-[900px]:text-ellipsis min-[900px]:whitespace-nowrap">{subtitle}</p>
       </div>
 
       {isContribution ? (
-        <div className="flex w-full shrink-0 flex-col items-center gap-[19px] min-[1100px]:w-[443px]">
-          <div className="flex w-full items-center justify-center gap-[41px]">
-            <ContributionMetric label="기여금 환산 수익률" value={contributionRate} className="w-[170px]" />
+        <div className="flex w-full shrink-0 flex-col items-center gap-[10px] min-[900px]:w-[382px]">
+          <div className="flex w-full items-center justify-center gap-[27px]">
+            <ContributionMetric label="기여금 환산 수익률" value={contributionRate} className="w-[148px]" />
             <div className="h-[75px] w-px bg-[#D5D5D5]" />
-            <ContributionMetric label="예상 만기 기여금 총액" value={maturityContribution} accent className="w-[185px]" valueAlign="center" />
+            <ContributionMetric label="예상 만기 기여금 총액" value={maturityContribution} accent className="w-[165px]" />
           </div>
-          <p className="w-full text-center text-[18px] font-normal leading-[1.2] text-[#606060]">{contributionCaption}</p>
+          <p className="w-full text-center text-[15.51px] font-normal leading-[1.2] text-[#606060]">{contributionCaption}</p>
         </div>
       ) : (
-        <div className="flex w-full shrink-0 flex-col items-center gap-[9px] min-[1100px]:w-[394px] min-[1100px]:items-end">
-          <div className="flex h-[86px] w-[376px] items-center justify-center gap-[41px]">
+        <div className="flex w-full shrink-0 flex-col items-center gap-[9px] min-[900px]:w-[338px] min-[900px]:items-end">
+          <div className="flex h-[74px] w-[324px] items-center justify-center gap-[35px]">
             <ListRateBlock label="기본 금리" value={baseRate} />
-            <div className="h-[75px] w-px bg-[#D5D5D5]" />
+            <div className="h-[65px] w-px bg-[#D5D5D5]" />
             <ListRateBlock label="최고 금리" value={maxRate} accent />
           </div>
           <RatePill isLoggedIn={isLoggedIn} myRate={myRate} />
