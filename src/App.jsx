@@ -8,6 +8,8 @@ import Agreement from './pages/Agreement';
 import AuthGuard from './routes/AuthGuard';
 import Recommend from './pages/Recommend';
 import ProductList from './pages/ProductList';
+import ProductDetail from './pages/ProductDetail';
+import ProductRateCalculator from './pages/ProductRateCalculator';
 
 function RecommendRoute() {
   const isMockMode = import.meta.env.DEV
@@ -26,6 +28,8 @@ function App() {
         <Route path="/introduce" element={<Introduce />} />
         <Route path="/recommend" element={<RecommendRoute />} />
         <Route path="/products" element={<ProductList/>}/>
+        <Route path="/products/:productId" element={<ProductDetail />} />
+        <Route path="/products/:productId/calculator" element={<ProductRateCalculator />} />
         
         <Route
           path="/"
