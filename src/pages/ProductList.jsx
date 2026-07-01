@@ -106,19 +106,22 @@ function SortInfo({ activeTab }) {
   const isSuitability = activeTab === "나에게 맞는 순";
   const label = isSuitability ? "적합도란?" : "달성 가능 금리란?";
   const tooltip = isSuitability
-    ? "선택하신 키워드(핵심 혜택, 저축 기간, 현재 신분, 은행 거래)를 기준으로 산정한 매칭 점수예요. 정부 지원 상품과 제 1금융권 상품별로 가중치를 다르게 반영하여 산정했어요."
-    : "입력하신 정보와 선택한 키워드를 기반으로 실제로 받을 수 있는 우대조건만 적용한 실질 금리예요. 상품별 계산 방식에 따라 결과가 달라질 수 있어요.";
+    ? "적합도란? 선택하신 키워드(핵심 혜택 ∙ 저축 기간 ∙ 현재 신분 ∙ 은행 거래)를 기준으로 산정한 매칭 점수예요.정부 지원 상품과 제 1금융권 상품별로 가중치를 다르게 반영하여 산정했어요."
+    : "달성 가능 금리란? 입력하신 정보(소득 ∙ 근속 ∙ 주거래 은행 등)와 단계 1 키워드를 기반으로 실제로 받을 수 있는 우대조건만 적용한 실질 금리예요. 정부 상품과 시중은행 상품의 계산 방식이 달라요.";
+  const labelWeight = isSuitability ? "font-medium" : "font-normal";
   const tooltipSize = isSuitability
-    ? "left-[124px] top-[-40px] min-h-[86px] w-[532px] px-[28px] py-[9px] text-[16.2px]"
-    : "left-[187px] top-[-3px] min-h-[63px] w-[395px] px-[21px] py-[6px] text-[12px]";
+    ? "left-[140px] top-[-22px] min-h-[72px] w-[420px] pb-[8px] pl-[22px] pr-[12px] pt-[8px] text-[13.5px] text-[#03BFA5]"
+    : "left-[180px] top-[-22px] min-h-[72px] w-[430px] pb-[8px] pl-[24px] pr-[12px] pt-[8px] text-[13.5px] text-[#03BFA5]";
 
   return (
     <div className="group relative flex h-[45px] items-center gap-[9px] pl-[18px] text-[20px] font-normal leading-[1.2] text-[#03BFA5]">
-      <span>{label}</span>
-      <span className="flex h-[18px] w-[18px] items-center justify-center rounded-full border border-[#03BFA5] text-[12px] font-semibold leading-none">
+      <span className={labelWeight}>{label}</span>
+      <span className="flex h-[18px] w-[18px] items-center justify-center rounded-full border-[1.8px] border-[#03BFA5] text-[12px] font-semibold leading-none">
         i
       </span>
-      <div className={`pointer-events-none absolute z-20 hidden rounded-[4px] border border-[#03BFA5] bg-[#F0FFFE] font-normal leading-[1.376] text-[#03BFA5] shadow-[0_4px_12px_rgba(0,0,0,0.08)] group-hover:block ${tooltipSize}`}>
+      <div className={`pointer-events-none absolute z-20 hidden rounded-[4px] border border-[#03BFA5] bg-[#F0FFFE] font-medium leading-[1.376] shadow-[0_4px_12px_rgba(0,0,0,0.08)] group-hover:block ${tooltipSize}`}>
+        <span className="absolute left-[-16px] top-[31px] h-0 w-0 border-y-[9px] border-r-[16px] border-y-transparent border-r-[#03BFA5]" />
+        <span className="absolute left-[-13px] top-[32px] h-0 w-0 border-y-[8px] border-r-[14px] border-y-transparent border-r-[#F0FFFE]" />
         {tooltip}
       </div>
     </div>
@@ -236,6 +239,7 @@ export default function ProductList() {
   const [activeTab, setActiveTab] = useState("나에게 맞는 순");
   const [activeFilter, setActiveFilter] = useState("전체");
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const effectiveActiveTab = !isLoggedIn && activeTab === "내가 받을 수 있는 금리 순" ? "나에게 맞는 순" : activeTab;
 
   const handleTabClick = (tabName) => {
     if (tabName === "내가 받을 수 있는 금리 순" && !isLoggedIn) {
@@ -260,9 +264,9 @@ export default function ProductList() {
         SECTIONS.some((section) => section.filterKey === activeFilter && section.name === product.category);
       return matchesSearch && matchesFilter;
     }).sort((a, b) =>
-      activeTab === "나에게 맞는 순" ? b.suitability - a.suitability : parseFloat(b.myRate) - parseFloat(a.myRate),
+      effectiveActiveTab === "나에게 맞는 순" ? b.suitability - a.suitability : parseFloat(b.myRate) - parseFloat(a.myRate),
     );
-  }, [activeFilter, activeTab, searchTerm]);
+  }, [activeFilter, effectiveActiveTab, searchTerm]);
 
   const topThree = processedProducts.slice(0, 3);
 
@@ -302,18 +306,18 @@ export default function ProductList() {
         <div className="mx-auto mt-[62px] w-full max-w-[1670px] px-4 min-[1720px]:px-0">
           <div className="flex h-[45px] items-end">
             <div className="flex shrink-0">
-              <SortTab active={activeTab === "나에게 맞는 순"} onClick={() => handleTabClick("나에게 맞는 순")}>
+              <SortTab active={effectiveActiveTab === "나에게 맞는 순"} onClick={() => handleTabClick("나에게 맞는 순")}>
                 나에게 맞는 순
               </SortTab>
               <SortTab
-                active={activeTab === "내가 받을 수 있는 금리 순"}
+                active={effectiveActiveTab === "내가 받을 수 있는 금리 순"}
                 locked={!isLoggedIn}
                 onClick={() => handleTabClick("내가 받을 수 있는 금리 순")}
               >
                 내가 받을 수 있는 금리 순
               </SortTab>
             </div>
-            <SortInfo activeTab={activeTab} />
+            <SortInfo activeTab={effectiveActiveTab} />
           </div>
 
           <section className="min-h-[745px] rounded-[3px] border border-[#D5D5D5] bg-white px-[clamp(28px,6.35vw,122px)] pb-[76px] pt-[56px]">
