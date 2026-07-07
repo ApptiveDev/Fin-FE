@@ -2,7 +2,6 @@ import StepLayout from "./StepLayout";
 import NavButtons from "./NavButtons";
 import InfoBox from "./InfoBox";
 import Tag from "./Tag";
-import InfoIcon from "./InfoIcon";
 import KeywordAlertModal from "./KeywordAlertModal";
 import { FormInput, FormSelect } from "./FormFields";
 import { toggleField } from "../utils/toggleField";
@@ -53,11 +52,19 @@ function getRangeProgress(value, min, max) {
   return `${Math.min(100, Math.max(0, progress))}%`;
 }
 
+function toggleSingleField(data, setData, field, val) {
+  const cur = data[field] || [];
+  setData({
+    ...data,
+    [field]: cur.includes(val) ? [] : [val],
+  });
+}
+
 /*  1. 저축 계획 (Step 1-1) */
 export function StepSavingPlan({ data, setData, onPrev, onNext }) {
   const amount = data.monthlyAmount || 1;
   return (
-      <StepLayout step={1} title="기본 정보" sub="월 납입 희망액을 슬라이더로 조정하거나 직접 입력해주세요">
+      <StepLayout step={1} title="기본 정보" sub="월 납입 희망액을 슬라이더로 조정하거나 직접 입력해주세요.">
         <div className="pl-6 mt-8">
           <FieldHeader title="월 납입 희망액" required className="mb-[34px]" />
 
@@ -108,7 +115,7 @@ export function StepBasicInfo({ data, setData, cats, onPrev, onNext }) {
             {cats.status.map((s) => (
               <Tag key={s.optionId} label={s.optionValue}
                 selected={(data.status || []).includes(s.optionId)}
-                onClick={() => toggleField(data, setData, "status", s.optionId)} />
+                onClick={() => toggleSingleField(data, setData, "status", s.optionId)} />
             ))}
           </div>
 
@@ -117,7 +124,7 @@ export function StepBasicInfo({ data, setData, cats, onPrev, onNext }) {
             {cats.savingPeriod.map((p) => (
               <Tag key={p.optionId} label={p.optionValue}
                 selected={(data.savingPeriod || []).includes(p.optionId)}
-                onClick={() => toggleField(data, setData, "savingPeriod", p.optionId)}/>
+                onClick={() => toggleSingleField(data, setData, "savingPeriod", p.optionId)}/>
             ))}
           </div>
         </div>
@@ -134,7 +141,7 @@ export function StepBasicInfo({ data, setData, cats, onPrev, onNext }) {
 export function StepBenefits({ data, setData, cats, onPrev, onNext }) {
   const [showKeywordAlert, setShowKeywordAlert] = useState(false);
   const handleNext = () => {
-    if (!data.benefits?.length) {
+    if (!data.bankRelation?.length) {
       setShowKeywordAlert(true);
       return;
     }
@@ -178,6 +185,8 @@ const DAYS   = Array.from({ length: 31 }, (_, i) => i + 1);
 
 /* 4. 개인 기본 정보 (Step 2-1) */
 export function StepPersonalInfo({ data, setData, onPrev, onNext }) {
+  const isComplete = Boolean(data.birthYear && data.birthMonth && data.birthDay && data.income);
+
   return (
       <StepLayout step={2} title="상세 정보" sub="Y-Fin.만의 정확한 적합도 분석과 예상 수익률 계산을 위해 필요한 정보입니다.">
         <div className="mt-8 pl-4">
@@ -187,7 +196,6 @@ export function StepPersonalInfo({ data, setData, onPrev, onNext }) {
           <div className="pl-2 mb-[32px]">
             <FieldHeader
               title="생년월일"
-              choice="(복수 선택)"
               required
               size="small"
               className="mb-[26px]"
@@ -246,15 +254,17 @@ export function StepPersonalInfo({ data, setData, onPrev, onNext }) {
             </div>
           </div>
         </div>
-        <NavButtons onPrev={onPrev} onNext={onNext} isLast={false} disabled={!data.income}/>
+        <NavButtons onPrev={onPrev} onNext={onNext} isLast={false} disabled={!isComplete}/>
       </StepLayout>
   );
 }
 
 /* 5. 거주지역 (Step 2-2) */
 export function StepRegion({ data, setData, cats, onNext, onPrev }) {
+  const hasRegion = Boolean(data.region);
+
   return (
-      <StepLayout step={2} title="상세정보" sub="Y-Fin만의 정확한 적합도 분석과 예상 수익률 계산을 위해 필요한 정보입니다.">
+      <StepLayout step={2} title="상세 정보" sub="Y-Fin.만의 정확한 적합도 분석과 예상 수익률 계산을 위해 필요한 정보입니다.">
         <div className="mt-8 pl-4">
           <div className="flex items-center mb-[26px]">
             <p className="text-[26px] text-[#454545] font-semibold">거주지역</p>
@@ -275,7 +285,7 @@ export function StepRegion({ data, setData, cats, onNext, onPrev }) {
             </InfoBox>
           </div>
         </div>
-        <NavButtons onPrev={onPrev} onNext={onNext} isLast={false} disabled={!data.region} />
+        <NavButtons onPrev={onPrev} onNext={onNext} isLast={false} nextLabel={hasRegion ? "다음 단계" : "건너뛰기"} />
       </StepLayout>
   );
 }
@@ -292,14 +302,14 @@ export function StepHouseholdIncome({ data, setData, cats, onPrev, onNext }) {
             <FieldHeader title="가구원 수" required size="small" className="mb-[30px]" />
             <div className="flex h-[56px] w-[235px] items-center justify-center gap-[30px] rounded-full border border-[#CACACA] bg-white p-[10px] shadow-sm mb-[34px]">
               <button type="button"
-                onClick={() => setData({ ...data, householdCount: Math.max(1, count + 1) })}
-                className="flex h-[28px] w-10 items-center justify-center rounded-full border-2 border-[#454545] text-center font-inter text-[25px] leading-none text-[#454545] hover:bg-gray-50">+</button>
+                onClick={() => setData({ ...data, householdCount: Math.max(1, count - 1) })}
+                className="flex h-[28px] w-10 items-center justify-center rounded-full border-2 border-[#454545] text-center font-inter text-[25px] leading-none text-[#454545] hover:bg-gray-50">-</button>
               <span className="font-inter text-[28px] text-center text-[#000000]">
                 {count}인
               </span>
               <button type="button"
-                onClick={() => setData({ ...data, householdCount: Math.max(1, count - 1) })}
-                className="flex h-[28px] w-10 items-center justify-center rounded-full border-2 border-[#454545] text-center font-inter text-[25px] leading-none text-[#454545] hover:bg-gray-50">-</button>
+                onClick={() => setData({ ...data, householdCount: Math.max(1, count + 1) })}
+                className="flex h-[28px] w-10 items-center justify-center rounded-full border-2 border-[#454545] text-center font-inter text-[25px] leading-none text-[#454545] hover:bg-gray-50">+</button>
             </div>
 
             <FieldHeader title="가구 소득" required size="small" className="mb-[26px]" />
@@ -351,6 +361,8 @@ export function StepHouseholdIncome({ data, setData, cats, onPrev, onNext }) {
 
 /* 7. 가구정보 (무주택 여부) (Step 2-4) */
 export function StepHousing({ data, setData, onPrev, onNext }) {
+  const hasHousingSelection = Boolean(data.housingStatus || data.isTenant);
+
   return (
       <StepLayout step={2} title="상세 정보" sub="Y-Fin.만의 정확한 적합도 분석과 예상 수익률 계산을 위해 필요한 정보입니다.">
         <div className="mt-8 pl-4">
@@ -361,7 +373,6 @@ export function StepHousing({ data, setData, onPrev, onNext }) {
           <div className="pl-2">
             <div className="flex items-center gap-1.5 mb-5">
               <p className="text-[23px] text-[#454545] font-medium">무주택 여부</p>
-              <InfoIcon text="청약/주거 지원 상품 자격 요건입니다." />
             </div>
 
         <div className="flex gap-4 mb-3">
@@ -379,7 +390,7 @@ export function StepHousing({ data, setData, onPrev, onNext }) {
                 <input type="checkbox" 
                   className="hidden" 
                   checked={isSelected}
-                  onChange={() => setData({ ...data, housingStatus: opt })} />
+                  onChange={() => setData({ ...data, housingStatus: isSelected ? "" : opt })} />
                 
                 <div className={`w-4 h-4 rounded-xs flex items-center justify-center transition-all ${
                   isSelected ? "bg-white" : "border border-gray-300 bg-white"}`}>
@@ -412,11 +423,15 @@ export function StepHousing({ data, setData, onPrev, onNext }) {
               <span className="text-[18px] font-inter">세대주입니다.</span>
             </label>
             <InfoBox type="mint-pill" className="w-full max-w-[484px]">
-              기본 만 19~34세, 군필자는 39세까지 선택 가능
+              청약/주거 지원 상품의 자격 요건입니다.
             </InfoBox>
         </div>
       </div>
-      <NavButtons onPrev={onPrev} onNext={onNext} disabled={!data.housingStatus} />
+      <NavButtons
+        onPrev={onPrev}
+        onNext={onNext}
+        nextLabel={hasHousingSelection ? "다음 단계" : "건너뛰기"}
+      />
     </StepLayout>
   );
 }
@@ -424,6 +439,7 @@ export function StepHousing({ data, setData, onPrev, onNext }) {
 /* 8. 재직 정보 (근속 기간) (Step 2-5) */
 export function StepEmployment({ data, setData, onPrev, onNext }) {
   const months = data.employmentMonths || 0;
+  const hasEmploymentSelection = Number(months) > 0 || Boolean(data.isFirstJob);
   
   return (
       <StepLayout step={2} title="상세 정보" sub="Y-Fin.만의 정확한 적합도 분석과 예상 수익률 계산을 위해 필요한 정보입니다.">
@@ -476,11 +492,16 @@ export function StepEmployment({ data, setData, onPrev, onNext }) {
             </label>
             
             <InfoBox type="mint-pill" className="mb-4 h-[50px] w-full max-w-[488px]">
-              첫 직장 선택 시 신규 취업자 전용 상품을 추천합니다.
+              일부 정부 상품은 근속 요건이 존재합니다.
             </InfoBox>
           </div>
         </div>
-        <NavButtons onPrev={onPrev} onNext={onNext} isLast={false} />
+        <NavButtons
+          onPrev={onPrev}
+          onNext={onNext}
+          isLast={false}
+          nextLabel={hasEmploymentSelection ? "다음 단계" : "건너뛰기"}
+        />
       </StepLayout>
   );
 }
@@ -678,7 +699,7 @@ export function StepTransaction({ data, setData, cats, onPrev, onSubmit }) {
 
           {subStep === 2 && (
             <BankSelector 
-              theme="blue" title="만기 예적금이 있는 은행" infoText="만기된(될) 예적금이 있는 은행을 선택하면 해당 은행의  ‘재예치 우대금리’가 자동 반영됩니다."
+              theme="blue" title="만기 예적금이 있는 은행" infoText="만기된(될) 예적금이 있는 은행을 선택하면 해당 은행의 ‘재예치 우대금리’가 자동 반영됩니다."
               cats={cats} userRegion={data.region} selectedBanks={maturedBanks}
               onChange={(newBanks) => setData({ ...data, maturedBanks: newBanks })}
               disabledBanks={firstBanks} 
@@ -690,7 +711,7 @@ export function StepTransaction({ data, setData, cats, onPrev, onSubmit }) {
           {subStep === 1 ? ( 
             <NavButtons onPrev={onPrev} onNext={() => setSubStep(2)} isLast={false} />
           ) : ( 
-            <NavButtons onPrev={() => setSubStep(1)} onSubmit={handleFinalSubmit} isLast={true} />
+            <NavButtons onPrev={() => setSubStep(1)} onSubmit={handleFinalSubmit} isLast={true} submitLabel="분석하기" />
           )}
         </div>
       </StepLayout>

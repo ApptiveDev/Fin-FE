@@ -2,12 +2,12 @@ const variants = {
   "mint-rect": {
     wrapper: "h-[46px] rounded-[5px] border-[#03BFA5] bg-[#EFFFFD] text-[18px]",
     icon: "size-[19px] bg-[#03BFA5] text-[#FFFFFF] text-[11px]",
-    text: "text-[#000000]",
+    text: "text-[#454545]",
   },
   "mint-region": {
     wrapper: "h-[46px] rounded-[5px] border-[1.367px] border-[#03BFA5] bg-[#EFFFFD] text-[18px]",
     icon: "size-[21.878px] bg-[#03BFA5] text-[#FFFFFF] text-[12px]",
-    text: "text-[#000000]",
+    text: "text-[#454545]",
   },
   "mint-pill": {
     wrapper: "h-[46px] rounded-full border-[#03BFA5] bg-[#EFFFFD] text-[18px]",
