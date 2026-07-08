@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { findProductById, PRODUCTS } from "../data/products";
+import { openProductApplication } from "../utils/productApplyLink";
 
 function ArrowLeftIcon({ className = "" }) {
   return (
@@ -51,14 +52,18 @@ function Chip({ label, active }) {
   );
 }
 
-function OptionButton({ active, children, onClick, className = "" }) {
+function OptionButton({ active, children, onClick, className = "", activeTone = "mint" }) {
+  const activeClass = activeTone === "soft"
+    ? "border border-[#E4E4E4] bg-[#EFEFEF] text-[#454545]"
+    : "border-2 border-[#03BFA5] bg-[#F7FFFE] text-[#03BFA5]";
+
   return (
     <button
       type="button"
       onClick={onClick}
       className={`flex h-[58px] items-center justify-center rounded-[10px] text-[22px] font-medium leading-[1.2] transition-colors ${
         active
-          ? "border-2 border-[#03BFA5] bg-[#F7FFFE] text-[#03BFA5]"
+          ? activeClass
           : "border border-[#E4E4E4] bg-white text-[#454545] hover:border-[#03BFA5]"
       } ${className}`}
     >
@@ -113,13 +118,13 @@ function PeriodCard({ months, onChange }) {
   );
 }
 
-function ToggleCard({ title, options, value, onChange }) {
+function ToggleCard({ title, options, value, onChange, activeTone = "soft" }) {
   return (
     <CalculatorCard className="h-[170px] px-[38px] py-[38px]">
       <h2 className="text-[22px] font-semibold leading-[1.2] text-[#454545]">{title}</h2>
       <div className="mt-[6px] grid grid-cols-2 gap-[5px]">
         {options.map((option) => (
-          <OptionButton key={option} active={value === option} onClick={() => onChange(option)}>
+          <OptionButton key={option} active={value === option} onClick={() => onChange(option)} activeTone={activeTone}>
             {option}
           </OptionButton>
         ))}
@@ -129,8 +134,18 @@ function ToggleCard({ title, options, value, onChange }) {
 }
 
 function RateHero({ product }) {
+  const navigate = useNavigate();
+
   return (
-    <section className="flex min-h-[180px] items-center justify-between gap-8 rounded-[10px] bg-[#EFFFFD] px-[38px] py-[34px]">
+    <section className="relative flex min-h-[180px] items-center justify-between gap-8 rounded-[10px] bg-[#EFFFFD] px-[38px] py-[34px]">
+      <button
+        type="button"
+        onClick={() => navigate(`/products/${product.id}`)}
+        className="absolute right-[39px] top-[31px] flex items-center gap-[14px] text-[20px] font-medium leading-[1.2] text-[#454545] transition-colors hover:text-[#03BFA5]"
+      >
+        <ArrowLeftIcon className="size-[21px]" />
+        계산 금리 수정하기
+      </button>
       <div>
         <p className="mb-[17px] text-[22px] font-semibold leading-[1.2] text-[#454545]">내가 받을 수 있는 금리</p>
         <div className="flex flex-wrap items-end gap-[7px]">
@@ -139,7 +154,7 @@ function RateHero({ product }) {
           <span className="pb-[11px] text-[20px] font-medium leading-[1.2] text-[#454545]">{product.calculator.baseText}</span>
         </div>
       </div>
-      <div className="flex flex-wrap justify-end gap-[6px]">
+      <div className="mt-[68px] flex flex-wrap justify-end gap-[6px]">
         {product.calculator.chips.map((chip) => (
           <Chip key={chip.label} label={chip.label} active={chip.active} />
         ))}
@@ -170,7 +185,7 @@ function ResultCard({ principal, interest, tax, finalAmount }) {
           <span className="text-[#454545]">이자 과세 (15.4%)</span>
           <span className="flex items-center gap-[5px] text-[#D3455B]">
             <TaxIcon className="size-[22px]" />
-            {formatWon(tax)}
+            - {formatWon(tax)}
           </span>
         </div>
       </div>
@@ -184,7 +199,7 @@ function ResultCard({ principal, interest, tax, finalAmount }) {
   );
 }
 
-function BottomActions({ productId }) {
+function BottomActions({ product }) {
   const navigate = useNavigate();
 
   return (
@@ -192,7 +207,7 @@ function BottomActions({ productId }) {
       <div className="grid grid-cols-2 gap-[10px]">
         <button
           type="button"
-          onClick={() => navigate(`/products/${productId}`)}
+          onClick={() => navigate(`/products/${product.id}`)}
           className="flex h-[78px] items-center justify-center gap-[10px] rounded-[10px] border-2 border-[#03BFA5] bg-white text-[25px] font-semibold leading-[1.2] text-[#03BFA5]"
         >
           <ArrowLeftIcon className="size-[16px]" />
@@ -200,6 +215,7 @@ function BottomActions({ productId }) {
         </button>
         <button
           type="button"
+          onClick={() => openProductApplication(product)}
           className="flex h-[78px] items-center justify-center rounded-[10px] border-2 border-[#03BFA5] bg-[#03BFA5] text-[25px] font-semibold leading-[1.2] text-white"
         >
           신청하러 가기
@@ -227,7 +243,7 @@ export default function ProductRateCalculator() {
     const monthlyAmount = product.calculator.monthlyAmount;
     const principal = monthlyAmount * months;
     const rate = parseRate(product.calculator.headlineRate);
-    const simpleInterest = monthlyAmount * rate * (months + 1) / 2;
+    const simpleInterest = monthlyAmount * rate * months * (months + 1) / 24;
     const interest = interestType === "복리" ? simpleInterest * 1.015 : simpleInterest;
     const tax = taxType.includes("비과세") ? 0 : interest * 0.154;
 
@@ -240,9 +256,9 @@ export default function ProductRateCalculator() {
   }, [interestType, months, product.calculator.headlineRate, product.calculator.monthlyAmount, taxType]);
 
   return (
-    <main className="min-h-screen bg-white px-6 pb-[70px] pt-[64px] font-inter text-[#454545]">
+    <main className="min-h-screen bg-white font-inter text-[#454545]">
       <div className="mx-auto w-full max-w-[1535px]">
-        <h1 className="mb-[20px] text-[32px] font-bold leading-[1.2] text-[#454545]">적금 수익률 계산기</h1>
+        <h1 className="mb-[32px] pt-[74px] text-[32px] font-bold leading-[1.2] text-[#454545]">적금 수익률 계산기</h1>
         <RateHero product={product} />
 
         <div className="mt-[28px] grid gap-[30px] xl:grid-cols-[752px_762px]">
@@ -266,12 +282,13 @@ export default function ProductRateCalculator() {
               options={["일반 15.4%", "비과세 0%"]}
               value={taxType}
               onChange={setTaxType}
+              activeTone="mint"
             />
           </div>
 
           <div className="flex flex-col gap-[12px]">
             <ResultCard {...result} />
-            <BottomActions productId={product.id} />
+            <BottomActions product={product} />
           </div>
         </div>
       </div>

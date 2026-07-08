@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { TopCard, ListItem } from "../components/ProductComponents";
 import icon_1_fin_sector from "../assets/icon_1_fin_sector.png";
@@ -21,6 +21,13 @@ const SECTIONS = [
   { name: "시중 은행 상품 · 제 1금융권", filterKey: "제 1금융권" },
   { name: "청약 상품", filterKey: "청약" },
 ];
+
+function isProductListMockMode(search) {
+  const mockParam = new URLSearchParams(search).get("mock");
+
+  if (mockParam === "false") return false;
+  return import.meta.env.DEV || mockParam === "true";
+}
 
 function SearchIcon() {
   return (
@@ -232,17 +239,21 @@ function LoginRequiredModal({ onClose, onLogin, onSignup }) {
 
 export default function ProductList() {
   const { accessToken } = useAuth();
-  const isLoggedIn = !!accessToken;
   const navigate = useNavigate();
+  const location = useLocation();
+  const hasAccessToken = Boolean(accessToken);
+  const isMockMode = !hasAccessToken && isProductListMockMode(location.search);
+  const isLoggedIn = hasAccessToken || isMockMode;
+  const shouldRequireLogin = !hasAccessToken && !isMockMode;
 
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("나에게 맞는 순");
   const [activeFilter, setActiveFilter] = useState("전체");
   const [showLoginModal, setShowLoginModal] = useState(false);
-  const effectiveActiveTab = !isLoggedIn && activeTab === "내가 받을 수 있는 금리 순" ? "나에게 맞는 순" : activeTab;
+  const effectiveActiveTab = shouldRequireLogin && activeTab === "내가 받을 수 있는 금리 순" ? "나에게 맞는 순" : activeTab;
 
   const handleTabClick = (tabName) => {
-    if (tabName === "내가 받을 수 있는 금리 순" && !isLoggedIn) {
+    if (tabName === "내가 받을 수 있는 금리 순" && shouldRequireLogin) {
       setShowLoginModal(true);
       return;
     }
@@ -311,7 +322,7 @@ export default function ProductList() {
               </SortTab>
               <SortTab
                 active={effectiveActiveTab === "내가 받을 수 있는 금리 순"}
-                locked={!isLoggedIn}
+                locked={shouldRequireLogin}
                 onClick={() => handleTabClick("내가 받을 수 있는 금리 순")}
               >
                 내가 받을 수 있는 금리 순

@@ -1,5 +1,6 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { findProductById, PRODUCTS } from "../data/products";
+import { getProductApplicationBadge, getProductApplicationBadgeVariant, openProductApplication } from "../utils/productApplyLink";
 
 function ArrowLeftIcon({ className = "" }) {
   return (
@@ -229,6 +230,31 @@ function NoticeBox({ children }) {
   );
 }
 
+function BankRateSummary({ product }) {
+  const baseRate = product.baseRateDisplay || `${product.baseRate}%`;
+  const maxRate = product.maxRateDisplay || `${product.maxRate}%`;
+
+  return (
+    <div className="flex h-[303px] flex-col items-center justify-center rounded-[10px] border border-[#D5D5D5] px-6 py-8 lg:w-[699px] lg:px-[37px] lg:py-[48px]">
+      <div className="grid w-full grid-cols-1 items-center justify-items-center gap-7 md:grid-cols-[1fr_1px_1fr] md:gap-0">
+        <div className="w-fit max-w-full text-left">
+          <p className="whitespace-nowrap text-[27.62px] font-medium leading-[1.2] text-[#454545]">기본 금리</p>
+          <p className="mt-[13px] whitespace-nowrap text-[55.88px] font-bold leading-[1.2] text-[#454545]">{baseRate}</p>
+        </div>
+        <div className="hidden h-[121px] w-px bg-[#D5D5D5] md:block" />
+        <div className="w-fit max-w-full text-left">
+          <p className="whitespace-nowrap text-[27.62px] font-medium leading-[1.2] text-[#454545]">최고 금리</p>
+          <p className="mt-[13px] whitespace-nowrap text-[55.88px] font-bold leading-[1.2] text-[#03BFA5]">{maxRate}</p>
+        </div>
+      </div>
+      <div className="mt-[16px] flex h-[44px] w-full max-w-[461px] items-center justify-center gap-[22px] rounded-full border border-[#03BFA5] bg-[#EFFFFD] px-[26px] leading-[1.2] text-[#03BFA5]">
+        <span className="whitespace-nowrap text-center text-[21.93px] font-normal">내가 달성 가능한 금리</span>
+        <span className="whitespace-nowrap text-center text-[24.37px] font-semibold">연 ??? %</span>
+      </div>
+    </div>
+  );
+}
+
 function ContributionSummary({ product }) {
   return (
     <div className="flex min-h-[262px] flex-col items-center justify-center rounded-[10px] border border-[#D5D5D5] px-6 py-8 lg:w-[699px] lg:px-[37px] lg:py-[41px]">
@@ -248,26 +274,28 @@ function ContributionSummary({ product }) {
   );
 }
 
+function ProductSummary({ product, isBankProduct }) {
+  return isBankProduct ? <BankRateSummary product={product} /> : <ContributionSummary product={product} />;
+}
+
 function RightPanel({ product, onEditRate }) {
-  const canEditRate = !product.contributionRate.includes("???");
+  const applicationBadgeVariant = getProductApplicationBadgeVariant(product);
+  const isBankProduct = applicationBadgeVariant === "bank";
+  const applicationBadgeClass = applicationBadgeVariant === "bank"
+    ? "bg-[#F4F5F6] text-[#454545]"
+    : "bg-[#F7FFFE] text-[#03BFA5]";
 
   return (
-    <aside className="relative flex flex-col gap-[30px] lg:w-[699px] lg:pt-[136px]">
-      {canEditRate && (
-        <button
-          type="button"
-          onClick={onEditRate}
-          className="absolute right-0 top-[96px] hidden items-center gap-[10px] text-[20px] font-medium leading-[1.2] text-[#454545] transition-colors hover:text-[#03BFA5] lg:flex"
-        >
-          <CalculatorIcon className="size-[21px]" />
-          계산 금리 수정하기
-        </button>
-      )}
-      <ContributionSummary product={product} />
+    <aside className="relative flex flex-col lg:w-[699px] lg:pt-[295px]">
+      <ProductSummary product={product} isBankProduct={isBankProduct} />
 
-      <div className="flex flex-col gap-[30px]">
+      <div className={`${isBankProduct ? "mt-[30px]" : "mt-[21px]"} flex flex-col`}>
         <div className="grid grid-cols-[1fr_82px] gap-[10px]">
-          <button className="flex h-[80px] items-center justify-center gap-[20px] rounded-[10px] border border-[#03BFA5] bg-[#03BFA5] text-[30px] font-medium leading-[1.2] text-white transition-colors hover:bg-[#02A892]">
+          <button
+            type="button"
+            onClick={() => openProductApplication(product)}
+            className="flex h-[80px] items-center justify-center gap-[20px] rounded-[10px] border border-[#03BFA5] bg-[#03BFA5] text-[30px] font-medium leading-[1.2] text-white transition-colors hover:bg-[#02A892]"
+          >
             <ExternalLinkIcon className="size-[30px]" />
             신청하러 가기
           </button>
@@ -275,16 +303,37 @@ function RightPanel({ product, onEditRate }) {
             <HeartIcon className="size-[40px]" />
           </button>
         </div>
+        {isBankProduct && product.calculator && (
+          <button
+            type="button"
+            onClick={onEditRate}
+            className="mt-[10px] flex h-[80px] w-full items-center justify-center gap-[16px] rounded-[10px] border-2 border-[#03BFA5] bg-white text-[30px] font-medium leading-[1.2] text-[#03BFA5] transition-colors hover:bg-[#F7FFFE]"
+          >
+            <CalculatorIcon className="size-[30px]" />
+            수익률 계산기
+          </button>
+        )}
 
-        <div className="flex flex-col gap-[10px]">
-          <div className="flex items-center gap-[10px] text-black">
-            <CalendarIcon className="size-[30px]" />
-            <h2 className="text-[26px] font-medium leading-[1.2]">모집 기간</h2>
+        {!isBankProduct && (
+          <div className="mt-[32px] flex flex-col">
+            <div className="flex items-center gap-[10px] text-black">
+              <CalendarIcon className="size-[30px]" />
+              <h2 className="text-[26px] font-medium leading-[1.2]">모집 기간</h2>
+            </div>
+            <div className="mt-[18px] flex h-[80px] items-center justify-center rounded-[10px] border-2 border-[#03BFA5] bg-[#F7FFFE] px-[34px] text-center text-[30px] font-medium leading-[1.2] text-[#03BFA5]">
+              {product.recruitPeriod}
+            </div>
           </div>
-          <div className="flex h-[80px] items-center justify-center rounded-[10px] border-2 border-[#03BFA5] bg-[#F7FFFE] px-[34px] text-center text-[30px] font-medium leading-[1.2] text-[#03BFA5]">
-            {product.recruitPeriod}
-          </div>
+        )}
+
+        <div className={`${isBankProduct ? "mt-[24px] h-[60px]" : "mt-[30px] h-[58px]"} flex w-fit items-center justify-center rounded-[10px] px-[37px] text-[26px] font-semibold leading-[1.2] ${applicationBadgeClass}`}>
+          {getProductApplicationBadge(product)}
         </div>
+        <div className="mt-[34px] h-px w-full bg-[#D5D5D5]" />
+        <p className="mt-[27px] text-[24px] font-normal leading-[1.35] text-[#9C9C9C]">
+          Y-Fin은 해당 상품의 판매 ∙ 중개 주체가 아니며,<br />
+          신청은 기관 공식 페이지에서 진행됩니다.
+        </p>
       </div>
     </aside>
   );
@@ -358,8 +407,8 @@ export default function ProductDetail() {
   const product = findProductById(productId) || PRODUCTS[0];
 
   return (
-    <main className="min-h-screen bg-white px-6 pb-[70px] pt-[40px] font-inter text-[#454545]">
-      <div className="mx-auto w-full max-w-[1670px] rounded-[3px] border border-[#D5D5D5] px-6 py-[46px] lg:px-[61px]">
+    <main className="min-h-screen bg-white font-inter text-[#454545]">
+      <div className="mx-auto mt-[13px] w-full max-w-[1670px] rounded-[3px] border border-[#D5D5D5] px-6 pb-[70px] pt-[46px] lg:px-[61px]">
         <div className="mx-auto grid w-full max-w-[1548px] gap-[33px] xl:grid-cols-[816px_699px]">
           <LeftPanel product={product} onBack={() => navigate("/products")} />
           <RightPanel product={product} onEditRate={() => navigate(`/products/${product.id}/calculator`)} />

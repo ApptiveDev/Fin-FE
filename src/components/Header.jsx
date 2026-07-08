@@ -5,7 +5,7 @@ import logo from '../assets/logo.png'
 
 export default function Header() {
   return (
-    <header className="sticky top-0 w-full h-18 flex items-center px-[3.5%] bg-white z-50">
+    <header className="sticky top-0 z-50 flex h-[100px] w-full items-center bg-white px-[79px]">
       <Logo />
       <NavMenu />
       <div className="ml-auto">
@@ -16,8 +16,10 @@ export default function Header() {
 }
 
 function Logo() {
+  const navigate = useNavigate()
+
   return (
-    <img src={logo} alt="Fin 로고" className="h-7 cursor-pointer" onClick={() => navigate('/')} />
+    <img src={logo} alt="Fin 로고" className="h-auto w-[115px] cursor-pointer" onClick={() => navigate('/')} />
   )
 }
 
@@ -32,15 +34,15 @@ function NavMenu() {
   const navigate = useNavigate()
   const location = useLocation()
   return (
-    <ul className="flex gap-[160px] ml-[300px]">
+    <ul className="ml-[238px] flex items-center gap-[123px]">
       {navItems.map((item, i) => (
         <li
           key={i}
           onClick={() => navigate(item.path)}
-          className={`font-[Inter] font-medium text-[17px] cursor-pointer whitespace-nowrap transition-colors
-            ${location.pathname === item.path
+          className={`w-[197px] cursor-pointer whitespace-nowrap text-center font-[Inter] text-[22px] font-medium leading-[1.2] transition-colors
+            ${location.pathname === item.path || (item.path === '/recommend' && location.pathname.startsWith('/products'))
               ? 'text-[#03BFA5]'
-              : 'text-gray-400 hover:text-[#515151]'
+              : 'text-[#454545] hover:text-[#03BFA5]'
             }`}
         >
           {item.label}
@@ -67,16 +69,16 @@ function UserButtons() {
 
   if (accessToken) {
     return (
-      <div className="flex items-center gap-3 font-inter text-[14.5px]">
+      <div className="flex h-[49px] items-center gap-[19px] font-inter text-[20px]">
         <button
           onClick={() => navigate('/mypage')}
-          className="text-[#515151] border border-gray-300 rounded-lg h-9 px-4 hover:border-[#03BFA5] hover:text-[#03BFA5] transition-colors whitespace-nowrap"
+          className="h-[49px] w-[112px] whitespace-nowrap rounded-[8px] border border-[#D5D5D5] text-[#454545] transition-colors hover:border-[#03BFA5] hover:text-[#03BFA5]"
         >
           프로필
         </button>
         <button
           onClick={handleLogout}
-          className="text-white bg-[#03BFA5] rounded-lg h-9 px-4 hover:bg-[#02a892] transition-colors whitespace-nowrap"
+          className="h-[49px] w-[112px] whitespace-nowrap rounded-[8px] bg-[#03BFA5] text-white transition-colors hover:bg-[#02a892]"
         >
           로그아웃
         </button>
@@ -85,7 +87,7 @@ function UserButtons() {
   }
 
   return (
-    <div className="flex items-center gap-3 font-inter text-[14.5px]">
+    <div className="flex h-[49px] items-center gap-[19px] font-inter text-[20px]">
       <LoginButton />
       <JoinButton />
     </div>
@@ -93,16 +95,28 @@ function UserButtons() {
 }
 
 function LoginButton() {
+  const navigate = useNavigate()
+
   return (
-    <button className="text-[#515151] border border-gray-300 rounded-lg h-9 w-19.5 hover:border-[#03BFA5] hover:text-[#03BFA5] transition-colors whitespace-nowrap">
+    <button
+      type="button"
+      onClick={() => navigate('/login')}
+      className="h-[49px] w-[112px] whitespace-nowrap rounded-[8px] border border-[#D5D5D5] text-[#454545] transition-colors hover:border-[#03BFA5] hover:text-[#03BFA5]"
+    >
       로그인
     </button>
   )
 }
 
 function JoinButton() {
+  const navigate = useNavigate()
+
   return (
-    <button className="text-white bg-[#03BFA5] rounded-lg h-9 w-19.5 hover:bg-[#02a892] transition-colors whitespace-nowrap">
+    <button
+      type="button"
+      onClick={() => navigate('/terms')}
+      className="h-[49px] w-[112px] whitespace-nowrap rounded-[8px] bg-[#03BFA5] text-white transition-colors hover:bg-[#02a892]"
+    >
       회원가입
     </button>
   )
