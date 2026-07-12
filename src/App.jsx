@@ -10,6 +10,7 @@ import Recommend from './pages/Recommend';
 import ProductList from './pages/ProductList';
 import ProductDetail from './pages/ProductDetail';
 import ProductRateCalculator from './pages/ProductRateCalculator';
+import ScrollToTop from "./components/ScrollToTop";
 
 function RecommendRoute() {
   const isMockMode = import.meta.env.DEV
@@ -22,6 +23,7 @@ function RecommendRoute() {
 function App() {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <Header />
       <Routes>
         <Route path="/login" element={<Login />} />
