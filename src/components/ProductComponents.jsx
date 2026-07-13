@@ -16,7 +16,7 @@ function getTagStyle(tag) {
   return "bg-[#F2F3F5] text-[#333333]";
 }
 
-function ProductTag({ tag, compact = false }) {
+export function ProductTag({ tag, compact = false }) {
   return (
     <span
       className={`inline-flex items-center justify-center overflow-hidden text-ellipsis whitespace-nowrap rounded-[6px] font-normal leading-[1.2] ${getTagStyle(tag)} ${

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
+import client, { withAuth } from "../api/client";
 
 const BANK_CATEGORIES = [
   { id: '시중', title: '시중은행', banks: ['KB국민', '신한', '하나', '우리', 'SC제일', 'iM뱅크'] },
@@ -70,13 +71,8 @@ export default function useRecommendForm() {
     if (!accessToken) return; // 토큰 없으면 대기... 인데 백엔드에서 수정 시 바꿈
     const fetchCategories = async () => {
     try {
-      const res = await fetch("https://test-fin.duckdns.org/api/categories", {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
-
-      if (!res.ok) throw new Error("카테고리 요청 실패");
-
-      const data = await res.json();
+      const res = await client.get("/api/categories", withAuth(accessToken));
+      const data = res.data;
 
       setCats({
         regions: data.find((c) => c.categoryName === "거주지역")?.options || [],
@@ -97,27 +93,13 @@ export default function useRecommendForm() {
   fetchCategories();
   }, [accessToken]);
   
-  // 서버에 보내기는 나중에...
   const handleSubmit = async () => {
-    /*
     try {
-      const res = await fetch("https://test-fin.duckdns.org/api/recommend", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify(formData),
-      });
-      
-      if (!res.ok) throw new Error(“전송 실패”);
-      
-      const result = await res.json();
-      console.log("추천 결과:", result);
+      const res = await client.post("/api/recommend", formData, withAuth(accessToken));
+      console.log("추천 결과:", res.data);
     } catch (e) {
       console.error(e);
     }
-    */
   };
 
   const go = (n) => () => setStep(n);
