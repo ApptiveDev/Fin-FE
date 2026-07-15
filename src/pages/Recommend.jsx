@@ -12,19 +12,36 @@ import {
   LoadingScreen,
 } from "../components/RecommendSteps";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 export default function Recommend() {
   const { step, formData, setFormData, cats, loading, go, handleSubmit } = useRecommendForm();
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisError, setAnalysisError] = useState("");
 
   const startAnalysis = () => {
+    setAnalysisError("");
     setIsOpen(false);
     setIsAnalyzing(true);
   };
 
   const finishAnalysis = async () => {
-    await handleSubmit();
+    try {
+      const recommendation = await handleSubmit();
+      navigate("/products", {
+        state: {
+          recommendationResult: recommendation.result,
+          recommendationRequest: recommendation.request,
+        },
+      });
+    } catch (error) {
+      console.error("상품 분석 실패:", error);
+      setAnalysisError(error.message || "상품 분석에 실패했습니다. 잠시 후 다시 시도해주세요.");
+      setIsAnalyzing(false);
+      setIsOpen(true);
+    }
   };
 
   const steps = [
@@ -77,6 +94,7 @@ export default function Recommend() {
             type="button"
             onClick={() => setIsOpen((prev) => !prev)}
             disabled={isAnalyzing}
+            aria-label={isOpen ? "정보 입력 닫기" : "정보 입력 열기"}
             className={`w-full h-[84px] flex items-center justify-between px-[29px] hover:bg-gray-50 transition-colors focus:outline-none ${
               isOpen ? "rounded-t-[28px] rounded-b-none" : "rounded-full"
             }`}
@@ -107,6 +125,14 @@ export default function Recommend() {
               }}
             >
               {!loading && steps[step]}
+              {analysisError && (
+                <div
+                  role="alert"
+                  className="mt-6 rounded-[10px] border border-red-200 bg-red-50 px-5 py-4 text-[16px] text-red-700"
+                >
+                  {analysisError}
+                </div>
+              )}
             </div>
           )}
 

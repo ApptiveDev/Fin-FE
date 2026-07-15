@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import InfoIcon from "../components/InfoIcon";
 import { TopCard, ListItem } from "../components/ProductComponents";
@@ -7,6 +7,10 @@ import icon_1_fin_sector from "../assets/icon_1_fin_sector.png";
 import icon_gov_support from "../assets/icon_gov_support.png";
 import icon_subscription from "../assets/icon_subscription.png";
 import { PRODUCTS } from "../data/products";
+import {
+  applyRecommendationResult,
+  readPersistedRecommendation,
+} from "../utils/recommendationResult";
 
 const SECTIONS = [
   { name: "정부 청년 상품", filterKey: "정부 지원" },
@@ -18,14 +22,29 @@ export default function ProductList() {
   const { accessToken } = useAuth();
   const isLoggedIn = !!accessToken;
   const navigate = useNavigate();
+  const location = useLocation();
   const sectionListRef = useRef(null);
   const stickyHeaderRef = useRef(null);
+  const persistedRecommendation = useMemo(
+    () => readPersistedRecommendation(),
+    [],
+  );
+  const recommendationResult = location.state?.recommendationResult
+    ?? persistedRecommendation?.result;
+  const recommendationCount = recommendationResult
+    ? (recommendationResult.governmentRanked?.length || 0)
+      + (recommendationResult.bankRanked?.length || 0)
+    : null;
 
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("나에게 맞는 순");
   const [activeFilter, setActiveFilter] = useState("전체");
   const [showLoginModal, setShowLoginModal] = useState(false);
   const effectiveActiveTab = !isLoggedIn && activeTab === "내가 받을 수 있는 금리 순" ? "나에게 맞는 순" : activeTab;
+  const recommendationProducts = useMemo(
+    () => applyRecommendationResult(PRODUCTS, recommendationResult, isLoggedIn),
+    [isLoggedIn, recommendationResult],
+  );
 
   const filters = [
     { label: "전체", icon: null },
@@ -55,7 +74,7 @@ export default function ProductList() {
 
   const processedProducts = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
-    return PRODUCTS.filter((product) => {
+    return recommendationProducts.filter((product) => {
       const matchesSearch =
         !normalizedSearch ||
         [product.title, product.subtitle, product.institution].some((value) => value?.toLowerCase().includes(normalizedSearch));
@@ -66,7 +85,7 @@ export default function ProductList() {
     }).sort((a, b) =>
       effectiveActiveTab === "나에게 맞는 순" ? b.suitability - a.suitability : parseFloat(b.myRate) - parseFloat(a.myRate),
     );
-  }, [activeFilter, effectiveActiveTab, searchTerm]);
+  }, [activeFilter, effectiveActiveTab, recommendationProducts, searchTerm]);
 
   const topThree = processedProducts.slice(0, 3);
 
@@ -158,7 +177,11 @@ export default function ProductList() {
                     </button>
                   ))}
                 </div>
-                <button className="flex items-center gap-1.5 px-4 py-1.5 rounded-sm border-[2px] border-[#E0DFDF] bg-white text-[15px] text-[#454545] font-medium hover:bg-gray-50 hover:shadow-sm whitespace-nowrap">
+                <button
+                  type="button"
+                  onClick={() => navigate("/recommend")}
+                  className="flex items-center gap-1.5 px-4 py-1.5 rounded-sm border-[2px] border-[#E0DFDF] bg-white text-[15px] text-[#454545] font-medium hover:bg-gray-50 hover:shadow-sm whitespace-nowrap"
+                >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                   입력 정보 수정
                 </button>
@@ -167,7 +190,14 @@ export default function ProductList() {
               {/* 안내 문구 */}
               <div className="flex items-center gap-1.5 mt-5 text-[15px] font-medium text-[#03BFA5] text-[15px] font-bold">
                 {isLoggedIn ? (
-                  <><div className="w-[16px] h-[16px] rounded-full bg-[#03BFA5] text-white flex items-center justify-center">✓</div><span>총 160개 상품 중 자격요건 미충족 상품 23개가 제외되었어요.</span></>
+                  <>
+                    <div className="w-[16px] h-[16px] rounded-full bg-[#03BFA5] text-white flex items-center justify-center">✓</div>
+                    <span>
+                      {recommendationCount === null
+                        ? "입력 정보를 바탕으로 나에게 맞는 상품을 정렬했어요."
+                        : `분석 결과 ${recommendationCount}개의 상품을 추천했어요.`}
+                    </span>
+                  </>
                 ) : (
                   <><div className="w-[16px] h-[16px] rounded-full bg-[#03BFA5] text-white flex items-center justify-center">i</div><span>로그인하면 자격요건 필터링 결과와 내가 달성 가능한 금리를 확인할 수 있어요.</span></>
                 )}
@@ -204,7 +234,9 @@ export default function ProductList() {
                     maturityContribution={product.maturityContribution}
                     contributionCaption={product.contributionCaption}
                     showContribution={product.category === "정부 청년 상품" || product.category === "청약 상품"}
-                    onClick={() => goToProductDetail(product.id)}
+                    onClick={product.isBackendOnly
+                      ? undefined
+                      : () => goToProductDetail(product.id)}
                   />
                 ))}
               </div>
@@ -254,7 +286,9 @@ export default function ProductList() {
                             contributionRate={product.contributionRate}
                             maturityContribution={product.maturityContribution}
                             contributionCaption={product.contributionCaption}
-                            onClick={() => goToProductDetail(product.id)}
+                            onClick={product.isBackendOnly
+                              ? undefined
+                              : () => goToProductDetail(product.id)}
                           />
                         ))}
                       </div>

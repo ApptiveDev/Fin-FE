@@ -1,3 +1,5 @@
+import { contributionDisplayValue } from "../utils/recommendationResult";
+
 function handleCardKeyDown(event, onClick) {
   if (!onClick) return;
   if (event.key === "Enter" || event.key === " ") {
@@ -32,14 +34,22 @@ export function TopCard({
   showContribution = false,
 }) {
   const hasContribution = showContribution && contributionRate && maturityContribution;
+  const isInteractive = Boolean(onClick);
+  const displayedContributionRate = contributionDisplayValue(contributionRate, isLoggedIn);
+  const displayedMaturityContribution = contributionDisplayValue(
+    maturityContribution,
+    isLoggedIn,
+  );
 
   return (
     <div
-      role="button"
-      tabIndex={0}
+      role={isInteractive ? "button" : undefined}
+      tabIndex={isInteractive ? 0 : undefined}
       onClick={onClick}
       onKeyDown={(event) => handleCardKeyDown(event, onClick)}
-      className={`px-13 py-8 bg-white rounded-xl border-[2px] hover:shadow-md cursor-pointer shadow-sm flex flex-col justify-between min-h-[300px] w-full transition-all ${
+      className={`px-13 py-8 bg-white rounded-xl border-[2px] shadow-sm flex flex-col justify-between min-h-[300px] w-full transition-all ${
+        isInteractive ? "hover:shadow-md cursor-pointer" : ""
+      } ${
         isBest ? "border-[#03BFA5]" : "border-[#E0DFDF] hover:border-[#03BFA5]"
       }`}
     >
@@ -59,12 +69,12 @@ export function TopCard({
           <div className="flex justify-between items-stretch px-2 mb-3">
             <div>
               <p className="text-[14px] text-[#7A7A7A]">기여금 환산 수익률</p>
-              <p className="text-[32px] font-bold text-[#454545]">{contributionRate}</p>
+              <p className="text-[32px] font-bold text-[#454545]">{displayedContributionRate}</p>
             </div>
             <div className="w-px bg-[#E0E0E0]" />
             <div>
               <p className="text-[14px] text-[#7A7A7A]">예상 만기 기여금 총액</p>
-              <p className="text-[32px] font-bold text-[#03BFA5]">{maturityContribution}</p>
+              <p className="text-[32px] font-bold text-[#03BFA5]">{displayedMaturityContribution}</p>
             </div>
           </div>
           <p className="text-[13px] text-[#7A7A7A] text-center mb-1">{contributionCaption}</p>
@@ -110,14 +120,22 @@ export function ListItem({
   contributionCaption,
 }) {
   const isContribution = variant === "contribution";
+  const isInteractive = Boolean(onClick);
+  const displayedContributionRate = contributionDisplayValue(contributionRate, isLoggedIn);
+  const displayedMaturityContribution = contributionDisplayValue(
+    maturityContribution,
+    isLoggedIn,
+  );
 
   return (
     <div
-      role="button"
-      tabIndex={0}
+      role={isInteractive ? "button" : undefined}
+      tabIndex={isInteractive ? 0 : undefined}
       onClick={onClick}
       onKeyDown={(event) => handleCardKeyDown(event, onClick)}
-      className="py-5 px-8 bg-white rounded-xl border-[2px] border-[#E0DFDF] mb-3 flex flex-col lg:flex-row lg:items-center justify-between hover:border-[#03BFA5] hover:shadow-md transition-all cursor-pointer gap-4"
+      className={`py-5 px-8 bg-white rounded-xl border-[2px] border-[#E0DFDF] mb-3 flex flex-col lg:flex-row lg:items-center justify-between transition-all gap-4 ${
+        isInteractive ? "hover:border-[#03BFA5] hover:shadow-md cursor-pointer" : ""
+      }`}
     >
       <div>
         <div className="flex gap-2 mb-2 flex-wrap">
@@ -134,11 +152,11 @@ export function ListItem({
           <div className="flex flex-row gap-10">
             <div className="text-right">
               <p className="text-[14px] text-[#7A7A7A] mb-0.5">기여금 환산 수익률</p>
-              <p className="text-[32px] font-bold text-[#454545] whitespace-nowrap">{contributionRate}</p>
+              <p className="text-[32px] font-bold text-[#454545] whitespace-nowrap">{displayedContributionRate}</p>
             </div>
             <div className="text-right">
               <p className="text-[14px] text-[#7A7A7A] mb-0.5">예상 만기 기여금 총액</p>
-              <p className="text-[32px] font-bold text-[#03BFA5] whitespace-nowrap">{maturityContribution}</p>
+              <p className="text-[32px] font-bold text-[#03BFA5] whitespace-nowrap">{displayedMaturityContribution}</p>
             </div>
           </div>
           <p className="text-[13px] text-[#7A7A7A] whitespace-nowrap">{contributionCaption}</p>

@@ -1,5 +1,54 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
+import {
+  buildRecommendationRequest,
+  mapRecommendCategories,
+} from "../utils/recommendationPayload";
+import { persistRecommendation } from "../utils/recommendationResult";
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+  || "https://test-fin.duckdns.org";
+
+async function fetchGovernmentDetails(result, request, accessToken) {
+  const matches = Array.isArray(result?.governmentRanked)
+    ? result.governmentRanked.filter((match) => match?.productId)
+    : [];
+  const uniqueMatches = [
+    ...new Map(
+      matches.map((match) => [`${match.productId}:${match.productPropertyId}`, match]),
+    ).values(),
+  ];
+
+  const detailResults = await Promise.allSettled(
+    uniqueMatches.map(async (match) => {
+      const response = await fetch(
+        `${API_BASE_URL}/search/products/${match.productId}/detail`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({
+            productPropertyId: match.productPropertyId ?? null,
+            options: request.options,
+            detailedOptions: request.detailedOptions,
+          }),
+        },
+      );
+
+      if (!response.ok) return null;
+      const detail = await response.json();
+      return detail?.government ? detail : null;
+    }),
+  );
+
+  return detailResults.flatMap((detailResult) =>
+    detailResult.status === "fulfilled" && detailResult.value
+      ? [detailResult.value]
+      : [],
+  );
+}
 
 const BANK_CATEGORIES = [
   { id: '시중', title: '시중은행', banks: ['KB국민', '신한', '하나', '우리', 'SC제일', 'iM뱅크'] },
@@ -44,6 +93,7 @@ const MOCK_CATEGORIES = {
     { optionId: "mock_first", optionValue: "첫 거래" },
     { optionId: "mock_salary", optionValue: "급여 이체" },
   ],
+  categoryIds: {},
   bankCategories: BANK_CATEGORIES,
   incomeLevel: INCOME_LEVELS,
 };
@@ -59,9 +109,10 @@ export default function useRecommendForm() {
   const [formData, setFormData] = useState({});
   const [cats, setCats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const mockMode = isMockRecommendMode();
 
   useEffect(() => {
-    if (isMockRecommendMode()) {
+    if (mockMode) {
       setCats(MOCK_CATEGORIES);
       setLoading(false);
       return;
@@ -69,55 +120,66 @@ export default function useRecommendForm() {
 
     if (!accessToken) return; // 토큰 없으면 대기... 인데 백엔드에서 수정 시 바꿈
     const fetchCategories = async () => {
-    try {
-      const res = await fetch("https://test-fin.duckdns.org/api/categories", {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/categories`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
 
-      if (!res.ok) throw new Error("카테고리 요청 실패");
+        if (!res.ok) throw new Error("카테고리 요청 실패");
 
-      const data = await res.json();
+        const data = await res.json();
 
-      setCats({
-        regions: data.find((c) => c.categoryName === "거주지역")?.options || [],
-        status: data.find((c) => c.categoryName === "현재신분")?.options || [],
-        savingPeriod: data.find((c) => c.categoryName === "저축기간")?.options || [],
-        benefits: data.find((c) => c.categoryName === "핵심혜택")?.options || [],
-        bankRelation: data.find((c) => c.categoryName === "은행거래")?.options || [],
-        bankCategories: BANK_CATEGORIES,
-        incomeLevel: INCOME_LEVELS,
-      });
-    } catch (e) {
-      console.error("카테고리 불러오기 실패:", e);
-    } finally {
-      setLoading(false);
-    }
-  };
+        setCats(mapRecommendCategories(data, {
+          bankCategories: BANK_CATEGORIES,
+          incomeLevel: INCOME_LEVELS,
+        }));
+      } catch (e) {
+        console.error("카테고리 불러오기 실패:", e);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  fetchCategories();
-  }, [accessToken]);
-  
-  // 서버에 보내기는 나중에...
+    fetchCategories();
+  }, [accessToken, mockMode]);
+
   const handleSubmit = async () => {
-    /*
-    try {
-      const res = await fetch("https://test-fin.duckdns.org/api/recommend", {
+    const request = buildRecommendationRequest(formData, cats);
+
+    if (mockMode) {
+      return { request, result: null };
+    }
+
+    const res = await fetch(`${API_BASE_URL}/search/products`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify(formData),
-      });
-      
-      if (!res.ok) throw new Error(“전송 실패”);
-      
-      const result = await res.json();
-      console.log("추천 결과:", result);
-    } catch (e) {
-      console.error(e);
+      },
+      body: JSON.stringify(request),
+    });
+
+    if (!res.ok) {
+      const errorBody = await res.json().catch(() => null);
+      throw new Error(errorBody?.message || errorBody?.error || "상품 분석에 실패했습니다.");
     }
-    */
+
+    const result = await res.json();
+    const governmentDetails = await fetchGovernmentDetails(
+      result,
+      request,
+      accessToken,
+    );
+    const recommendation = {
+      request,
+      result: {
+        ...result,
+        governmentDetails,
+      },
+    };
+
+    persistRecommendation({ result: recommendation.result });
+    return recommendation;
   };
 
   const go = (n) => () => setStep(n);
