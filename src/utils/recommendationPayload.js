@@ -6,6 +6,8 @@ const CATEGORY_ALIASES = {
   bankRelation: ["우대거래", "은행거래"],
 };
 
+const HIDDEN_BANK_RELATION_OPTIONS = new Set(["첫거래고객", "재예치"]);
+
 const BANK_CODE_BY_LABEL = {
   KB국민: "0010927",
   KB국민은행: "0010927",
@@ -66,7 +68,11 @@ export function mapRecommendCategories(payload, extras = {}) {
     status: matched.status?.options || [],
     savingPeriod: matched.savingPeriod?.options || [],
     benefits: matched.benefits?.options || [],
-    bankRelation: matched.bankRelation?.options || [],
+    bankRelation: (matched.bankRelation?.options || []).filter(
+      (option) => !HIDDEN_BANK_RELATION_OPTIONS.has(
+        normalizeCategoryName(option?.optionValue),
+      ),
+    ),
     categoryIds: Object.fromEntries(
       Object.entries(matched).map(([key, category]) => [key, category?.categoryId]),
     ),
