@@ -522,7 +522,7 @@ const REGION_BANK_MAP = {
   "reg_09": "제주은행"
 };
 
-function BankSelector({ 
+export function BankSelector({
   theme = 'mint', 
   title, 
   infoText,

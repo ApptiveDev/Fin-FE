@@ -7,7 +7,7 @@ import { clearPersistedRecommendation } from '../utils/recommendationResult'
 export default function Header() {
   return (
     <header className="sticky top-0 z-50 w-full bg-white">
-      <div className="mx-auto flex h-16 max-w-[1920px] items-center justify-between px-4 sm:h-[72px] sm:px-6 lg:h-20 lg:px-[3.5%]">
+      <div className="mx-auto flex h-14 max-w-480 items-center justify-between px-4 sm:h-16 sm:px-6 lg:h-18 lg:px-[3.5%]">
         <Logo />
         <NavMenu />
         <UserButtons />

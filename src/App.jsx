@@ -10,14 +10,22 @@ import Recommend from './pages/Recommend';
 import ProductList from './pages/ProductList';
 import ProductDetail from './pages/ProductDetail';
 import ProductRateCalculator from './pages/ProductRateCalculator';
+import MyPage from './pages/MyPage';
 import ScrollToTop from "./components/ScrollToTop";
 
-function RecommendRoute() {
-  const isMockMode = import.meta.env.DEV
+function isMockMode() {
+  return import.meta.env.DEV
     && new URLSearchParams(window.location.search).get("mock") === "true";
+}
 
-  if (isMockMode) return <Recommend />;
+function RecommendRoute() {
+  if (isMockMode()) return <Recommend />;
   return <AuthGuard><Recommend /></AuthGuard>;
+}
+
+function MyPageRoute() {
+  if (isMockMode()) return <MyPage />;
+  return <AuthGuard><MyPage /></AuthGuard>;
 }
 
 function App() {
@@ -32,6 +40,7 @@ function App() {
         <Route path="/products" element={<ProductList/>}/>
         <Route path="/products/:productId" element={<ProductDetail />} />
         <Route path="/products/:productId/calculator" element={<ProductRateCalculator />} />
+        <Route path="/mypage" element={<MyPageRoute />} />
         
         <Route
           path="/"
