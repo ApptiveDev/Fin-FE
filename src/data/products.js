@@ -30,8 +30,8 @@ export const PRODUCTS = [
       { label: "카드 실적 충족", value: "+0.30%", status: "missed" },
       { label: "이자 계산 방식", value: "단리", status: "neutral" },
     ],
-    contributionRate: "연 ???%",
-    maturityContribution: "??? 만원",
+    contributionRate: "연 4.00%",
+    maturityContribution: "144 만원",
     contributionCaption: "소득 매칭 ∙ 월 70만원 (5년 만기) 기준",
     recruitPeriod: "은행별 상이 / 상시 확인 필요",
     calculator: {
@@ -81,8 +81,8 @@ export const PRODUCTS = [
       { label: "하나 합 서비스", value: "+0.50%", status: "missed" },
       { label: "이자 계산 방식", value: "단리", status: "neutral" },
     ],
-    contributionRate: "연 ???%",
-    maturityContribution: "??? 만원",
+    contributionRate: "연 100%",
+    maturityContribution: "1,080 만원",
     contributionCaption: "정액 매칭 ∙ 월 30만원 (3년 만기) 기준",
     recruitPeriod: "2026.05.04(월) ~ 2026.05.20(수)",
     calculator: {
@@ -131,8 +131,8 @@ export const PRODUCTS = [
       { label: "은행 앱 가입", value: "+0.30%", status: "missed" },
       { label: "이자 계산 방식", value: "단리", status: "neutral" },
     ],
-    contributionRate: "연 ???%",
-    maturityContribution: "??? 만원",
+    contributionRate: "연 100%",
+    maturityContribution: "720 만원",
     contributionCaption: "매칭지원금 ∙ 월 40만원 기준",
     recruitPeriod: "복무 기간 중 가입 가능",
     calculator: {
@@ -180,8 +180,8 @@ export const PRODUCTS = [
       { label: "급여 이체", value: "+0.20%", status: "missed" },
       { label: "이자 계산 방식", value: "단리", status: "neutral" },
     ],
-    contributionRate: "연 ???%",
-    maturityContribution: "??? 만원",
+    contributionRate: "연 4.00%",
+    maturityContribution: "216 만원",
     contributionCaption: "일시납 환산 ∙ 5년 만기 기준",
     recruitPeriod: "청년희망적금 만기 이후 별도 안내",
     calculator: {

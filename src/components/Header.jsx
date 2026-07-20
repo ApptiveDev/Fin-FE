@@ -2,6 +2,7 @@ import axios from 'axios'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import logo from '../assets/logo.png'
+import { clearPersistedRecommendation } from '../utils/recommendationResult'
 
 export default function Header() {
   return (
@@ -63,6 +64,7 @@ function UserButtons() {
     } catch (e) {
       console.error(e)
     } finally {
+      clearPersistedRecommendation()
       setAccessToken(null)
       navigate('/login')
     }
