@@ -44,6 +44,77 @@ function buildOptionTagsByCategory(profile, categories) {
   return groups;
 }
 
+export function findCategoryOptions(categories, categoryName) {
+  return categories?.find((category) => category.categoryName === categoryName)?.options || [];
+}
+
+export function findSelectedOptionIds(categories, categoryName, selectedOptionIds) {
+  const ids = new Set(findCategoryOptions(categories, categoryName).map((option) => option.optionId));
+  return (selectedOptionIds || []).filter((id) => ids.has(id));
+}
+
+export function replaceCategorySelection(selectedOptionIds, categories, categoryName, newIds) {
+  const ids = new Set(findCategoryOptions(categories, categoryName).map((option) => option.optionId));
+  const kept = (selectedOptionIds || []).filter((id) => !ids.has(id));
+  return [...kept, ...newIds];
+}
+
+function buildProfileRequestBody(profile, patch) {
+  return {
+    birthdate: profile.birthdate,
+    annualIncome: profile.annualIncome,
+    householdSize: profile.householdSize,
+    householdIncomePercent: profile.householdIncomePercent,
+    tenureMonths: profile.tenureMonths,
+    isFirstJob: profile.isFirstJob,
+    isHomeless: profile.isHomeless,
+    isHouseholder: profile.isHouseholder,
+    monthlySavingsGoal: profile.monthlySavingsGoal,
+    mainBanks: profile.mainBanks,
+    neverUsedBanks: profile.neverUsedBanks,
+    maturedSavingBanks: profile.maturedSavingBanks,
+    selectedOptionIds: profile.selectedOptionIds,
+    ...patch,
+  };
+}
+
+function calculateAge(birthdate) {
+  const birth = new Date(birthdate);
+  const today = new Date();
+  let age = today.getFullYear() - birth.getFullYear();
+  const hadBirthdayThisYear =
+    today.getMonth() > birth.getMonth() ||
+    (today.getMonth() === birth.getMonth() && today.getDate() >= birth.getDate());
+  if (!hadBirthdayThisYear) age -= 1;
+  return age;
+}
+
+// mock 모드는 실제 백엔드가 없어 display를 재계산할 서버가 없으므로, 미리보기용으로 최소한만 다시 계산한다.
+function applyMockPatch(prev, patch, categories) {
+  const merged = { ...prev, ...patch };
+  const display = { ...prev.display };
+
+  if (patch.birthdate) {
+    display.age = calculateAge(patch.birthdate);
+  }
+
+  if (patch.selectedOptionIds) {
+    const regionOption = findCategoryOptions(categories, "거주지역").find((option) =>
+      patch.selectedOptionIds.includes(option.optionId),
+    );
+    if (regionOption) display.region = regionOption.optionValue;
+  }
+
+  if (patch.neverUsedBanks || patch.maturedSavingBanks) {
+    display.transactionHistory = {
+      firstTransactionBanks: patch.neverUsedBanks ?? prev.neverUsedBanks ?? [],
+      redepositBanks: patch.maturedSavingBanks ?? prev.maturedSavingBanks ?? [],
+    };
+  }
+
+  return { ...merged, display };
+}
+
 export default function useMyPage() {
   const { accessToken } = useAuth();
   const mockMode = isMockMode();
@@ -106,13 +177,33 @@ export default function useMyPage() {
     }
   };
 
+  const updateProfile = async (patch) => {
+    if (mockMode) {
+      setProfile((prev) => applyMockPatch(prev, patch, categories));
+      return { ok: true };
+    }
+
+    const body = buildProfileRequestBody(profile, patch);
+    try {
+      await client.put("/user/me/profile", body, withAuth(accessToken));
+      const res = await client.get("/user/me/profile", withAuth(accessToken));
+      setProfile(res.data);
+      return { ok: true };
+    } catch (e) {
+      console.error("개인정보 수정에 실패했습니다:", e);
+      return { ok: false };
+    }
+  };
+
   return {
     profile,
+    categories,
     optionTagsByCategory,
     favorites,
     showComparisonNotice,
     loading,
     error,
     removeFavorite,
+    updateProfile,
   };
 }

@@ -14,7 +14,7 @@ export const MOCK_PROFILE = {
   mainBanks: ["카카오뱅크"],
   neverUsedBanks: ["카카오뱅크", "토스뱅크"],
   maturedSavingBanks: ["NH농협은행"],
-  selectedOptionIds: [901, 902, 903, 904, 905, 906],
+  selectedOptionIds: [901, 902, 903, 904, 905, 906, 910],
   display: {
     age: 25,
     householdIncomeGuide: 536,
@@ -28,20 +28,46 @@ export const MOCK_PROFILE = {
 };
 
 export const MOCK_OPTION_CATEGORIES = [
-  { categoryName: "저축기간", options: [{ optionId: 901, optionValue: "2~3년(중기)" }] },
-  { categoryName: "현재신분", options: [{ optionId: 902, optionValue: "중소기업_재직" }] },
+  {
+    categoryName: "저축기간",
+    options: [
+      { optionId: 900, optionValue: "1년 내외(단기)" },
+      { optionId: 901, optionValue: "2~3년(중기)" },
+      { optionId: 907, optionValue: "3년 초과(장기)" },
+    ],
+  },
+  {
+    categoryName: "현재신분",
+    options: [
+      { optionId: 908, optionValue: "무소득(학생)" },
+      { optionId: 909, optionValue: "알바/프리랜서" },
+      { optionId: 902, optionValue: "중소기업_재직" },
+      { optionId: 917, optionValue: "군복무" },
+    ],
+  },
   {
     categoryName: "핵심혜택",
     options: [
-      { optionId: 903, optionValue: "정부기여금" },
+      { optionId: 918, optionValue: "최고이율 중심" },
       { optionId: 904, optionValue: "비과세" },
+      { optionId: 919, optionValue: "우대조건 간편" },
+      { optionId: 903, optionValue: "정부기여금" },
     ],
   },
   {
     categoryName: "은행거래",
     options: [
-      { optionId: 905, optionValue: "급여이체_우대" },
       { optionId: 906, optionValue: "자동이체_우대" },
+      { optionId: 920, optionValue: "카드실적_우대" },
+      { optionId: 905, optionValue: "급여이체_우대" },
+    ],
+  },
+  {
+    categoryName: "거주지역",
+    options: [
+      { optionId: 910, optionValue: "부산" },
+      { optionId: 911, optionValue: "서울" },
+      { optionId: 912, optionValue: "제주" },
     ],
   },
 ];

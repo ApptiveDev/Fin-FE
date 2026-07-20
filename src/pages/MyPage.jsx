@@ -1,29 +1,8 @@
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import useMyPage, { splitTrailingParen } from "../hooks/UseMyPage";
+import EditFieldModal from "../components/MyPageEditModals";
 import heartIcon from "../assets/green_heart.png";
-
-function ExternalLinkIcon({ className = "" }) {
-  return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M14 5h5v5M10 14 19 5M19 14v5H5V5h5" />
-    </svg>
-  );
-}
-
-function ChevronIcon({ direction = "left", className = "" }) {
-  return (
-    <svg
-      className={`${className} ${direction === "right" ? "rotate-180" : ""}`}
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-    >
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
-    </svg>
-  );
-}
 
 function ChevronDownIcon({ className = "" }) {
   return (
@@ -31,6 +10,15 @@ function ChevronDownIcon({ className = "" }) {
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="m6 9 6 6 6-6" />
     </svg>
   );
+}
+
+// ProductComponents.jsx의 getTagStyle과 동일한 색상 규칙(팀원 담당 파일은 직접 import하지 않고 복제).
+function getTagStyle(tag) {
+  let tagStyle = "bg-[#F5F5F5] text-[#7A7A7A]";
+  if (tag.includes("적합도")) tagStyle = "bg-[#FFF4E6] text-[#FF8A00]";
+  if (tag.includes("정부기여금") || tag.includes("비과세") || tag.includes("우대")) tagStyle = "bg-[#F2FBF9] text-[#03BFA5]";
+  if (tag.includes("내집마련")) tagStyle = "bg-[#F0F2FF] text-[#6B4EFF]";
+  return tagStyle;
 }
 
 function PencilIcon({ className = "" }) {
@@ -50,7 +38,7 @@ function Tabs({ active, onChange, likedCount }) {
   ];
 
   return (
-    <div className="flex items-center gap-8">
+    <div className="flex items-center gap-8 px-1">
       {tabs.map((tab) => (
         <button
           key={tab.key}
@@ -62,11 +50,11 @@ function Tabs({ active, onChange, likedCount }) {
         >
           {tab.label}
           {typeof tab.badge === "number" && (
-            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#03BFA5] px-1 text-[12px] font-bold leading-none text-white">
+            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#03BFA5] text-[12px] font-bold leading-none text-white">
               {tab.badge}
             </span>
           )}
-          {active === tab.key && <span className="absolute inset-x-0 -bottom-px h-[3px] bg-[#03BFA5]" />}
+          {active === tab.key && <span className="absolute inset-x-0 -bottom-0.5 h-0.75 bg-[#03BFA5]" />}
         </button>
       ))}
     </div>
@@ -104,8 +92,8 @@ function FilterChip({ label, active, onClick }) {
     <button
       type="button"
       onClick={onClick}
-      className={`flex h-10 items-center justify-center rounded-lg border px-4 text-[14px] font-medium transition-colors ${
-        active ? "border-[#03BFA5] bg-[#EFFFFD] text-[#03BFA5]" : "border-[#E0DFDF] bg-white text-[#606060] hover:border-[#03BFA5]"
+      className={`flex items-center justify-center rounded-lg border-2 py-1 px-3.5 pt-1.5 text-[16px] font-medium transition-colors ${
+        active ? "border-[#03BFA5] bg-[#EFFFFD] text-[#03BFA5]" : "border-[#E0DFDF] text-[#606060] hover:border-[#03BFA5] hover:bg-[#EFFFFD] hover:text-[#03BFA5]"
       }`}
     >
       {label}
@@ -121,10 +109,10 @@ function SortDropdown() {
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
-        className="flex h-10 items-center gap-1.5 rounded-lg border border-[#E0DFDF] bg-white px-4 text-[14px] font-medium text-[#454545] transition-colors hover:border-[#03BFA5]"
+        className="flex items-center gap-1.5 rounded-lg border-2 border-[#E0DFDF] py-1 px-3.5 pt-1.5 text-[16px] font-medium text-[#606060] transition-colors hover:border-[#03BFA5] hover:text-[#03BFA5]"
       >
         찜 최신순
-        <ChevronDownIcon className="size-4" />
+        <ChevronDownIcon className="size-5" />
       </button>
       {open && (
         <div className="absolute right-0 top-[calc(100%+6px)] z-10 w-32 overflow-hidden rounded-lg border border-[#EBEBEB] bg-white py-1 shadow-md">
@@ -145,10 +133,10 @@ function LikedCard({ product, onRemove }) {
   const visibleTags = product.tags.slice(0, 3);
 
   return (
-    <div className="relative flex w-[380px] shrink-0 flex-col gap-4 rounded-[10px] border-2 border-[#E0DFDF] bg-white px-7 py-6">
+    <div className="relative flex w-full flex-col gap-4 rounded-[10px] border border-[#E0DFDF] bg-white px-7 py-6">
       <div className="flex flex-wrap items-center gap-2 pr-8">
         {visibleTags.map((tag) => (
-          <span key={tag} className="rounded-md bg-[#F2F3F5] px-2 py-1 text-[13px] font-medium text-[#333333]">
+          <span key={tag} className={`rounded-md px-2 py-1 text-[13px] font-medium ${getTagStyle(tag)}`}>
             {tag}
           </span>
         ))}
@@ -158,9 +146,9 @@ function LikedCard({ product, onRemove }) {
         type="button"
         onClick={() => onRemove(product.id)}
         aria-label="찜 해제"
-        className="absolute right-6 top-6 text-[#03BFA5]"
+        className="absolute right-6 top-6 flex size-9 items-center justify-center rounded-full bg-[#EFFFFD] text-[#03BFA5]"
       >
-        <img src={heartIcon} alt="찜 해제" className="size-6 object-contain" />
+        <img src={heartIcon} alt="찜 해제" className="size-5 object-contain" />
       </button>
 
       <div>
@@ -169,37 +157,37 @@ function LikedCard({ product, onRemove }) {
       </div>
 
       {product.isContribution ? (
-        <div className="flex flex-col items-center gap-2 rounded-[8px] bg-[#FAFAFA] py-4">
-          <div className="flex items-center justify-center gap-6">
-            <div className="flex flex-col items-start">
-              <span className="text-[13px] text-[#8A8A8A]">기여금 환산 수익률</span>
-              <span className="text-[22px] font-bold text-[#181818]">{product.contributionRate}</span>
+        <div className="flex flex-col items-center gap-2">
+          <div className="flex items-center w-full justify-start rounded-lg border border-[#EDF1EF]">
+            <div className="flex flex-1 flex-col items-start my-4 pl-3.5">
+              <span className="text-[14px] text-[#8A928F] leading-4.5">기여금 환산<br />수익률</span>
+              <span className="text-[22px] font-extrabold text-[#03BFA5]">{product.contributionRate}</span>
             </div>
-            <div className="h-10 w-px bg-[#D5D5D5]" />
-            <div className="flex flex-col items-start">
-              <span className="text-[13px] text-[#8A8A8A]">예상 만기 기여금 총액</span>
-              <span className="text-[22px] font-bold text-[#03BFA5]">{product.maturityContribution}</span>
+            <div className="h-full w-1px bg-[#EDF1EF]" />
+            <div className="flex flex-1 flex-col items-start pl-3.5">
+              <span className="text-[14px] text-[#8A928F] leading-4.5">예상 만기<br />기여금 총액</span>
+              <span className="text-[22px] font-extrabold text-[#26313A]">{product.maturityContribution}</span>
             </div>
           </div>
           {product.contributionCaption && (
-            <p className="text-center text-[13px] text-[#8A8A8A]">{product.contributionCaption}</p>
+            <p className="text-center text-[13px] text-[#A0A7A3] mt-3">{product.contributionCaption}</p>
           )}
         </div>
       ) : (
-        <div className="flex flex-col items-center gap-3 rounded-[8px] bg-[#FAFAFA] py-4">
-          <div className="flex items-center justify-center gap-6">
-            <div className="flex flex-col items-start">
-              <span className="text-[13px] text-[#8A8A8A]">기본 금리</span>
-              <span className="text-[22px] font-bold text-[#181818]">연 {product.baseRate}%</span>
+        <div className="flex flex-col items-center gap-2">
+          <div className="flex items-center w-full justify-start rounded-lg border border-[#EDF1EF]">
+            <div className="flex flex-1 flex-col items-start my-4 pl-3.5">
+              <span className="text-[14px] text-[#8A8A8A]">기본 금리</span>
+              <span className="text-[22px] font-extrabold text-[#03BFA5]">연 {product.baseRate}%</span>
             </div>
-            <div className="h-10 w-px bg-[#D5D5D5]" />
-            <div className="flex flex-col items-start">
+            <div className="h-full w-px bg-[#EDF1EF]" />
+            <div className="flex flex-1 flex-col items-start pl-3.5">
               <span className="text-[13px] text-[#8A8A8A]">최고 금리</span>
-              <span className="text-[22px] font-bold text-[#03BFA5]">연 {product.maxRate}%</span>
+              <span className="text-[22px] font-extrabold text-[#26313A]">연 {product.maxRate}%</span>
             </div>
           </div>
-          <div className="flex items-center gap-2 rounded-full border border-[#03BFA5] bg-[#EFFFFD] px-4 py-1.5 text-[13px] text-[#03BFA5]">
-            <span>내가 달성 가능한 금리</span>
+          <div className="flex items-center justify-center gap-2 w-full rounded-lg bg-[#EFFFFD] py-1.5 mt-3 text-[14px] text-[#03BFA5]">
+            <span>내가 받을 수 있는 금리</span>
             <span className="font-semibold">연 {product.myRate}%</span>
           </div>
         </div>
@@ -210,50 +198,71 @@ function LikedCard({ product, onRemove }) {
         onClick={() => {
           if (product.applyUrl) window.open(product.applyUrl, "_blank", "noopener,noreferrer");
         }}
-        className="flex h-[52px] items-center justify-center gap-2 rounded-full border border-[#03BFA5] bg-[#03BFA5] text-[16px] font-semibold text-white transition-colors hover:bg-[#02A892]"
+        className="mt-auto flex h-[40px] items-center justify-center gap-2 rounded-lg bg-[#03BFA5] text-medium text-[16px] text-white transition-colors hover:bg-[#02A892]"
       >
         신청하러 가기
-        <ExternalLinkIcon className="size-4" />
       </button>
     </div>
   );
 }
 
-function LikedProductsCarousel({ products, onRemove }) {
-  const scrollRef = useRef(null);
+const LIKED_PAGE_SIZE = 3;
 
-  const scroll = (direction) => {
-    scrollRef.current?.scrollBy({ left: direction * 400, behavior: "smooth" });
-  };
+function LikedProductsCarousel({ products, onRemove }) {
+  const [page, setPage] = useState(0);
+
+  const totalPages = Math.max(1, Math.ceil(products.length / LIKED_PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages - 1);
+  const visibleProducts = products.slice(
+    currentPage * LIKED_PAGE_SIZE,
+    currentPage * LIKED_PAGE_SIZE + LIKED_PAGE_SIZE,
+  );
+
+  const goToPage = (next) => setPage(Math.min(totalPages - 1, Math.max(0, next)));
 
   return (
-    <div className="relative">
-      <button
-        type="button"
-        onClick={() => scroll(-1)}
-        aria-label="이전 상품"
-        className="absolute -left-5 top-1/2 z-10 flex size-10 -translate-y-1/2 items-center justify-center rounded-full border border-[#D5D5D5] bg-white text-[#606060] shadow-sm transition-colors hover:border-[#03BFA5] hover:text-[#03BFA5]"
-      >
-        <ChevronIcon direction="left" className="size-5" />
-      </button>
+    <div>
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => goToPage(currentPage - 1)}
+          disabled={currentPage === 0}
+          aria-label="이전 상품"
+          className="absolute -left-22 top-1/2 z-10 flex size-10 -translate-y-1/2 items-center justify-center rounded-full border border-[#D5D5D5] bg-white pb-0.5 pr-0.5 text-[19px] font-medium text-[#726E6E] shadow-sm transition-colors hover:border-[#03BFA5] hover:text-[#03BFA5] disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          <span className="inline-block scale-y-180">&lt;</span>
+        </button>
 
-      <div
-        ref={scrollRef}
-        className="flex gap-5 overflow-x-auto scroll-smooth px-1 py-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-      >
-        {products.map((product) => (
-          <LikedCard key={product.id} product={product} onRemove={onRemove} />
-        ))}
+        <div className="grid grid-cols-1 gap-5 py-2 sm:grid-cols-2 lg:grid-cols-3">
+          {visibleProducts.map((product) => (
+            <LikedCard key={product.id} product={product} onRemove={onRemove} />
+          ))}
+        </div>
+
+        <button
+          type="button"
+          onClick={() => goToPage(currentPage + 1)}
+          disabled={currentPage === totalPages - 1}
+          aria-label="다음 상품"
+          className="absolute -right-22 top-1/2 z-10 flex size-10 -translate-y-1/2 items-center justify-center rounded-full border border-[#D5D5D5] bg-white pb-0.5 pl-0.5 text-[19px] font-medium text-[#726E6E] shadow-sm transition-colors hover:border-[#03BFA5] hover:text-[#03BFA5] disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          <span className="inline-block scale-y-180">&gt;</span>
+        </button>
       </div>
 
-      <button
-        type="button"
-        onClick={() => scroll(1)}
-        aria-label="다음 상품"
-        className="absolute -right-5 top-1/2 z-10 flex size-10 -translate-y-1/2 items-center justify-center rounded-full border border-[#D5D5D5] bg-white text-[#606060] shadow-sm transition-colors hover:border-[#03BFA5] hover:text-[#03BFA5]"
-      >
-        <ChevronIcon direction="right" className="size-5" />
-      </button>
+      {totalPages > 1 && (
+        <div className="mt-7 flex items-center justify-center gap-1.5">
+          {Array.from({ length: totalPages }, (_, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => goToPage(i)}
+              aria-label={`${i + 1}번째 페이지`}
+              className={`h-2 rounded-full transition-all ${i === currentPage ? "w-6.5 bg-[#03BFA5]" : "w-2 bg-[#CFD8D4]"}`}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -277,7 +286,7 @@ function EmptyLikedState({ onGoRecommend }) {
       <button
         type="button"
         onClick={onGoRecommend}
-        className="flex h-12 items-center justify-center gap-1.5 rounded-xl bg-[#03BFA5] px-6 text-[17px] font-medium text-white transition-colors hover:bg-[#02A892]"
+        className="flex h-12 items-center justify-center gap-1.5 rounded-xl bg-[#03BFA5] px-7 text-[17px] font-medium text-white transition-colors hover:bg-[#02A892]"
       >
         내 추천 상품 보러 가기 →
       </button>
@@ -316,7 +325,7 @@ function LikedTab({ favorites, showComparisonNotice, onRemove, onGoRecommend }) 
       </div>
 
       {showComparisonNotice && (
-        <div className="mb-5 rounded-full bg-[#EFFFFD] px-6 py-3 text-center text-[14px] text-[#03BFA5]">
+        <div className="mb-3 rounded-lg border border-[#03BFA5] bg-[#EFFFFD] px-6 py-3 text-center text-[17px] text-[#0C7C6E]">
           정부 상품의 기여금 환산 수익률과 은행 상품의 달성 가능 금리는 산정 기준이 달라 수치를 직접 비교할 수 없어요.
         </div>
       )}
@@ -329,7 +338,7 @@ function LikedTab({ favorites, showComparisonNotice, onRemove, onGoRecommend }) 
         </p>
       )}
 
-      <p className="mt-4 text-center text-[13px] text-[#8A8A8A]">
+      <p className="mt-7 text-center text-[14px] text-[#626866]">
         Y-Fin은 해당 상품의 판매·중개 주체가 아니며, 신청은 기관 공식 페이지에서 진행됩니다.
       </p>
     </section>
@@ -341,19 +350,19 @@ function LikedTab({ favorites, showComparisonNotice, onRemove, onGoRecommend }) 
 function FieldShell({ label, required, empty, emptyHelper, onEdit, className = "", children }) {
   return (
     <div
-      className={`relative rounded-[10px] border bg-white px-5 py-4 pr-12 ${
-        empty ? "border-dashed border-[#03BFA5]" : "border-[#EBEBEB]"
+      className={`relative rounded-[10px] border px-5 py-4 pr-12 ${
+        empty ? "border-dashed border-[#03BFA5]" : "bg-[#FAFBFB] border-[#EDF1EF]"
       } ${className}`}
     >
-      <p className="mb-1.5 flex items-center gap-1 text-[14px] font-medium text-[#8A8A8A]">
+      <p className="mb-0.5 flex items-center gap-1 text-[14px] font-medium text-[#626866]">
         {label}
         {required && <span className="text-[#03BFA5]">*</span>}
       </p>
 
       {empty ? (
         <>
-          <p className="text-[16px] font-semibold text-[#B5B5B5]">미입력</p>
-          {emptyHelper && <p className="mt-1 text-[12px] text-[#8A8A8A]">{emptyHelper}</p>}
+          <p className="text-[18px] font-semibold text-[#9BA39F]">미입력</p>
+          {emptyHelper && <p className="text-[14px] text-[#9BA39F]">{emptyHelper}</p>}
         </>
       ) : (
         children
@@ -376,9 +385,10 @@ function FieldShell({ label, required, empty, emptyHelper, onEdit, className = "
 function TextField({ label, required, value, caption, emptyHelper, onEdit }) {
   return (
     <FieldShell label={label} required={required} empty={!value} emptyHelper={emptyHelper} onEdit={onEdit}>
-      <p className="text-[16px] font-bold leading-[1.3] text-[#26313A]">
+      <p className="text-[18px] font-bold leading-[1.3] text-[#26313A]">
         {value}
-        {caption && <span className="ml-1.5 text-[12px] font-medium text-[#8A8A8A]">· {caption}</span>}
+        <br />
+        {caption && <span className="text-[14px] font-medium text-[#8A8A8A]">{caption}</span>}
       </p>
     </FieldShell>
   );
@@ -386,7 +396,7 @@ function TextField({ label, required, value, caption, emptyHelper, onEdit }) {
 
 function Pill({ children }) {
   return (
-    <span className="rounded-md border border-[#E0DFDF] bg-white px-2.5 py-1 text-[13px] font-medium text-[#454545]">
+    <span className="rounded-md border border-[#DCE3E0] bg-white px-2.5 py-1 text-[13.5px] font-semibold text-[#454545]">
       {children}
     </span>
   );
@@ -403,8 +413,8 @@ function TagField({ label, required, tags, caption, groups, emptyHelper, onEdit,
         {hasGroups
           ? visibleGroups.map((group, index) => (
               <span key={group.label} className="flex flex-wrap items-center gap-2">
-                {index > 0 && <span className="h-4 w-px bg-[#D5D5D5]" aria-hidden="true" />}
-                <span className="text-[13px] font-medium text-[#8A8A8A]">{group.label}</span>
+                {index > 0 && <span className="h-4 mx-1 w-px bg-[#E4E9E6]" aria-hidden="true" />}
+                <span className="text-[13.5px] font-semibold text-[#626866]">{group.label}</span>
                 {group.tags.map((tag) => (
                   <Pill key={tag}>{tag}</Pill>
                 ))}
@@ -414,37 +424,6 @@ function TagField({ label, required, tags, caption, groups, emptyHelper, onEdit,
         {caption && <span className="text-[13px] text-[#8A8A8A]">{caption}</span>}
       </div>
     </FieldShell>
-  );
-}
-
-function EditFieldModal({ fieldLabel, onClose }) {
-  return (
-    <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 px-4"
-      role="presentation"
-      onMouseDown={onClose}
-    >
-      <div
-        role="dialog"
-        aria-modal="true"
-        className="w-full max-w-[400px] rounded-[20px] bg-white p-8 text-center"
-        onMouseDown={(event) => event.stopPropagation()}
-      >
-        <p className="mb-2 text-[18px] font-bold text-[#181818]">{fieldLabel} 수정</p>
-        <p className="mb-6 text-[14px] leading-relaxed text-[#8A8A8A]">
-          해당 항목 편집 기능은 준비 중이에요.
-          <br />
-          곧 만나보실 수 있어요.
-        </p>
-        <button
-          type="button"
-          onClick={onClose}
-          className="h-12 w-full rounded-full bg-[#03BFA5] text-[15px] font-semibold text-white transition-colors hover:bg-[#02A892]"
-        >
-          확인
-        </button>
-      </div>
-    </div>
   );
 }
 
@@ -506,14 +485,14 @@ function InfoTab({ profile, optionTags, onEditField, onResubmit }) {
             value={profile.birthdate ? profile.birthdate.replaceAll("-", ".") : ""}
             caption={profile.birthdate ? `만 ${display.age}세 · 자동 계산` : ""}
             emptyHelper="생년월일 입력이 필요해요."
-            onEdit={() => onEditField("생년월일")}
+            onEdit={() => onEditField("birthdate")}
           />
           <TextField
             required
             label="개인 연 소득"
             value={profile.annualIncome ? `${profile.annualIncome.toLocaleString()} 만원` : ""}
             emptyHelper="연 소득 입력이 필요해요."
-            onEdit={() => onEditField("개인 연 소득")}
+            onEdit={() => onEditField("income")}
           />
           <TextField
             required
@@ -523,21 +502,21 @@ function InfoTab({ profile, optionTags, onEditField, onResubmit }) {
             }
             caption={display.householdIncomeGuide ? `월 ${display.householdIncomeGuide.toLocaleString()}만 원 이하` : ""}
             emptyHelper="가구 정보 입력이 필요해요."
-            onEdit={() => onEditField("가구원 수 · 가구 소득")}
+            onEdit={() => onEditField("household")}
           />
 
           <TextField
             label="거주 지역"
             value={display.region || ""}
             emptyHelper="지역 전용 상품 추천에 필요해요."
-            onEdit={() => onEditField("거주 지역")}
+            onEdit={() => onEditField("region")}
           />
           <TextField
             label="근속 기간"
             value={profile.tenureMonths ? `${profile.tenureMonths}개월` : ""}
             caption={profile.isFirstJob ? "첫 직장" : ""}
             emptyHelper="재직 기간 우대 상품 추천에 필요해요."
-            onEdit={() => onEditField("근속 기간")}
+            onEdit={() => onEditField("tenure")}
           />
           <TextField
             label="무주택 여부 · 세대주"
@@ -547,7 +526,7 @@ function InfoTab({ profile, optionTags, onEditField, onResubmit }) {
                 : ""
             }
             emptyHelper="청약 상품 추천에 필요해요."
-            onEdit={() => onEditField("무주택 여부 · 세대주")}
+            onEdit={() => onEditField("housing")}
           />
 
           <TagField
@@ -559,20 +538,20 @@ function InfoTab({ profile, optionTags, onEditField, onResubmit }) {
               { label: "재예치", tags: transactionHistory.redepositBanks || [] },
             ]}
             emptyHelper="거래 은행 정보가 필요해요."
-            onEdit={() => onEditField("거래 이력")}
+            onEdit={() => onEditField("transaction")}
           />
         </div>
       </div>
 
       <div className="rounded-lg border border-[#E7ECEA] bg-white px-5 py-4">
-        <h3 className="mb-5 text-[19px] font-bold text-[#181818]">추천 조건</h3>
+        <h3 className="mb-5 text-[19px] font-extrabold text-[#26313A]">추천 조건</h3>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <TextField
             required
             label="월 납입 희망액"
             value={profile.monthlySavingsGoal ? `${profile.monthlySavingsGoal.toLocaleString()}만 원` : ""}
             emptyHelper="월 납입 희망액 입력이 필요해요."
-            onEdit={() => onEditField("월 납입 희망액")}
+            onEdit={() => onEditField("monthlyGoal")}
           />
           <TagField
             required
@@ -580,13 +559,13 @@ function InfoTab({ profile, optionTags, onEditField, onResubmit }) {
             tags={savingPeriodMain ? [`#${savingPeriodMain}`] : []}
             caption={savingPeriodCaption}
             emptyHelper="저축 기간 선택이 필요해요."
-            onEdit={() => onEditField("저축 기간")}
+            onEdit={() => onEditField("savingPeriod")}
           />
           <TagField
             label="현재 신분"
             tags={statusRaw ? [`#${statusRaw}`] : []}
             emptyHelper="신분별 맞춤 상품 추천에 필요해요."
-            onEdit={() => onEditField("현재 신분")}
+            onEdit={() => onEditField("status")}
           />
         </div>
 
@@ -595,14 +574,14 @@ function InfoTab({ profile, optionTags, onEditField, onResubmit }) {
             label="핵심 혜택(선호)"
             tags={optionTags.benefits.map((tag) => `#${tag}`)}
             emptyHelper="선호 혜택을 고르면 정렬이 정확해져요."
-            onEdit={() => onEditField("핵심 혜택")}
+            onEdit={() => onEditField("benefits")}
           />
           <TagField
             required
             label="은행 거래 우대(선호)"
             tags={optionTags.bankRelation.map((tag) => `#${tag}`)}
             emptyHelper="은행 거래 우대 선택이 필요해요."
-            onEdit={() => onEditField("은행 거래 우대")}
+            onEdit={() => onEditField("bankRelation")}
           />
         </div>
       </div>
@@ -627,18 +606,24 @@ export default function MyPage() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("liked");
   const [editingField, setEditingField] = useState(null);
-  const { profile, optionTagsByCategory, favorites, showComparisonNotice, loading, removeFavorite } = useMyPage();
+  const { profile, categories, optionTagsByCategory, favorites, showComparisonNotice, loading, updateProfile, removeFavorite } =
+    useMyPage();
+
+  const handleSaveField = async (patch) => {
+    const result = await updateProfile(patch);
+    if (result.ok) setEditingField(null);
+  };
 
   return (
     <div className="flex min-h-screen flex-col bg-white font-inter">
-      <div className="border-1 border-[#EBEBEB]">
-        <div className="mx-auto max-w-[1480px] px-6">
+      <div className="border border-[#EBEBEB]">
+        <div className="mx-auto max-w-400 py-0.5">
           <Tabs active={activeTab} onChange={setActiveTab} likedCount={favorites.length} />
         </div>
       </div>
 
       <div className="flex-1 bg-[#F8FAF9]">
-        <main className="mx-auto max-w-[1480px] px-6 py-10">
+        <main className="mx-auto max-w-370 px-6 py-8">
           {loading ? (
             <p className="py-24 text-center text-[#8A8A8A]">불러오는 중이에요...</p>
           ) : activeTab === "liked" ? (
@@ -659,7 +644,15 @@ export default function MyPage() {
         </main>
       </div>
 
-      {editingField && <EditFieldModal fieldLabel={editingField} onClose={() => setEditingField(null)} />}
+      {editingField && (
+        <EditFieldModal
+          fieldKey={editingField}
+          profile={profile}
+          categories={categories}
+          onClose={() => setEditingField(null)}
+          onSave={handleSaveField}
+        />
+      )}
     </div>
   );
 }
