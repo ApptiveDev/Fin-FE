@@ -5,7 +5,7 @@ import AgreementItem from '../components/AgreementItem';
 import ContentModal from '../components/ContentModal';
 
 function Agreement() {
-  const { accessToken } = useAuth();
+  const { accessToken, setUserRole } = useAuth();
   const navigate = useNavigate();
   const [terms, setTerms] = useState([]);
   const [checks, setChecks] = useState({ age: false });
@@ -71,6 +71,10 @@ function Agreement() {
         })
       });
       if (!res.ok) throw new Error("약관 동의 실패");
+
+      const data = await res.json();
+      if (data?.userRole) setUserRole(data.userRole);
+
       navigate('/introduce', { replace: true });
     } catch (e) {
       console.error(e);

@@ -19,8 +19,9 @@ const SECTIONS = [
 ];
 
 export default function ProductList() {
-  const { accessToken } = useAuth();
-  const isLoggedIn = !!accessToken;
+  const { accessToken, userRole } = useAuth();
+  const isLoggedIn = Boolean(accessToken);
+  const hasRecommendationAccess = userRole === "RECOMMENDATION" || userRole === "ADMIN";
   const navigate = useNavigate();
   const location = useLocation();
   const sectionListRef = useRef(null);
@@ -39,11 +40,11 @@ export default function ProductList() {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("나에게 맞는 순");
   const [activeFilter, setActiveFilter] = useState("전체");
-  const [showLoginModal, setShowLoginModal] = useState(false);
-  const effectiveActiveTab = !isLoggedIn && activeTab === "내가 받을 수 있는 금리 순" ? "나에게 맞는 순" : activeTab;
+  const [blockedModalReason, setBlockedModalReason] = useState(null); // "login" | "agree" | null
+  const effectiveActiveTab = !hasRecommendationAccess && activeTab === "내가 받을 수 있는 금리 순" ? "나에게 맞는 순" : activeTab;
   const recommendationProducts = useMemo(
-    () => applyRecommendationResult(PRODUCTS, recommendationResult, isLoggedIn),
-    [isLoggedIn, recommendationResult],
+    () => applyRecommendationResult(PRODUCTS, recommendationResult, hasRecommendationAccess),
+    [hasRecommendationAccess, recommendationResult],
   );
 
   const filters = [
@@ -54,8 +55,8 @@ export default function ProductList() {
   ];
 
   const handleTabClick = (tabName) => {
-    if (tabName === "내가 받을 수 있는 금리 순" && !isLoggedIn) {
-      setShowLoginModal(true);
+    if (tabName === "내가 받을 수 있는 금리 순" && !hasRecommendationAccess) {
+      setBlockedModalReason(isLoggedIn ? "agree" : "login");
       return;
     }
     setActiveTab(tabName);
@@ -138,7 +139,7 @@ export default function ProductList() {
                     : "text-[#03BFA5] bg-white border-[#03BFA5]"
                 }`}
               >
-                {!isLoggedIn && (
+                {!hasRecommendationAccess && (
                   <svg className="w-4 h-4 text-[#03BFA5]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                     <rect x="5" y="11" width="14" height="10" rx="2" ry="2" />
                     <path d="M7 11V7a5 5 0 0 1 10 0v4" />
@@ -189,7 +190,7 @@ export default function ProductList() {
 
               {/* 안내 문구 */}
               <div className="flex items-center gap-1.5 mt-5 text-[15px] font-medium text-[#03BFA5] text-[15px] font-bold">
-                {isLoggedIn ? (
+                {hasRecommendationAccess ? (
                   <>
                     <div className="w-[16px] h-[16px] rounded-full bg-[#03BFA5] text-white flex items-center justify-center">✓</div>
                     <span>
@@ -199,7 +200,7 @@ export default function ProductList() {
                     </span>
                   </>
                 ) : (
-                  <><div className="w-[16px] h-[16px] rounded-full bg-[#03BFA5] text-white flex items-center justify-center">i</div><span>로그인하면 자격요건 필터링 결과와 내가 달성 가능한 금리를 확인할 수 있어요.</span></>
+                  <><div className="w-[16px] h-[16px] rounded-full bg-[#03BFA5] text-white flex items-center justify-center">i</div><span>{isLoggedIn ? "약관 동의하면 자격요건 필터링 결과와 내가 달성 가능한 금리를 확인할 수 있어요." : "로그인하면 자격요건 필터링 결과와 내가 달성 가능한 금리를 확인할 수 있어요."}</span></>
                 )}
               </div>
             </div>
@@ -229,7 +230,7 @@ export default function ProductList() {
                     myRate={product.myRate}
                     tags={product.tags}
                     isBest={index === 0}
-                    isLoggedIn={isLoggedIn}
+                    isLoggedIn={hasRecommendationAccess}
                     contributionRate={product.contributionRate}
                     maturityContribution={product.maturityContribution}
                     contributionCaption={product.contributionCaption}
@@ -281,7 +282,7 @@ export default function ProductList() {
                             maxRate={product.maxRate}
                             myRate={product.myRate}
                             tags={product.tags}
-                            isLoggedIn={isLoggedIn}
+                            isLoggedIn={hasRecommendationAccess}
                             variant={sec.name === "정부 청년 상품" ? "contribution" : "rate"}
                             contributionRate={product.contributionRate}
                             maturityContribution={product.maturityContribution}
@@ -304,17 +305,26 @@ export default function ProductList() {
       </div>
 
       {/* 모달 팝업 */}
-      {showLoginModal && (
+      {blockedModalReason && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div className="bg-white rounded-3xl w-full max-w-[550px] px-22 py-18 text-center shadow-2xl relative">
-            <button onClick={() => setShowLoginModal(false)} className="absolute top-6 right-6 text-gray-400 hover:text-gray-600">
+            <button onClick={() => setBlockedModalReason(null)} className="absolute top-6 right-6 text-gray-400 hover:text-gray-600">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
             <div className="w-14 h-14 bg-[#F0FFFE] rounded-full flex items-center justify-center mx-auto mb-4">
               <svg className="w-7 h-7 text-[#03BFA5]" fill="currentColor" viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
             </div>
-            <p className="text-[22px] font-semibold text-[#03BFA5] mb-2">로그인 후 이용할 수 있어요</p>
-            <p className="text-[13px] text-[#03BFA5] mb-9 leading-relaxed">나에게 맞는 실질 우대금리를<br/>로그인 후 바로 확인해보세요.</p>
+            {blockedModalReason === "agree" ? (
+              <>
+                <p className="text-[22px] font-semibold text-[#03BFA5] mb-2">약관 동의 후 이용할 수 있어요</p>
+                <p className="text-[13px] text-[#03BFA5] mb-9 leading-relaxed">나에게 맞는 실질 우대금리를<br/>약관 동의 후 바로 확인해보세요.</p>
+              </>
+            ) : (
+              <>
+                <p className="text-[22px] font-semibold text-[#03BFA5] mb-2">로그인 후 이용할 수 있어요</p>
+                <p className="text-[13px] text-[#03BFA5] mb-9 leading-relaxed">나에게 맞는 실질 우대금리를<br/>로그인 후 바로 확인해보세요.</p>
+              </>
+            )}
             <div className="flex flex-col gap-2.5 mb-2.5 text-left">
               {["소득·근속·주거래 은행 등 내 정보를 바탕으로 실질 금리를 계산해드려요.", "실제 충족 가능한 우대조건만 적용해 정확한 금리를 보여드려요.","단계2 정보 입력 후 더 정밀한 맞춤 추천이 활성화됩니다."].map((text, i) => (
                 <div key={i} className="flex items-start gap-3 border border-[#03BFA5] rounded-lg px-4 py-3 bg-[#F0FFFE]">
@@ -325,10 +335,16 @@ export default function ProductList() {
                 </div>
               ))}
             </div>
-            <div className="flex flex-col gap-2.5">
-              <button onClick={() => navigate("/login")} className="w-full py-3 rounded-lg border border-gray-300 text-gray-700 font-medium text-[14px] hover:bg-gray-50">로그인하고 확인하기</button>
-              <button onClick={() => navigate("/terms")} className="w-full py-3 rounded-lg border border-gray-300 text-gray-700 font-medium text-[14px] hover:bg-gray-50">회원가입 후 이용하기</button>
-            </div>
+            {blockedModalReason === "agree" ? (
+              <div className="flex flex-col gap-2.5">
+                <button onClick={() => navigate("/terms")} className="w-full py-3 rounded-lg border border-gray-300 text-gray-700 font-medium text-[14px] hover:bg-gray-50">약관 동의하러 가기</button>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2.5">
+                <button onClick={() => navigate("/login")} className="w-full py-3 rounded-lg border border-gray-300 text-gray-700 font-medium text-[14px] hover:bg-gray-50">로그인하고 확인하기</button>
+                <button onClick={() => navigate("/terms")} className="w-full py-3 rounded-lg border border-gray-300 text-gray-700 font-medium text-[14px] hover:bg-gray-50">회원가입 후 이용하기</button>
+              </div>
+            )}
           </div>
         </div>
       )}
