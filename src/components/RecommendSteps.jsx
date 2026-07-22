@@ -634,7 +634,7 @@ export function BankSelector({
 
                 return (
                   <button key={bank} disabled={isDisabled} onClick={() => toggleBank(bank)}
-                    className={`h-[56px] rounded-[10px] border-2 px-[10px] py-3 text-[24px] font-medium font-inter flex items-center justify-center transition-all ${btnStyle}`}
+                    className={`h-[56px] rounded-[10px] border-2 px-[10px] py-3 text-[22px] font-medium font-inter flex items-center justify-center transition-all ${btnStyle}`}
                     style={{ backgroundColor: isSelected && !isDisabled ? themeColor.bg : undefined }}
                   >{bank}</button>
                 );
