@@ -1,54 +1,12 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
+import client, { withAuth } from "../api/client";
 import {
+  buildProfileUpdateFromRequest,
   buildRecommendationRequest,
   mapRecommendCategories,
 } from "../utils/recommendationPayload";
-import { persistRecommendation } from "../utils/recommendationResult";
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
-  || "https://test-fin.duckdns.org";
-
-async function fetchGovernmentDetails(result, request, accessToken) {
-  const matches = Array.isArray(result?.governmentRanked)
-    ? result.governmentRanked.filter((match) => match?.productId)
-    : [];
-  const uniqueMatches = [
-    ...new Map(
-      matches.map((match) => [`${match.productId}:${match.productPropertyId}`, match]),
-    ).values(),
-  ];
-
-  const detailResults = await Promise.allSettled(
-    uniqueMatches.map(async (match) => {
-      const response = await fetch(
-        `${API_BASE_URL}/search/products/${match.productId}/detail`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${accessToken}`,
-          },
-          body: JSON.stringify({
-            productPropertyId: match.productPropertyId ?? null,
-            options: request.options,
-            detailedOptions: request.detailedOptions,
-          }),
-        },
-      );
-
-      if (!response.ok) return null;
-      const detail = await response.json();
-      return detail?.government ? detail : null;
-    }),
-  );
-
-  return detailResults.flatMap((detailResult) =>
-    detailResult.status === "fulfilled" && detailResult.value
-      ? [detailResult.value]
-      : [],
-  );
-}
+import { runProductSearch } from "../utils/productSearch";
 
 const BANK_CATEGORIES = [
   { id: '시중', title: '시중은행', banks: ['KB국민', '신한', '하나', '우리', 'SC제일', 'iM뱅크'] },
@@ -121,15 +79,8 @@ export default function useRecommendForm() {
     if (!accessToken) return; // 토큰 없으면 대기... 인데 백엔드에서 수정 시 바꿈
     const fetchCategories = async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/api/categories`, {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        });
-
-        if (!res.ok) throw new Error("카테고리 요청 실패");
-
-        const data = await res.json();
-
-        setCats(mapRecommendCategories(data, {
+        const res = await client.get("/api/categories", withAuth(accessToken));
+        setCats(mapRecommendCategories(res.data, {
           bankCategories: BANK_CATEGORIES,
           incomeLevel: INCOME_LEVELS,
         }));
@@ -150,35 +101,13 @@ export default function useRecommendForm() {
       return { request, result: null };
     }
 
-    const res = await fetch(`${API_BASE_URL}/search/products`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${accessToken}`,
-      },
-      body: JSON.stringify(request),
-    });
+    const [recommendation] = await Promise.all([
+      runProductSearch(request, accessToken),
+      client
+        .put("/user/me/profile", buildProfileUpdateFromRequest(request), withAuth(accessToken))
+        .catch((e) => console.error("프로필 저장 실패:", e)),
+    ]);
 
-    if (!res.ok) {
-      const errorBody = await res.json().catch(() => null);
-      throw new Error(errorBody?.message || errorBody?.error || "상품 분석에 실패했습니다.");
-    }
-
-    const result = await res.json();
-    const governmentDetails = await fetchGovernmentDetails(
-      result,
-      request,
-      accessToken,
-    );
-    const recommendation = {
-      request,
-      result: {
-        ...result,
-        governmentDetails,
-      },
-    };
-
-    persistRecommendation({ result: recommendation.result });
     return recommendation;
   };
 

@@ -2,13 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import client, { withAuth } from "../api/client";
 import { MOCK_PROFILE, MOCK_OPTION_CATEGORIES, MOCK_FAVORITES } from "../data/mypage";
+import { findCategoryByGroup, normalizeCategoryName } from "../utils/recommendationPayload";
 
-const CATEGORY_NAME_BY_GROUP = {
-  savingPeriod: "저축기간",
-  status: "현재신분",
-  benefits: "핵심혜택",
-  bankRelation: "은행거래",
-};
+const TAG_GROUP_KEYS = ["savingPeriod", "status", "benefits", "bankRelation"];
 
 export function splitTrailingParen(value) {
   if (!value) return { main: "", caption: "" };
@@ -25,6 +21,12 @@ function buildOptionTagsByCategory(profile, categories) {
   const groups = { savingPeriod: [], status: [], benefits: [], bankRelation: [] };
   if (!profile || !categories) return groups;
 
+  const groupKeyByNormalizedCategoryName = {};
+  TAG_GROUP_KEYS.forEach((key) => {
+    const category = findCategoryByGroup(categories, key);
+    if (category) groupKeyByNormalizedCategoryName[normalizeCategoryName(category.categoryName)] = key;
+  });
+
   const optionMap = {};
   categories.forEach((category) => {
     (category.options || []).forEach((option) => {
@@ -35,26 +37,24 @@ function buildOptionTagsByCategory(profile, categories) {
   (profile.selectedOptionIds || []).forEach((id) => {
     const option = optionMap[id];
     if (!option) return;
-    const groupKey = Object.keys(CATEGORY_NAME_BY_GROUP).find(
-      (key) => CATEGORY_NAME_BY_GROUP[key] === option.categoryName,
-    );
+    const groupKey = groupKeyByNormalizedCategoryName[normalizeCategoryName(option.categoryName)];
     if (groupKey) groups[groupKey].push(option.optionValue);
   });
 
   return groups;
 }
 
-export function findCategoryOptions(categories, categoryName) {
-  return categories?.find((category) => category.categoryName === categoryName)?.options || [];
+export function findCategoryOptions(categories, groupKey) {
+  return findCategoryByGroup(categories, groupKey)?.options || [];
 }
 
-export function findSelectedOptionIds(categories, categoryName, selectedOptionIds) {
-  const ids = new Set(findCategoryOptions(categories, categoryName).map((option) => option.optionId));
+export function findSelectedOptionIds(categories, groupKey, selectedOptionIds) {
+  const ids = new Set(findCategoryOptions(categories, groupKey).map((option) => option.optionId));
   return (selectedOptionIds || []).filter((id) => ids.has(id));
 }
 
-export function replaceCategorySelection(selectedOptionIds, categories, categoryName, newIds) {
-  const ids = new Set(findCategoryOptions(categories, categoryName).map((option) => option.optionId));
+export function replaceCategorySelection(selectedOptionIds, categories, groupKey, newIds) {
+  const ids = new Set(findCategoryOptions(categories, groupKey).map((option) => option.optionId));
   const kept = (selectedOptionIds || []).filter((id) => !ids.has(id));
   return [...kept, ...newIds];
 }

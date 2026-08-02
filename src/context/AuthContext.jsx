@@ -1,6 +1,6 @@
 // AuthContext.jsx
 import { createContext, useContext, useState, useEffect } from "react";
-import axios from "axios";
+import client, { withAuth } from "../api/client";
 
 const AuthContext = createContext(null);
 
@@ -10,7 +10,7 @@ export function AuthProvider({ children }) {
   const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    axios.post('https://test-fin.duckdns.org/auth/refresh', {}, { withCredentials: true })
+    client.post('/auth/refresh', {})
       .then(res => setAccessToken(res.data.data))
       .catch(() => {})
       .finally(() => setIsInitialized(true));
@@ -21,9 +21,7 @@ export function AuthProvider({ children }) {
 
     let cancelled = false;
 
-    axios.get('https://test-fin.duckdns.org/user/me', {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    })
+    client.get('/user/me', withAuth(accessToken))
       .then(res => { if (!cancelled) setFetchedRole(res.data.userRole); })
       .catch(() => { if (!cancelled) setFetchedRole(null); });
 

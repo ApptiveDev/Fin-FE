@@ -279,13 +279,13 @@ function HouseholdModal({ profile, onClose, onSave }) {
 }
 
 function RegionModal({ profile, categories, onClose, onSave }) {
-  const options = findCategoryOptions(categories, "거주지역");
-  const currentId = findSelectedOptionIds(categories, "거주지역", profile.selectedOptionIds)[0] ?? "";
+  const options = findCategoryOptions(categories, "regions");
+  const currentId = findSelectedOptionIds(categories, "regions", profile.selectedOptionIds)[0] ?? "";
   const [selectedId, setSelectedId] = useState(currentId);
 
   const handleSave = () => {
     const newIds = selectedId ? [Number(selectedId)] : [];
-    onSave({ selectedOptionIds: replaceCategorySelection(profile.selectedOptionIds, categories, "거주지역", newIds) });
+    onSave({ selectedOptionIds: replaceCategorySelection(profile.selectedOptionIds, categories, "regions", newIds) });
   };
 
   return (
@@ -583,7 +583,7 @@ export default function EditFieldModal({ fieldKey, profile, categories, onClose,
       return (
         <SingleChoiceOptionModal
           title="저축 기간"
-          categoryName="저축기간"
+          categoryName="savingPeriod"
           required
           profile={profile}
           categories={categories}
@@ -595,7 +595,7 @@ export default function EditFieldModal({ fieldKey, profile, categories, onClose,
       return (
         <SingleChoiceOptionModal
           title="현재 신분"
-          categoryName="현재신분"
+          categoryName="status"
           profile={profile}
           categories={categories}
           onClose={onClose}
@@ -606,7 +606,7 @@ export default function EditFieldModal({ fieldKey, profile, categories, onClose,
       return (
         <MultiChoiceOptionModal
           title="핵심 혜택"
-          categoryName="핵심혜택"
+          categoryName="benefits"
           profile={profile}
           categories={categories}
           onClose={onClose}
@@ -617,7 +617,7 @@ export default function EditFieldModal({ fieldKey, profile, categories, onClose,
       return (
         <MultiChoiceOptionModal
           title="은행 거래"
-          categoryName="은행거래"
+          categoryName="bankRelation"
           required
           profile={profile}
           categories={categories}

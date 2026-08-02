@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import InfoIcon from "../components/InfoIcon";
@@ -6,10 +6,9 @@ import { TopCard, ListItem } from "../components/ProductComponents";
 import icon_1_fin_sector from "../assets/icon_1_fin_sector.png";
 import icon_gov_support from "../assets/icon_gov_support.png";
 import icon_subscription from "../assets/icon_subscription.png";
-import { PRODUCTS } from "../data/products";
 import {
-  applyRecommendationResult,
-  readPersistedRecommendation,
+  buildProductListFromResult,
+  getActiveRecommendationResult,
 } from "../utils/recommendationResult";
 
 const SECTIONS = [
@@ -26,16 +25,20 @@ export default function ProductList() {
   const location = useLocation();
   const sectionListRef = useRef(null);
   const stickyHeaderRef = useRef(null);
-  const persistedRecommendation = useMemo(
-    () => readPersistedRecommendation(),
-    [],
+  const recommendationResult = useMemo(
+    () => getActiveRecommendationResult(location),
+    [location],
   );
-  const recommendationResult = location.state?.recommendationResult
-    ?? persistedRecommendation?.result;
   const recommendationCount = recommendationResult
     ? (recommendationResult.governmentRanked?.length || 0)
       + (recommendationResult.bankRanked?.length || 0)
     : null;
+
+  useEffect(() => {
+    if (!recommendationResult) {
+      navigate("/recommend", { replace: true });
+    }
+  }, [recommendationResult, navigate]);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("나에게 맞는 순");
@@ -43,8 +46,8 @@ export default function ProductList() {
   const [blockedModalReason, setBlockedModalReason] = useState(null); // "login" | "agree" | null
   const effectiveActiveTab = !hasRecommendationAccess && activeTab === "내가 받을 수 있는 금리 순" ? "나에게 맞는 순" : activeTab;
   const recommendationProducts = useMemo(
-    () => applyRecommendationResult(PRODUCTS, recommendationResult, hasRecommendationAccess),
-    [hasRecommendationAccess, recommendationResult],
+    () => buildProductListFromResult(recommendationResult),
+    [recommendationResult],
   );
 
   const filters = [
@@ -89,6 +92,8 @@ export default function ProductList() {
   }, [activeFilter, effectiveActiveTab, recommendationProducts, searchTerm]);
 
   const topThree = processedProducts.slice(0, 3);
+
+  if (!recommendationResult) return null;
 
   return (
     <div className="w-full bg-white select-none font-[Inter] px-[clamp(16px,3vw,40px)]">
@@ -235,9 +240,7 @@ export default function ProductList() {
                     maturityContribution={product.maturityContribution}
                     contributionCaption={product.contributionCaption}
                     showContribution={product.category === "정부 청년 상품" || product.category === "청약 상품"}
-                    onClick={product.isBackendOnly
-                      ? undefined
-                      : () => goToProductDetail(product.id)}
+                    onClick={() => goToProductDetail(product.id)}
                   />
                 ))}
               </div>
@@ -287,9 +290,7 @@ export default function ProductList() {
                             contributionRate={product.contributionRate}
                             maturityContribution={product.maturityContribution}
                             contributionCaption={product.contributionCaption}
-                            onClick={product.isBackendOnly
-                              ? undefined
-                              : () => goToProductDetail(product.id)}
+                            onClick={() => goToProductDetail(product.id)}
                           />
                         ))}
                       </div>

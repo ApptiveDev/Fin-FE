@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import client, { withAuth } from '../api/client';
 import AgreementItem from '../components/AgreementItem';
 import ContentModal from '../components/ContentModal';
 
@@ -22,10 +23,8 @@ function Agreement() {
     if (!accessToken) return;
     const fetchTerms = async () => {
       try {
-        const res = await fetch("https://test-fin.duckdns.org/term", {
-          headers: { Authorization: `Bearer ${accessToken}` }
-        });
-        const data = await res.json();
+        const res = await client.get("/term", withAuth(accessToken));
+        const data = res.data;
         setTerms(data);
         const initialChecks = { age: false };
         data.forEach(t => { initialChecks[t.code] = false; });
@@ -58,21 +57,9 @@ function Agreement() {
         versionId: t.versionId,
         agreed: checks[t.code] ?? false
       }));
-      const res = await fetch("https://test-fin.duckdns.org/term", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json"
-      },
-        body: JSON.stringify({
-          agreements: terms.map(t => ({
-            versionId: t.versionId,
-            agreed: checks[t.code] ?? false
-          }))
-        })
-      });
-      if (!res.ok) throw new Error("약관 동의 실패");
+      const res = await client.post("/term", { agreements }, withAuth(accessToken));
 
-      const data = await res.json();
+      const data = res.data;
       if (data?.userRole) setUserRole(data.userRole);
 
       navigate('/introduce', { replace: true });

@@ -1,5 +1,9 @@
-import { useNavigate, useParams } from "react-router-dom";
-import { findProductById, PRODUCTS } from "../data/products";
+import { useEffect, useMemo } from "react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
+import {
+  findProductViewById,
+  getActiveRecommendationResult,
+} from "../utils/recommendationResult";
 import { getProductApplicationBadge, getProductApplicationBadgeVariant, openProductApplication } from "../utils/productApplyLink";
 
 function ArrowLeftIcon({ className = "" }) {
@@ -404,7 +408,38 @@ function LeftPanel({ product, onBack }) {
 export default function ProductDetail() {
   const { productId } = useParams();
   const navigate = useNavigate();
-  const product = findProductById(productId) || PRODUCTS[0];
+  const location = useLocation();
+  const recommendationResult = useMemo(
+    () => getActiveRecommendationResult(location),
+    [location],
+  );
+  const product = useMemo(
+    () => findProductViewById(recommendationResult, productId),
+    [recommendationResult, productId],
+  );
+
+  useEffect(() => {
+    if (!recommendationResult) {
+      navigate("/recommend", { replace: true });
+    }
+  }, [recommendationResult, navigate]);
+
+  if (!recommendationResult) return null;
+
+  if (!product) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center gap-6 bg-white text-[#454545]">
+        <p className="text-[22px] font-medium">상품 정보를 찾을 수 없어요.</p>
+        <button
+          type="button"
+          onClick={() => navigate("/products")}
+          className="rounded-[10px] border-2 border-[#03BFA5] px-6 py-3 text-[18px] font-medium text-[#03BFA5]"
+        >
+          상품 리스트로 돌아가기
+        </button>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-white font-inter text-[#454545]">

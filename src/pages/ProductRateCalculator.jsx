@@ -1,6 +1,9 @@
-import { useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { findProductById, PRODUCTS } from "../data/products";
+import { useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
+import {
+  findProductViewById,
+  getActiveRecommendationResult,
+} from "../utils/recommendationResult";
 import { openProductApplication } from "../utils/productApplyLink";
 
 function ArrowLeftIcon({ className = "" }) {
@@ -233,13 +236,31 @@ function BottomActions({ product }) {
 
 export default function ProductRateCalculator() {
   const { productId } = useParams();
-  const product = findProductById(productId) || PRODUCTS[0];
-  const [months, setMonths] = useState(product.calculator.months);
-  const [accumulationType, setAccumulationType] = useState(product.calculator.accumulationType);
-  const [interestType, setInterestType] = useState(product.calculator.interestType);
-  const [taxType, setTaxType] = useState(product.calculator.taxType);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const recommendationResult = useMemo(
+    () => getActiveRecommendationResult(location),
+    [location],
+  );
+  const product = useMemo(
+    () => findProductViewById(recommendationResult, productId),
+    [recommendationResult, productId],
+  );
+
+  useEffect(() => {
+    if (!recommendationResult) {
+      navigate("/recommend", { replace: true });
+    }
+  }, [recommendationResult, navigate]);
+
+  const [months, setMonths] = useState(product?.calculator?.months ?? 12);
+  const [accumulationType, setAccumulationType] = useState(product?.calculator?.accumulationType ?? "정액");
+  const [interestType, setInterestType] = useState(product?.calculator?.interestType ?? "단리");
+  const [taxType, setTaxType] = useState(product?.calculator?.taxType ?? "일반 15.4%");
 
   const result = useMemo(() => {
+    if (!product) return { principal: 0, interest: 0, tax: 0, finalAmount: 0 };
+
     const monthlyAmount = product.calculator.monthlyAmount;
     const principal = monthlyAmount * months;
     const rate = parseRate(product.calculator.headlineRate);
@@ -253,7 +274,24 @@ export default function ProductRateCalculator() {
       tax,
       finalAmount: principal + interest - tax,
     };
-  }, [interestType, months, product.calculator.headlineRate, product.calculator.monthlyAmount, taxType]);
+  }, [interestType, months, product, taxType]);
+
+  if (!recommendationResult) return null;
+
+  if (!product) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center gap-6 bg-white text-[#454545]">
+        <p className="text-[22px] font-medium">상품 정보를 찾을 수 없어요.</p>
+        <button
+          type="button"
+          onClick={() => navigate("/products")}
+          className="rounded-[10px] border-2 border-[#03BFA5] px-6 py-3 text-[18px] font-medium text-[#03BFA5]"
+        >
+          상품 리스트로 돌아가기
+        </button>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-white font-inter text-[#454545]">

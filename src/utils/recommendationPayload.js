@@ -1,4 +1,4 @@
-const CATEGORY_ALIASES = {
+export const CATEGORY_ALIASES = {
   regions: ["거주지역"],
   status: ["현재신분"],
   savingPeriod: ["저축기간"],
@@ -38,7 +38,7 @@ const BANK_CODE_BY_LABEL = {
   경남은행: "0010024",
 };
 
-function normalizeCategoryName(value = "") {
+export function normalizeCategoryName(value = "") {
   return value.replace(/[\s·_()-]/g, "").toLowerCase();
 }
 
@@ -47,6 +47,10 @@ function findCategory(categories, aliases) {
   return categories.find((category) =>
     normalizedAliases.includes(normalizeCategoryName(category?.categoryName)),
   );
+}
+
+export function findCategoryByGroup(categories, groupKey) {
+  return findCategory(categories || [], CATEGORY_ALIASES[groupKey] || [groupKey]);
 }
 
 export function mapRecommendCategories(payload, extras = {}) {
@@ -91,6 +95,11 @@ function toWonFromTenThousand(value) {
   return number === null ? null : Math.round(number * 10_000);
 }
 
+function toTenThousandFromWon(value) {
+  const number = toNumber(value);
+  return number === null ? null : Math.round(number / 10_000);
+}
+
 function toBirthdate(data) {
   if (!data.birthYear || !data.birthMonth || !data.birthDay) return null;
   const month = String(data.birthMonth).padStart(2, "0");
@@ -105,6 +114,18 @@ function toHouseholdIncomePercent(value) {
 
 function toBankCodes(values = []) {
   return values.map((value) => BANK_CODE_BY_LABEL[value] || value);
+}
+
+const BANK_LABEL_BY_CODE = Object.entries(BANK_CODE_BY_LABEL).reduce((map, [label, code]) => {
+  const existing = map[code];
+  if (!existing || (existing.endsWith("은행") && !label.endsWith("은행"))) {
+    map[code] = label;
+  }
+  return map;
+}, {});
+
+function fromBankCodes(values = []) {
+  return values.map((value) => BANK_LABEL_BY_CODE[value] || value);
 }
 
 function selectedOptions(data, categoryIds) {
@@ -156,5 +177,59 @@ export function buildRecommendationRequest(data, categories) {
       maturedSavingBanks: toBankCodes(data.maturedBanks || []),
       selectedInterestRateOptions: [],
     },
+  };
+}
+
+export function buildRecommendationRequestFromProfile(profile, categories) {
+  const categoryIdByOptionId = new Map();
+  (categories || []).forEach((category) => {
+    (category.options || []).forEach((option) => {
+      categoryIdByOptionId.set(option.optionId, category.categoryId);
+    });
+  });
+
+  const options = (profile?.selectedOptionIds || []).flatMap((optionId) => {
+    const categoryId = categoryIdByOptionId.get(optionId);
+    return categoryId === undefined ? [] : [{ categoryId, optionId }];
+  });
+
+  return {
+    options,
+    detailedOptions: {
+      birthdate: profile?.birthdate ?? null,
+      annualIncome: toWonFromTenThousand(profile?.annualIncome),
+      householdSize: profile?.householdSize ?? null,
+      householdIncomePercent: profile?.householdIncomePercent ?? null,
+      tenureMonths: profile?.tenureMonths ?? null,
+      isFirstJob: profile?.isFirstJob ?? null,
+      isHomeless: profile?.isHomeless ?? null,
+      isHouseholder: profile?.isHouseholder ?? null,
+      monthlySavingsGoal: toWonFromTenThousand(profile?.monthlySavingsGoal),
+      mainBanks: [],
+      neverUsedBanks: toBankCodes(profile?.neverUsedBanks ?? []),
+      maturedSavingBanks: toBankCodes(profile?.maturedSavingBanks ?? []),
+      selectedInterestRateOptions: [],
+    },
+  };
+}
+
+export function buildProfileUpdateFromRequest(request) {
+  const options = Array.isArray(request?.options) ? request.options : [];
+  const detailed = request?.detailedOptions || {};
+
+  return {
+    birthdate: detailed.birthdate ?? null,
+    annualIncome: toTenThousandFromWon(detailed.annualIncome),
+    householdSize: detailed.householdSize ?? null,
+    householdIncomePercent: detailed.householdIncomePercent ?? null,
+    tenureMonths: detailed.tenureMonths ?? null,
+    isFirstJob: detailed.isFirstJob ?? null,
+    isHomeless: detailed.isHomeless ?? null,
+    isHouseholder: detailed.isHouseholder ?? null,
+    monthlySavingsGoal: toTenThousandFromWon(detailed.monthlySavingsGoal),
+    mainBanks: detailed.mainBanks ?? [],
+    neverUsedBanks: fromBankCodes(detailed.neverUsedBanks ?? []),
+    maturedSavingBanks: fromBankCodes(detailed.maturedSavingBanks ?? []),
+    selectedOptionIds: options.map((option) => option.optionId),
   };
 }

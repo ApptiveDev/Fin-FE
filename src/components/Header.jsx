@@ -1,8 +1,8 @@
-import axios from 'axios'
+import client from '../api/client'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import logo from '../assets/logo.png'
-import { clearPersistedRecommendation } from '../utils/recommendationResult'
+import { clearPersistedRecommendation, readPersistedRecommendation } from '../utils/recommendationResult'
 
 export default function Header() {
   return (
@@ -33,6 +33,15 @@ const navItems = [
 function NavMenu() {
   const navigate = useNavigate()
   const location = useLocation()
+
+  const handleNavClick = (item) => {
+    if (item.path === '/recommend' && readPersistedRecommendation()?.result) {
+      navigate('/products')
+      return
+    }
+    navigate(item.path)
+  }
+
   return (
     <ul className="hidden flex-1 items-center justify-between px-20 md:flex lg:px-30 xl:px-50">
       {navItems.map((item, i) => {
@@ -41,7 +50,7 @@ function NavMenu() {
         return (
           <li
             key={i}
-            onClick={() => navigate(item.path)}
+            onClick={() => handleNavClick(item)}
             className={`cursor-pointer whitespace-nowrap font-[Inter] text-[16px] font-medium transition-colors lg:text-[18px] ${
               isActive ? 'text-[#03BFA5]' : 'text-gray-400 hover:text-[#515151]'
             }`}
@@ -60,7 +69,7 @@ function UserButtons() {
 
   const handleLogout = async () => {
     try {
-      await axios.post('https://test-fin.duckdns.org/auth/logout', {}, { withCredentials: true })
+      await client.post('/auth/logout', {})
     } catch (e) {
       console.error(e)
     } finally {
