@@ -304,7 +304,7 @@ export function StepHouseholdIncome({ data, setData, cats, onPrev, onNext }) {
               <button type="button"
                 onClick={() => setData({ ...data, householdCount: Math.max(1, count - 1) })}
                 className="flex h-[28px] w-10 items-center justify-center rounded-full border-2 border-[#454545] text-center font-inter text-[25px] leading-none text-[#454545] hover:bg-gray-50">-</button>
-              <span className="font-inter text-[28px] text-center text-[#000000]">
+              <span className="font-inter text-[25px] text-center text-[#000000]">
                 {count}인
               </span>
               <button type="button"
@@ -336,7 +336,7 @@ export function StepHouseholdIncome({ data, setData, cats, onPrev, onNext }) {
                       )}
                     </div>
 
-                    <span className={`w-[150px] text-center font-inter text-[22px] font-normal ${isSelected ? "text-white" : "text-[#454545]"}`}>
+                    <span className={`w-[150px] text-center font-inter text-[20px] font-normal ${isSelected ? "text-white" : "text-[#454545]"}`}>
                       {item.label}
                     </span>
                     {item.amount && (
