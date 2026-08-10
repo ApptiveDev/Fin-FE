@@ -141,7 +141,7 @@ function BirthdateModal({ profile, onClose, onSave }) {
 }
 
 function IncomeModal({ profile, onClose, onSave }) {
-  const [income, setIncome] = useState(profile.annualIncome ? String(profile.annualIncome) : "");
+  const [income, setIncome] = useState(profile.annualIncome !== null && profile.annualIncome !== undefined ? String(profile.annualIncome) : "");
   const isComplete = income !== "";
 
   const handleSave = () => {
