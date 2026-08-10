@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import {
   findProductViewById,
   getActiveRecommendationResult,
@@ -238,7 +239,7 @@ function NoticeBox({ children }) {
   );
 }
 
-function BankRateSummary({ product }) {
+function BankRateSummary({ product, isLoggedIn }) {
   const baseRate = product.baseRateDisplay || `${product.baseRate}%`;
   const maxRate = product.maxRateDisplay || `${product.maxRate}%`;
 
@@ -257,7 +258,7 @@ function BankRateSummary({ product }) {
       </div>
       <div className="mt-[16px] flex h-[44px] w-full max-w-[461px] items-center justify-center gap-[22px] rounded-full border border-[#03BFA5] bg-[#EFFFFD] px-[26px] leading-[1.2] text-[#03BFA5]">
         <span className="whitespace-nowrap text-center text-[21.93px] font-normal">내가 달성 가능한 금리</span>
-        <span className="whitespace-nowrap text-center text-[24.37px] font-semibold">연 ??? %</span>
+        <span className="whitespace-nowrap text-center text-[24.37px] font-semibold">연 {isLoggedIn ? product.myRate : "???"} %</span>
       </div>
     </div>
   );
@@ -282,8 +283,8 @@ function ContributionSummary({ product }) {
   );
 }
 
-function ProductSummary({ product, isBankProduct }) {
-  return isBankProduct ? <BankRateSummary product={product} /> : <ContributionSummary product={product} />;
+function ProductSummary({ product, isBankProduct, isLoggedIn }) {
+  return isBankProduct ? <BankRateSummary product={product} isLoggedIn={isLoggedIn} /> : <ContributionSummary product={product} />;
 }
 
 function ApplicationFallbackModal({ product, onClose, onOpenInstitutionPage }) {
@@ -363,7 +364,7 @@ function ApplicationFallbackModal({ product, onClose, onOpenInstitutionPage }) {
   );
 }
 
-function RightPanel({ product, onEditRate, onApply }) {
+function RightPanel({ product, onEditRate, onApply, isLoggedIn }) {
   const applicationBadgeVariant = getProductApplicationBadgeVariant(product);
   const isBankProduct = applicationBadgeVariant === "bank";
   const applicationBadgeClass = applicationBadgeVariant === "bank"
@@ -372,7 +373,7 @@ function RightPanel({ product, onEditRate, onApply }) {
 
   return (
     <aside className="relative flex w-full max-w-[620px] flex-col min-[1100px]:pt-[222px]">
-      <ProductSummary product={product} isBankProduct={isBankProduct} />
+      <ProductSummary product={product} isBankProduct={isBankProduct} isLoggedIn={isLoggedIn} />
 
       <div className={`${isBankProduct ? "mt-[30px]" : "mt-[21px]"} flex flex-col`}>
         <div className="grid grid-cols-[1fr_82px] gap-[10px]">
@@ -498,6 +499,7 @@ export default function ProductDetail() {
     () => findProductViewById(recommendationResult, productId),
     [recommendationResult, productId],
   );
+  const { accessToken } = useAuth();
   const [isApplicationFallbackOpen, setIsApplicationFallbackOpen] = useState(false);
 
   useEffect(() => {
@@ -532,11 +534,11 @@ export default function ProductDetail() {
   };
 
   return (
-    <main className="min-h-screen bg-white font-inter text-[#454545]">
+    <main className="min-h-screen bg-white pb-[80px] font-inter text-[#454545]">
       <div className="mx-auto mt-[13px] w-full max-w-[1320px] rounded-[3px] border border-[#D5D5D5] px-5 pb-[48px] pt-[32px] lg:px-[42px]">
         <div className="mx-auto grid w-full max-w-[1236px] gap-[24px] min-[1100px]:grid-cols-[minmax(0,1.17fr)_minmax(0,1fr)]">
           <LeftPanel product={product} onBack={() => navigate("/products")} />
-          <RightPanel product={product} onEditRate={() => navigate(`/products/${product.id}/calculator`)} onApply={handleApplication} />
+          <RightPanel product={product} onEditRate={() => navigate(`/products/${product.id}/calculator`)} onApply={handleApplication} isLoggedIn={Boolean(accessToken)} />
         </div>
       </div>
       {isApplicationFallbackOpen && (

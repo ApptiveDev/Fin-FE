@@ -44,7 +44,7 @@ function parseRate(rateText) {
 function Chip({ label, active }) {
   return (
     <span
-      className={`flex h-[44px] items-center justify-center rounded-full px-[24px] text-[22px] font-medium leading-[1.2] ${
+      className={`flex h-[38px] items-center justify-center rounded-full px-[18px] text-[18px] font-medium leading-[1.2] ${
         active
           ? "border-2 border-[#03BFA5] bg-[#F7FFFE] text-[#03BFA5]"
           : "border border-[#E4E4E4] bg-white text-[#454545]"
@@ -65,7 +65,7 @@ function OptionButton({ active, children, onClick, className = "", activeTone = 
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`flex h-[58px] items-center justify-center rounded-[10px] text-[22px] font-medium leading-[1.2] transition-colors ${
+      className={`flex h-[48px] items-center justify-center rounded-[8px] text-[18px] font-medium leading-[1.2] transition-colors ${
         active
           ? activeClass
           : "border border-[#E4E4E4] bg-white text-[#454545] hover:border-[#03BFA5]"
@@ -86,11 +86,11 @@ function CalculatorCard({ children, className = "" }) {
 
 function AmountCard({ amount, label }) {
   return (
-    <CalculatorCard className="relative h-[165px] px-[38px] py-[38px]">
-      <h2 className="text-[22px] font-semibold leading-[1.2] text-[#454545]">{label}</h2>
-      <div className="absolute bottom-[36px] right-[38px] flex items-end gap-[14px] text-[#454545]">
-        <span className="text-[45px] font-bold leading-[1.2]">{amount.toLocaleString("ko-KR")}</span>
-        <span className="pb-[10px] text-[26px] font-medium leading-[1.2]">원</span>
+    <CalculatorCard className="relative h-[135px] px-[30px] py-[30px]">
+      <h2 className="text-[18px] font-semibold leading-[1.2] text-[#454545]">{label}</h2>
+      <div className="absolute bottom-[28px] right-[30px] flex items-end gap-[10px] text-[#454545]">
+        <span className="text-[36px] font-bold leading-[1.2]">{amount.toLocaleString("ko-KR")}</span>
+        <span className="pb-[7px] text-[21px] font-medium leading-[1.2]">원</span>
       </div>
     </CalculatorCard>
   );
@@ -100,19 +100,19 @@ function PeriodCard({ months, onChange, label = "저축 기간" }) {
   const options = [6, 12, 24, 36];
 
   return (
-    <CalculatorCard className="relative h-[220px] px-[42px] py-[38px]">
-      <h2 className="text-[22px] font-semibold leading-[1.2] text-[#454545]">{label}</h2>
-      <div className="absolute right-[38px] top-[65px] flex items-end gap-[10px] text-[#454545]">
-        <span className="text-[45px] font-bold leading-[1.2]">{months}</span>
-        <span className="pb-[10px] text-[26px] font-medium leading-[1.2]">개월</span>
+    <CalculatorCard className="relative h-[180px] px-[32px] py-[30px]">
+      <h2 className="text-[18px] font-semibold leading-[1.2] text-[#454545]">{label}</h2>
+      <div className="absolute right-[30px] top-[52px] flex items-end gap-[8px] text-[#454545]">
+        <span className="text-[36px] font-bold leading-[1.2]">{months}</span>
+        <span className="pb-[7px] text-[21px] font-medium leading-[1.2]">개월</span>
       </div>
-      <div className="absolute bottom-[36px] right-[38px] flex gap-[6px]">
+      <div className="absolute bottom-[28px] right-[30px] flex gap-[5px]">
         {options.map((option) => (
           <OptionButton
             key={option}
             active={months === option}
             onClick={() => onChange(option)}
-            className="h-[50px] rounded-full px-[24px]"
+            className="h-[42px] rounded-full px-[18px]"
           >
             {option}개월
           </OptionButton>
@@ -124,9 +124,9 @@ function PeriodCard({ months, onChange, label = "저축 기간" }) {
 
 function ToggleCard({ title, options, value, onChange, activeTone = "soft", disabled = false }) {
   return (
-    <CalculatorCard className="h-[170px] px-[38px] py-[38px]">
-      <h2 className="text-[22px] font-semibold leading-[1.2] text-[#454545]">{title}</h2>
-      <div className="mt-[6px] grid grid-cols-2 gap-[5px]">
+    <CalculatorCard className="h-[140px] px-[30px] py-[30px]">
+      <h2 className="text-[18px] font-semibold leading-[1.2] text-[#454545]">{title}</h2>
+      <div className="mt-[5px] grid grid-cols-2 gap-[5px]">
         {options.map((option) => (
           <OptionButton key={option} active={value === option} onClick={() => onChange(option)} activeTone={activeTone} disabled={disabled}>
             {option}
@@ -140,24 +140,24 @@ function ToggleCard({ title, options, value, onChange, activeTone = "soft", disa
 function RateHero({ calculator, onEditRate }) {
 
   return (
-    <section className="relative flex min-h-[180px] items-center justify-between gap-8 rounded-[10px] bg-[#EFFFFD] px-[38px] py-[34px]">
+    <section className="relative flex min-h-[150px] items-center justify-between gap-6 rounded-[10px] bg-[#EFFFFD] px-[30px] py-[28px]">
       <button
         type="button"
         onClick={onEditRate}
-        className="absolute right-[39px] top-[31px] flex items-center gap-[14px] text-[20px] font-medium leading-[1.2] text-[#454545] transition-colors hover:text-[#03BFA5]"
+        className="absolute right-[30px] top-[25px] flex items-center gap-[10px] text-[16px] font-medium leading-[1.2] text-[#454545] transition-colors hover:text-[#03BFA5]"
       >
-        <ArrowLeftIcon className="size-[21px]" />
+        <ArrowLeftIcon className="size-[18px]" />
         계산 금리 수정하기
       </button>
       <div>
-        <p className="mb-[17px] text-[22px] font-semibold leading-[1.2] text-[#454545]">내가 받을 수 있는 금리</p>
-        <div className="flex flex-wrap items-end gap-[7px]">
-          <span className="text-[50px] font-bold leading-[1.2] text-[#03BFA5]">{calculator.headlineRate}</span>
-          <span className="pb-[10px] text-[22px] font-medium leading-[1.2] text-[#454545]">(연)</span>
-          <span className="pb-[11px] text-[20px] font-medium leading-[1.2] text-[#454545]">{calculator.baseText}</span>
+        <p className="mb-[12px] text-[18px] font-semibold leading-[1.2] text-[#454545]">내가 받을 수 있는 금리</p>
+        <div className="flex flex-wrap items-end gap-[6px]">
+          <span className="text-[40px] font-bold leading-[1.2] text-[#03BFA5]">{calculator.headlineRate}</span>
+          <span className="pb-[8px] text-[18px] font-medium leading-[1.2] text-[#454545]">(연)</span>
+          <span className="pb-[9px] text-[16px] font-medium leading-[1.2] text-[#454545]">{calculator.baseText}</span>
         </div>
       </div>
-      <div className="mt-[68px] flex flex-wrap justify-end gap-[6px]">
+      <div className="mt-[55px] flex flex-wrap justify-end gap-[5px]">
         {calculator.conditions.map((chip) => (
           <Chip key={chip.label} label={chip.label} active={chip.active} />
         ))}
@@ -215,7 +215,7 @@ function ResultRow({ label, value, tone = "default" }) {
   const colorClass = tone === "positive" ? "text-[#03BFA5]" : tone === "negative" ? "text-[#D3455B]" : "text-[#454545]";
 
   return (
-    <div className="flex h-[45px] items-start justify-between border-b border-[#D9D9D9] text-[24px] font-medium leading-[1.2]">
+    <div className="flex h-[38px] items-start justify-between border-b border-[#D9D9D9] text-[20px] font-medium leading-[1.2]">
       <span className="text-[#454545]">{label}</span>
       <span className={colorClass}>{value}</span>
     </div>
@@ -224,23 +224,23 @@ function ResultRow({ label, value, tone = "default" }) {
 
 function ResultCard({ principal, interest, tax, finalAmount }) {
   return (
-    <CalculatorCard className="h-[407px] px-[38px] py-[38px]">
-      <h2 className="text-[22px] font-semibold leading-[1.2] text-[#454545]">예상 수령액</h2>
-      <div className="mt-[35px] flex flex-col gap-[15px]">
+    <CalculatorCard className="h-[335px] px-[30px] py-[30px]">
+      <h2 className="text-[18px] font-semibold leading-[1.2] text-[#454545]">예상 수령액</h2>
+      <div className="mt-[28px] flex flex-col gap-[12px]">
         <ResultRow label="납입원금합계" value={formatWon(principal)} />
         <ResultRow label="세전 이자" value={`+ ${formatWon(interest)}`} tone="positive" />
-        <div className="flex items-center justify-between text-[24px] font-medium leading-[1.2]">
+        <div className="flex items-center justify-between text-[20px] font-medium leading-[1.2]">
           <span className="text-[#454545]">이자 과세 (15.4%)</span>
           <span className="flex items-center gap-[5px] text-[#D3455B]">
-            <TaxIcon className="size-[22px]" />
+            <TaxIcon className="size-[18px]" />
             - {formatWon(tax)}
           </span>
         </div>
       </div>
-      <div className="mt-[33px] border-t-2 border-[#D9D9D9] pt-[25px]">
+      <div className="mt-[27px] border-t-2 border-[#D9D9D9] pt-[20px]">
         <div className="flex items-center justify-between">
-          <span className="text-[24px] font-semibold leading-[1.2] text-[#454545]">세후 실수령액</span>
-          <span className="text-[40px] font-semibold leading-[1.2] text-[#03BFA5]">{formatWon(finalAmount)}</span>
+          <span className="text-[20px] font-semibold leading-[1.2] text-[#454545]">세후 실수령액</span>
+          <span className="text-[33px] font-semibold leading-[1.2] text-[#03BFA5]">{formatWon(finalAmount)}</span>
         </div>
       </div>
     </CalculatorCard>
@@ -256,7 +256,7 @@ function BottomActions({ product }) {
         <button
           type="button"
           onClick={() => navigate(`/products/${product.id}`)}
-          className="flex h-[78px] items-center justify-center gap-[10px] rounded-[10px] border-2 border-[#03BFA5] bg-white text-[25px] font-semibold leading-[1.2] text-[#03BFA5]"
+          className="flex h-[64px] items-center justify-center gap-[8px] rounded-[10px] border-2 border-[#03BFA5] bg-white text-[20px] font-semibold leading-[1.2] text-[#03BFA5]"
         >
           <ArrowLeftIcon className="size-[16px]" />
           상품 상세
@@ -264,14 +264,14 @@ function BottomActions({ product }) {
         <button
           type="button"
           onClick={() => openProductApplication(product)}
-          className="flex h-[78px] items-center justify-center rounded-[10px] border-2 border-[#03BFA5] bg-[#03BFA5] text-[25px] font-semibold leading-[1.2] text-white"
+          className="flex h-[64px] items-center justify-center rounded-[10px] border-2 border-[#03BFA5] bg-[#03BFA5] text-[20px] font-semibold leading-[1.2] text-white"
         >
           신청하러 가기
         </button>
       </div>
-      <div className="flex min-h-[93px] items-center rounded-[10px] border border-[#03BFA5] bg-[#F7FFFE] px-[37px] py-[22px]">
+      <div className="flex min-h-[76px] items-center rounded-[10px] border border-[#03BFA5] bg-[#F7FFFE] px-[30px] py-[18px]">
         <InfoCircleIcon className="mr-[9px] size-[20px] shrink-0 text-[#03BFA5]" />
-        <p className="text-[18px] font-normal leading-[1.3] text-[#454545]">
+        <p className="text-[15px] font-normal leading-[1.3] text-[#454545]">
           매월 초 ∙ 매월 동일액 납입 가정 기준 예상치입니다(첫 회차가 전 기간, 마지막 회차가 1개월치 이자) 실제 납입 시점 ∙ 금액에 따라 수령액이 달라질 수 있습니다.
         </p>
       </div>
@@ -361,43 +361,45 @@ export default function ProductRateCalculator() {
   }
 
   return (
-    <main className="min-h-screen bg-white font-inter text-[#454545]">
-      <div className="mx-auto w-full max-w-[1535px]">
-        <h1 className="mb-[32px] pt-[74px] text-[32px] font-bold leading-[1.2] text-[#454545]">{isDeposit ? "예금" : "적금"} 수익률 계산기</h1>
-        <RateHero calculator={calculator} onEditRate={() => setIsRateEditOpen(true)} />
+    <main className="min-h-screen bg-white pb-[80px] font-inter text-[#454545]">
+      <div className="mx-auto mt-[13px] w-full max-w-[1320px] rounded-[3px] border border-[#D5D5D5] px-5 pb-[48px] pt-[32px] lg:px-[42px]">
+        <div className="mx-auto w-full max-w-[1236px]">
+          <h1 className="mb-[26px] text-[28px] font-bold leading-[1.2] text-[#454545]">{isDeposit ? "예금" : "적금"} 수익률 계산기</h1>
+          <RateHero calculator={calculator} onEditRate={() => setIsRateEditOpen(true)} />
 
-        <div className="mt-[28px] grid gap-[30px] xl:grid-cols-[752px_762px]">
-          <div className="flex flex-col gap-[20px]">
-            <AmountCard amount={product.calculator.monthlyAmount} label={isDeposit ? "예치 금액" : "월 납입액"} />
-            <PeriodCard months={months} onChange={setMonths} label={isDeposit ? "예치 기간" : "저축 기간"} />
-            {!isDeposit && (
+          <div className="mt-[24px] grid gap-[24px] min-[1100px]:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+            <div className="flex flex-col gap-[16px]">
+              <AmountCard amount={product.calculator.monthlyAmount} label={isDeposit ? "예치 금액" : "월 납입액"} />
+              <PeriodCard months={months} onChange={setMonths} label={isDeposit ? "예치 기간" : "저축 기간"} />
+              {!isDeposit && (
+                <ToggleCard
+                  title="적립 방식"
+                  options={["정액", "자유"]}
+                  value={accumulationType}
+                  onChange={setAccumulationType}
+                  disabled
+                />
+              )}
               <ToggleCard
-                title="적립 방식"
-                options={["정액", "자유"]}
-                value={accumulationType}
-                onChange={setAccumulationType}
+                title="이자 방식"
+                options={["단리", "복리"]}
+                value={interestType}
+                onChange={setInterestType}
                 disabled
               />
-            )}
-            <ToggleCard
-              title="이자 방식"
-              options={["단리", "복리"]}
-              value={interestType}
-              onChange={setInterestType}
-              disabled
-            />
-            <ToggleCard
-              title="과세 유형"
-              options={["일반 15.4%", "비과세 0%"]}
-              value={taxType}
-              onChange={setTaxType}
-              activeTone="mint"
-            />
-          </div>
+              <ToggleCard
+                title="과세 유형"
+                options={["일반 15.4%", "비과세 0%"]}
+                value={taxType}
+                onChange={setTaxType}
+                activeTone="mint"
+              />
+            </div>
 
-          <div className="flex flex-col gap-[12px]">
-            <ResultCard {...result} />
-            <BottomActions product={product} />
+            <div className="flex flex-col gap-[10px]">
+              <ResultCard {...result} />
+              <BottomActions product={product} />
+            </div>
           </div>
         </div>
       </div>
