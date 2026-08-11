@@ -721,29 +721,34 @@ export function StepTransaction({ data, setData, cats, onPrev, onSubmit, onSkip 
 }
 
 /* 10. 로딩 스크린 컴포넌트 */
-export function LoadingScreen({ onAnimationComplete }) {
+export function LoadingScreen({ onAnimationComplete, isAnalysisReady = true, eligibleProductCount }) {
   const [progress, setProgress] = useState(55);
 
   useEffect(() => {
     const interval = setInterval(() => {
       setProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          if (onAnimationComplete) {
-            setTimeout(() => {
-              onAnimationComplete();
-            }, 700);
-          }
-          return 100;
+        const maxProgress = isAnalysisReady ? 100 : 95;
+        if (prev >= maxProgress) {
+          return maxProgress;
         }
-        return prev + 1;
+        return Math.min(prev + 1, maxProgress);
       });
     }, 25);
 
     return () => clearInterval(interval);
-  }, [onAnimationComplete]);
+  }, [isAnalysisReady]);
+
+  useEffect(() => {
+    if (progress !== 100 || !isAnalysisReady || !onAnimationComplete) return undefined;
+
+    const timeout = setTimeout(onAnimationComplete, 700);
+    return () => clearTimeout(timeout);
+  }, [isAnalysisReady, onAnimationComplete, progress]);
 
   const isDone = progress === 100;
+  const hasEligibleProductCount = eligibleProductCount !== null
+    && eligibleProductCount !== undefined
+    && eligibleProductCount !== "";
 
   return (
     <div
@@ -777,7 +782,9 @@ export function LoadingScreen({ onAnimationComplete }) {
               분석이 완료됐어요!
             </h2>
             <p className="absolute left-1/2 top-[244px] -translate-x-1/2 text-center text-[15.85px] leading-[1.2] whitespace-nowrap text-[#03BFA5]">
-              총 50개의 상품 중 나에게 맞는 상품을 찾았어요.
+              {hasEligibleProductCount
+                ? `총 ${Number(eligibleProductCount).toLocaleString("ko-KR")}개의 상품 중 나에게 맞는 상품을 찾았어요.`
+                : "나에게 맞는 상품을 찾았어요."}
             </p>
           </>
         ) : (

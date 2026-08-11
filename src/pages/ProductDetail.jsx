@@ -364,7 +364,31 @@ function ApplicationFallbackModal({ product, onClose, onOpenInstitutionPage }) {
   );
 }
 
-function RightPanel({ product, onEditRate, onApply, isLoggedIn }) {
+function LoginRequiredModal({ onClose, onLogin }) {
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 px-4 py-8" role="presentation" onMouseDown={onClose}>
+      <section
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="login-required-title"
+        className="w-full max-w-[420px] rounded-[20px] bg-white px-8 py-10 text-center shadow-2xl"
+        onMouseDown={(event) => event.stopPropagation()}
+      >
+        <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-[#EFFFFD] text-[#03BFA5]">
+          <HeartIcon className="size-7" />
+        </div>
+        <h2 id="login-required-title" className="mt-5 text-[22px] font-semibold text-[#454545]">로그인 후 찜할 수 있어요</h2>
+        <p className="mt-3 text-[16px] leading-[1.5] text-[#6B7571]">로그인하면 관심 있는 상품을<br />마이페이지에 저장할 수 있어요.</p>
+        <div className="mt-7 grid grid-cols-2 gap-3">
+          <button type="button" onClick={onClose} className="h-12 rounded-[10px] border border-[#D5D5D5] text-[16px] font-semibold text-[#454545]">닫기</button>
+          <button type="button" onClick={onLogin} className="h-12 rounded-[10px] bg-[#03BFA5] text-[16px] font-semibold text-white">로그인</button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function RightPanel({ product, onEditRate, onApply, onFavorite, isLoggedIn }) {
   const applicationBadgeVariant = getProductApplicationBadgeVariant(product);
   const isBankProduct = applicationBadgeVariant === "bank";
   const applicationBadgeClass = applicationBadgeVariant === "bank"
@@ -385,7 +409,7 @@ function RightPanel({ product, onEditRate, onApply, isLoggedIn }) {
             <ExternalLinkIcon className="size-[30px]" />
             신청하러 가기
           </button>
-          <button className="flex h-[64px] items-center justify-center rounded-[10px] border-2 border-[#D4D4D4] text-[#D4D4D4] transition-colors hover:border-[#03BFA5] hover:text-[#03BFA5]" aria-label="관심 상품">
+          <button type="button" onClick={onFavorite} className="flex h-[64px] items-center justify-center rounded-[10px] border-2 border-[#D4D4D4] text-[#D4D4D4] transition-colors hover:border-[#03BFA5] hover:text-[#03BFA5]" aria-label="관심 상품">
             <HeartIcon className="size-[30px]" />
           </button>
         </div>
@@ -501,6 +525,7 @@ export default function ProductDetail() {
   );
   const { accessToken } = useAuth();
   const [isApplicationFallbackOpen, setIsApplicationFallbackOpen] = useState(false);
+  const [isFavoriteLoginOpen, setIsFavoriteLoginOpen] = useState(false);
 
   useEffect(() => {
     if (!recommendationResult) {
@@ -532,13 +557,16 @@ export default function ProductDetail() {
     }
     openProductApplication(product);
   };
+  const handleFavorite = () => {
+    if (!accessToken) setIsFavoriteLoginOpen(true);
+  };
 
   return (
     <main className="min-h-screen bg-white pb-[80px] font-inter text-[#454545]">
       <div className="mx-auto mt-[13px] w-full max-w-[1320px] rounded-[3px] border border-[#D5D5D5] px-5 pb-[48px] pt-[32px] lg:px-[42px]">
         <div className="mx-auto grid w-full max-w-[1236px] gap-[24px] min-[1100px]:grid-cols-[minmax(0,1.17fr)_minmax(0,1fr)]">
           <LeftPanel product={product} onBack={() => navigate("/products")} />
-          <RightPanel product={product} onEditRate={() => navigate(`/products/${product.id}/calculator`)} onApply={handleApplication} isLoggedIn={Boolean(accessToken)} />
+          <RightPanel product={product} onEditRate={() => navigate(`/products/${product.id}/calculator`)} onApply={handleApplication} onFavorite={handleFavorite} isLoggedIn={Boolean(accessToken)} />
         </div>
       </div>
       {isApplicationFallbackOpen && (
@@ -549,6 +577,12 @@ export default function ProductDetail() {
             openProductApplication(product);
             setIsApplicationFallbackOpen(false);
           }}
+        />
+      )}
+      {isFavoriteLoginOpen && (
+        <LoginRequiredModal
+          onClose={() => setIsFavoriteLoginOpen(false)}
+          onLogin={() => navigate("/login")}
         />
       )}
     </main>

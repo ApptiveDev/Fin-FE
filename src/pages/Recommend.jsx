@@ -11,7 +11,7 @@ import {
   StepTransaction,
   LoadingScreen,
 } from "../components/RecommendSteps";
-import { useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { readPersistedRecommendation } from "../utils/recommendationResult";
 
@@ -21,17 +21,31 @@ export default function Recommend() {
   const [isOpen, setIsOpen] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisError, setAnalysisError] = useState("");
+  const [analysisResult, setAnalysisResult] = useState(null);
+  const analysisPromiseRef = useRef(null);
   const hasPreviousRecommendation = Boolean(readPersistedRecommendation()?.result);
 
   const startAnalysis = () => {
     setAnalysisError("");
     setIsOpen(false);
     setIsAnalyzing(true);
+    setAnalysisResult(null);
+
+    const analysisPromise = handleSubmit();
+    analysisPromiseRef.current = analysisPromise;
+    analysisPromise
+      .then((recommendation) => setAnalysisResult(recommendation))
+      .catch((error) => {
+        console.error("상품 분석 실패:", error);
+        setAnalysisError(error.message || "상품 분석에 실패했습니다. 잠시 후 다시 시도해주세요.");
+        setIsAnalyzing(false);
+        setIsOpen(true);
+      });
   };
 
-  const finishAnalysis = async () => {
+  const finishAnalysis = useCallback(async () => {
     try {
-      const recommendation = await handleSubmit();
+      const recommendation = analysisResult || await analysisPromiseRef.current;
       navigate("/products", {
         state: {
           recommendationResult: recommendation.result,
@@ -44,7 +58,7 @@ export default function Recommend() {
       setIsAnalyzing(false);
       setIsOpen(true);
     }
-  };
+  }, [analysisResult, navigate]);
 
   const steps = [
     <StepSavingPlan      data={formData} setData={setFormData} cats={cats} onNext={go(1)} />,
@@ -77,7 +91,13 @@ export default function Recommend() {
 
   return (
     <div className="min-h-screen bg-linear-to-b from-[#F1FFFC] via-[#F8FFFD] to-white flex flex-col">
-      {isAnalyzing && <LoadingScreen onAnimationComplete={finishAnalysis} />}
+      {isAnalyzing && (
+        <LoadingScreen
+          onAnimationComplete={finishAnalysis}
+          isAnalysisReady={Boolean(analysisResult)}
+          eligibleProductCount={analysisResult?.result?.eligibleProductCount}
+        />
+      )}
 
       <div className={`flex-1 flex flex-col items-center px-4 pb-[288px] ${isAnalyzing ? "pt-[146px]" : "pt-[141px]"}`}>
 
