@@ -186,7 +186,13 @@ export default function ProductList() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => navigate("/recommend")}
+                  onClick={() => {
+                    if (isLoggedIn) {
+                      navigate("/mypage", { state: { activeTab: "info" } });
+                    } else {
+                      navigate("/recommend", { state: { openForm: true } });
+                    }
+                  }}
                   className="flex items-center gap-1.5 px-4 py-1.5 rounded-sm border-[2px] border-[#E0DFDF] bg-white text-[15px] text-[#454545] font-medium hover:bg-gray-50 hover:shadow-sm whitespace-nowrap"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>

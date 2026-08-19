@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import useMyPage, { splitTrailingParen } from "../hooks/UseMyPage";
 import EditFieldModal from "../components/MyPageEditModals";
 import heartIcon from "../assets/green_heart.png";
@@ -609,8 +609,9 @@ function InfoTab({ profile, optionTags, onEditField, onResubmit, resubmitting, r
 
 export default function MyPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { accessToken } = useAuth();
-  const [activeTab, setActiveTab] = useState("liked");
+  const [activeTab, setActiveTab] = useState(location.state?.activeTab === "info" ? "info" : "liked");
   const [editingField, setEditingField] = useState(null);
   const [resubmitting, setResubmitting] = useState(false);
   const [resubmitError, setResubmitError] = useState(null);

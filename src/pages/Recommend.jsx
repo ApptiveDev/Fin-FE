@@ -12,12 +12,13 @@ import {
   LoadingScreen,
 } from "../components/RecommendSteps";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 export default function Recommend() {
   const { step, formData, setFormData, cats, loading, go, handleSubmit } = useRecommendForm();
   const navigate = useNavigate();
-  const [isOpen, setIsOpen] = useState(false);
+  const location = useLocation();
+  const [isOpen, setIsOpen] = useState(Boolean(location.state?.openForm));
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisError, setAnalysisError] = useState("");
 
