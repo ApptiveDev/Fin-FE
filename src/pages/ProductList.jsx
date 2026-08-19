@@ -97,7 +97,7 @@ export default function ProductList() {
   if (!recommendationResult) return null;
 
   return (
-    <div className="w-full bg-white select-none font-[Inter] px-[clamp(16px,3vw,40px)]">
+    <div className="w-full bg-white select-none font-pretendard px-[clamp(16px,3vw,40px)]">
 
       {/* 상단 고정 영역: 검색창 + 탭 + 필터 */}
       <div ref={stickyHeaderRef} className="sticky top-16 sm:top-18 lg:top-20 z-40 bg-white">

@@ -442,7 +442,7 @@ export default function ProductDetail() {
   }
 
   return (
-    <main className="min-h-screen bg-white font-inter text-[#454545]">
+    <main className="min-h-screen bg-white font-pretendard text-[#454545]">
       <div className="mx-auto mt-[13px] w-full max-w-[1670px] rounded-[3px] border border-[#D5D5D5] px-6 pb-[70px] pt-[46px] lg:px-[61px]">
         <div className="mx-auto grid w-full max-w-[1548px] gap-[33px] xl:grid-cols-[816px_699px]">
           <LeftPanel product={product} onBack={() => navigate("/products")} />

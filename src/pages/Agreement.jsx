@@ -75,7 +75,7 @@ function Agreement() {
 
       {/* 약관 동의 모달 */}
       <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[60]">
-        <div className="bg-white font-[Inter] text-[#515151] w-full mt-5 max-w-2xl p-9 rounded-2xl shadow-2xl">
+        <div className="bg-white font-pretendard text-[#515151] w-full mt-5 max-w-2xl p-9 rounded-2xl shadow-2xl">
           <h2 className="text-xl font-bold mb-5 mt-6">이용약관에 동의해주세요.</h2>
 
           {/* 전체 동의 */}

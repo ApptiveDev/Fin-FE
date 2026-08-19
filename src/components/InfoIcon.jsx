@@ -22,7 +22,7 @@ export default function InfoIcon({ text }) {
         <div className="absolute -left-[5px] top-1/2 -translate-y-1/2 w-2 h-2 bg-[#F0FFFE] border-l border-b border-[#03BFA5] rotate-45"></div>
         
         {/* 설명 텍스트 */}
-        <span className="text-[#454545] text-[13px] font-inter relative z-10 tracking-tight leading-relaxed">
+        <span className="text-[#454545] text-[13px] font-pretendard relative z-10 tracking-tight leading-relaxed">
           {text}
         </span>
       </div>

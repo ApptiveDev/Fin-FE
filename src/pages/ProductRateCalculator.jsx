@@ -294,7 +294,7 @@ export default function ProductRateCalculator() {
   }
 
   return (
-    <main className="min-h-screen bg-white font-inter text-[#454545]">
+    <main className="min-h-screen bg-white font-pretendard text-[#454545]">
       <div className="mx-auto w-full max-w-[1535px]">
         <h1 className="mb-[32px] pt-[74px] text-[32px] font-bold leading-[1.2] text-[#454545]">적금 수익률 계산기</h1>
         <RateHero product={product} />

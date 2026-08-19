@@ -642,7 +642,7 @@ export default function MyPage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-white font-inter">
+    <div className="flex min-h-screen flex-col bg-white font-pretendard">
       <div className="border border-[#EBEBEB]">
         <div className="mx-auto max-w-400 py-0.5">
           <Tabs active={activeTab} onChange={setActiveTab} likedCount={favorites.length} />

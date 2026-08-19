@@ -51,7 +51,7 @@ function NavMenu() {
           <li
             key={i}
             onClick={() => handleNavClick(item)}
-            className={`cursor-pointer whitespace-nowrap font-[Inter] text-[16px] font-medium transition-colors lg:text-[18px] ${
+            className={`cursor-pointer whitespace-nowrap font-pretendard text-[16px] font-medium transition-colors lg:text-[18px] ${
               isActive ? 'text-[#03BFA5]' : 'text-gray-400 hover:text-[#515151]'
             }`}
           >
@@ -81,7 +81,7 @@ function UserButtons() {
 
   if (accessToken) {
     return (
-      <div className="flex shrink-0 items-center gap-3 font-inter text-[14.5px]">
+      <div className="flex shrink-0 items-center gap-3 font-pretendard text-[14.5px]">
         <button
           onClick={() => navigate('/mypage')}
           className="text-[#515151] border border-gray-300 rounded-lg h-9 px-4 hover:border-[#03BFA5] hover:text-[#03BFA5] transition-colors whitespace-nowrap"
@@ -99,7 +99,7 @@ function UserButtons() {
   }
 
   return (
-    <div className="flex shrink-0 items-center gap-3 font-inter text-[14.5px]">
+    <div className="flex shrink-0 items-center gap-3 font-pretendard text-[14.5px]">
       <LoginButton />
       <JoinButton />
     </div>

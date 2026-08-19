@@ -30,7 +30,7 @@ export default function InfoBox({ children, type = "mint-rect", className = "" }
   const variant = variants[type] || variants["mint-rect"];
 
   return (
-    <div className={`inline-flex items-center justify-center gap-[7px] border font-inter ${variant.wrapper} ${className}`}>
+    <div className={`inline-flex items-center justify-center gap-[7px] border font-pretendard ${variant.wrapper} ${className}`}>
       <div className={`flex shrink-0 items-center justify-center rounded-full font-bold ${variant.icon}`}>
         i
       </div>

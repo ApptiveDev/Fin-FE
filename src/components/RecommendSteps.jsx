@@ -74,7 +74,7 @@ export function StepSavingPlan({ data, setData, onPrev, onNext }) {
               className="recommend-range w-full mb-[18px]"
               style={{ "--range-progress": getRangeProgress(amount, 1, 100) }} />
             
-            <div className="flex font-inter justify-between text-[17px] font-semibold text-[#454545] px-1">
+            <div className="flex font-pretendard justify-between text-[17px] font-semibold text-[#454545] px-1">
               <span>1만원</span>
               <span>100만원</span>
             </div>
@@ -273,7 +273,7 @@ export function StepRegion({ data, setData, cats, onNext, onPrev }) {
             <FormSelect
               value={data.region || ""}
               onChange={(e) => setData({ ...data, region: e.target.value })}
-              className="h-[54px] w-full border-[#454545] text-[16.8px] bg-white font-inter cursor-pointer"
+              className="h-[54px] w-full border-[#454545] text-[16.8px] bg-white font-pretendard cursor-pointer"
             >
               <option value="">선택해주세요.</option>
               {cats.regions.map((r) => (
@@ -303,13 +303,13 @@ export function StepHouseholdIncome({ data, setData, cats, onPrev, onNext }) {
             <div className="flex h-[56px] w-[235px] items-center justify-center gap-[30px] rounded-full border border-[#CACACA] bg-white p-[10px] shadow-sm mb-[34px]">
               <button type="button"
                 onClick={() => setData({ ...data, householdCount: Math.max(1, count - 1) })}
-                className="flex h-[28px] w-10 items-center justify-center rounded-full border-2 border-[#454545] text-center font-inter text-[25px] leading-none text-[#454545] hover:bg-gray-50">-</button>
-              <span className="font-inter text-[28px] text-center text-[#000000]">
+                className="flex h-[28px] w-10 items-center justify-center rounded-full border-2 border-[#454545] text-center font-pretendard text-[25px] leading-none text-[#454545] hover:bg-gray-50">-</button>
+              <span className="font-pretendard text-[28px] text-center text-[#000000]">
                 {count}인
               </span>
               <button type="button"
                 onClick={() => setData({ ...data, householdCount: Math.max(1, count + 1) })}
-                className="flex h-[28px] w-10 items-center justify-center rounded-full border-2 border-[#454545] text-center font-inter text-[25px] leading-none text-[#454545] hover:bg-gray-50">+</button>
+                className="flex h-[28px] w-10 items-center justify-center rounded-full border-2 border-[#454545] text-center font-pretendard text-[25px] leading-none text-[#454545] hover:bg-gray-50">+</button>
             </div>
 
             <FieldHeader title="가구 소득" required size="small" className="mb-[26px]" />
@@ -336,11 +336,11 @@ export function StepHouseholdIncome({ data, setData, cats, onPrev, onNext }) {
                       )}
                     </div>
 
-                    <span className={`w-[150px] text-center font-inter text-[22px] font-normal ${isSelected ? "text-white" : "text-[#454545]"}`}>
+                    <span className={`w-[150px] text-center font-pretendard text-[22px] font-normal ${isSelected ? "text-white" : "text-[#454545]"}`}>
                       {item.label}
                     </span>
                     {item.amount && (
-                      <span className={`w-[235px] text-center font-inter text-[22px] font-normal ${isSelected ? "text-white" : "text-[#03BFA5]"}`}>
+                      <span className={`w-[235px] text-center font-pretendard text-[22px] font-normal ${isSelected ? "text-white" : "text-[#03BFA5]"}`}>
                         {item.amount}
                       </span>
                     )}
@@ -400,7 +400,7 @@ export function StepHousing({ data, setData, onPrev, onNext }) {
                     </svg>
                   )}
                 </div>
-                <span className="text-[20px] font-inter">{opt}</span>
+                <span className="text-[20px] font-pretendard">{opt}</span>
               </label>
             );
           })}
@@ -420,7 +420,7 @@ export function StepHousing({ data, setData, onPrev, onNext }) {
                   </svg>
                 )}
               </div>
-              <span className="text-[18px] font-inter">세대주입니다.</span>
+              <span className="text-[18px] font-pretendard">세대주입니다.</span>
             </label>
             <InfoBox type="mint-pill" className="w-full max-w-[484px]">
               청약/주거 지원 상품의 자격 요건입니다.
@@ -458,7 +458,7 @@ export function StepEmployment({ data, setData, onPrev, onNext }) {
                 onChange={(e) => setData({ ...data, employmentMonths: Number(e.target.value) })}
                 className="recommend-range w-full"
                 style={{ "--range-progress": getRangeProgress(months, 0, 120) }} />
-              <div className="flex justify-between text-[17px] text-[#454545] font-semibold font-inter mt-[18px] px-1">
+              <div className="flex justify-between text-[17px] text-[#454545] font-semibold font-pretendard mt-[18px] px-1">
                 <span>0개월</span>
                 <span>120개월</span>
               </div>
@@ -468,9 +468,9 @@ export function StepEmployment({ data, setData, onPrev, onNext }) {
               <div className="flex items-center justify-center border border-[#E0E0E0] rounded-[4px] w-[66px] h-[25px] mr-4 bg-[#FBFBFB]">
                 <FormInput type="text" value={months}
                   onChange={(e) => setData({ ...data, employmentMonths: Math.min(120, Math.max(0, Number(e.target.value))) })}
-                  className="w-full text-center text-[#E0DFDF] text-[16px] font-inter bg-transparent outline-none border-none focus:ring-0" />
+                  className="w-full text-center text-[#E0DFDF] text-[16px] font-pretendard bg-transparent outline-none border-none focus:ring-0" />
               </div>
-              <span className="text-[18px] font-inter text-[#454545]">개월</span>
+              <span className="text-[18px] font-pretendard text-[#454545]">개월</span>
             </div>
             
             <label className={`h-[46px] flex items-center gap-3 px-6 rounded-full border border-[#D9D9D9] transition-all mb-3 cursor-pointer w-full max-w-[488px] ${
@@ -488,7 +488,7 @@ export function StepEmployment({ data, setData, onPrev, onNext }) {
                   </svg>
                 )}
               </div>
-              <span className="text-[17px] font-inter">첫 직장입니다.</span>
+              <span className="text-[17px] font-pretendard">첫 직장입니다.</span>
             </label>
             
             <InfoBox type="mint-pill" className="mb-4 h-[50px] w-full max-w-[488px]">
@@ -629,12 +629,12 @@ export function BankSelector({
                 const isSelected = selectedBanks.includes(bank);
                 const isDisabled = disabledBanks.includes(bank);
                 let btnStyle = "border-[#E0DFDF] text-[#454545] bg-white hover:border-[#A5A5A5]";
-                if (isDisabled) btnStyle = "border-[#E0E0E0] text-[#B0B0B0] bg-[#F5F5F5] font-inter cursor-not-allowed"; 
-                else if (isSelected) btnStyle = `${themeColor.border} ${themeColor.text} font-inter shadow`;
+                if (isDisabled) btnStyle = "border-[#E0E0E0] text-[#B0B0B0] bg-[#F5F5F5] font-pretendard cursor-not-allowed"; 
+                else if (isSelected) btnStyle = `${themeColor.border} ${themeColor.text} font-pretendard shadow`;
 
                 return (
                   <button key={bank} disabled={isDisabled} onClick={() => toggleBank(bank)}
-                    className={`h-[56px] rounded-[10px] border-2 px-[10px] py-3 text-[22px] font-medium font-inter flex items-center justify-center transition-all ${btnStyle}`}
+                    className={`h-[56px] rounded-[10px] border-2 px-[10px] py-3 text-[22px] font-medium font-pretendard flex items-center justify-center transition-all ${btnStyle}`}
                     style={{ backgroundColor: isSelected && !isDisabled ? themeColor.bg : undefined }}
                   >{bank}</button>
                 );
