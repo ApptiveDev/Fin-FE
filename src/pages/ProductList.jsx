@@ -24,7 +24,6 @@ export default function ProductList() {
   const navigate = useNavigate();
   const location = useLocation();
   const sectionListRef = useRef(null);
-  const stickyHeaderRef = useRef(null);
   const recommendationResult = useMemo(
     () => getActiveRecommendationResult(location),
     [location],
@@ -71,8 +70,7 @@ export default function ProductList() {
 
   const scrollToSectionList = () => {
     if (!sectionListRef.current) return;
-    const offset = stickyHeaderRef.current?.getBoundingClientRect().bottom ?? 0;
-    const top = sectionListRef.current.getBoundingClientRect().top + window.scrollY - offset;
+    const top = sectionListRef.current.getBoundingClientRect().top + window.scrollY;
     window.scrollTo({ top, behavior: "smooth" });
   };
 
@@ -100,7 +98,7 @@ export default function ProductList() {
     <div className="w-full bg-white select-none font-pretendard px-[clamp(16px,3vw,40px)]">
 
       {/* 상단 고정 영역: 검색창 + 탭 + 필터 */}
-      <div ref={stickyHeaderRef} className="sticky top-16 sm:top-18 lg:top-20 z-40 bg-white">
+      <div className="bg-white">
 
         {/* 상단 고정 검색바 영역 */}
         <div className="bg-white mt-10 mb-15 shrink-0">
