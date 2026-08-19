@@ -252,7 +252,7 @@ function BankRateSummary({ product }) {
         </div>
       </div>
       <div className="mt-[16px] flex h-[44px] w-full max-w-[461px] items-center justify-center gap-[22px] rounded-full border border-[#03BFA5] bg-[#EFFFFD] px-[26px] leading-[1.2] text-[#03BFA5]">
-        <span className="whitespace-nowrap text-center text-[21.93px] font-normal">내가 달성 가능한 금리</span>
+        <span className="whitespace-nowrap text-center text-[21.93px] font-normal">내가 받을 수 있는 금리</span>
         <span className="whitespace-nowrap text-center text-[24.37px] font-semibold">연 ??? %</span>
       </div>
     </div>

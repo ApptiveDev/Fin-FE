@@ -231,7 +231,7 @@ function LikedProductsCarousel({ products, onRemove }) {
           onClick={() => goToPage(currentPage - 1)}
           disabled={currentPage === 0}
           aria-label="이전 상품"
-          className="absolute -left-22 top-1/2 z-10 flex size-10 -translate-y-1/2 items-center justify-center rounded-full border border-[#D5D5D5] bg-white pb-0.5 pr-0.5 text-[19px] font-medium text-[#726E6E] shadow-sm transition-colors hover:border-[#03BFA5] hover:text-[#03BFA5] disabled:cursor-not-allowed disabled:opacity-40"
+          className="absolute -left-5 top-1/2 z-10 flex size-10 -translate-y-1/2 items-center justify-center rounded-full border border-[#D5D5D5] bg-white pb-0.5 pr-0.5 text-[19px] font-medium text-[#726E6E] shadow-sm transition-colors hover:border-[#03BFA5] hover:text-[#03BFA5] disabled:cursor-not-allowed disabled:opacity-40"
         >
           <span className="inline-block scale-y-180">&lt;</span>
         </button>
@@ -247,7 +247,7 @@ function LikedProductsCarousel({ products, onRemove }) {
           onClick={() => goToPage(currentPage + 1)}
           disabled={currentPage === totalPages - 1}
           aria-label="다음 상품"
-          className="absolute -right-22 top-1/2 z-10 flex size-10 -translate-y-1/2 items-center justify-center rounded-full border border-[#D5D5D5] bg-white pb-0.5 pl-0.5 text-[19px] font-medium text-[#726E6E] shadow-sm transition-colors hover:border-[#03BFA5] hover:text-[#03BFA5] disabled:cursor-not-allowed disabled:opacity-40"
+          className="absolute -right-5 top-1/2 z-10 flex size-10 -translate-y-1/2 items-center justify-center rounded-full border border-[#D5D5D5] bg-white pb-0.5 pl-0.5 text-[19px] font-medium text-[#726E6E] shadow-sm transition-colors hover:border-[#03BFA5] hover:text-[#03BFA5] disabled:cursor-not-allowed disabled:opacity-40"
         >
           <span className="inline-block scale-y-180">&gt;</span>
         </button>

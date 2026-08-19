@@ -88,7 +88,7 @@ export function TopCard({
             </div>
             <div className="w-px bg-[#E0E0E0]" />
             <div>
-              <p className="text-[14px] text-[#7A7A7A]">최대 수익 효과</p>
+              <p className="text-[14px] text-[#7A7A7A]">최고 금리</p>
               <p className="text-[32px] font-bold text-[#03BFA5]">연 {maxRate}%</p>
             </div>
           </div>
@@ -169,14 +169,14 @@ export function ListItem({
               <p className="text-[32px] font-bold text-[#454545] whitespace-nowrap">연 {baseRate}%</p>
             </div>
             <div className="text-right">
-              <p className="text-[14px] text-[#7A7A7A] mb-0.5">최대 수익 효과</p>
+              <p className="text-[14px] text-[#7A7A7A] mb-0.5">최고 금리</p>
               <p className="text-[32px] font-bold text-[#03BFA5] whitespace-nowrap">연 {maxRate}%</p>
             </div>
           </div>
           <div className={`w-full py-1 rounded-full border text-center text-[15px] ${
             isLoggedIn ? "border-[#03BFA5] text-[#03BFA5] bg-[#EFFFFD]" : "border-gray-300 text-gray-400 bg-white"
           }`}>
-            내가 달성 가능한 금리 <span className="ml-1 whitespace-nowrap">{isLoggedIn ? `연 ${myRate}%` : "연 ??? %"}</span>
+            내가 받을 수 있는 금리 <span className="ml-1 whitespace-nowrap">{isLoggedIn ? `연 ${myRate}%` : "연 ??? %"}</span>
           </div>
         </div>
       )}

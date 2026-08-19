@@ -92,6 +92,7 @@ export default function ProductList() {
   }, [activeFilter, effectiveActiveTab, recommendationProducts, searchTerm]);
 
   const topThree = processedProducts.slice(0, 3);
+  const remainingProducts = processedProducts.slice(3);
 
   if (!recommendationResult) return null;
 
@@ -205,7 +206,7 @@ export default function ProductList() {
                     </span>
                   </>
                 ) : (
-                  <><div className="w-[16px] h-[16px] rounded-full bg-[#03BFA5] text-white flex items-center justify-center">i</div><span>{isLoggedIn ? "약관 동의하면 자격요건 필터링 결과와 내가 달성 가능한 금리를 확인할 수 있어요." : "로그인하면 자격요건 필터링 결과와 내가 달성 가능한 금리를 확인할 수 있어요."}</span></>
+                  <><div className="w-[16px] h-[16px] rounded-full bg-[#03BFA5] text-white flex items-center justify-center">i</div><span>{isLoggedIn ? "약관 동의하면 자격요건 필터링 결과와 내가 받을 수 있는 금리를 확인할 수 있어요." : "로그인하면 자격요건 필터링 결과와 내가 받을 수 있는 금리를 확인할 수 있어요."}</span></>
                 )}
               </div>
             </div>
@@ -267,7 +268,7 @@ export default function ProductList() {
                 {SECTIONS.map((sec) => {
                   if (activeFilter !== "전체" && activeFilter !== sec.filterKey) return null;
 
-                  const sectionProducts = processedProducts.filter(p => p.category === sec.name);
+                  const sectionProducts = remainingProducts.filter(p => p.category === sec.name);
                   if (sectionProducts.length === 0) return null;
 
                   return (
