@@ -2,7 +2,6 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Header from './components/Header'
 import Footer from './components/Footer';
 import Login from './pages/Login';
-import Main from './pages/Main';
 import Introduce from './pages/Introduce';
 import Agreement from './pages/Agreement';
 import AuthGuard from './routes/AuthGuard';
@@ -42,14 +41,7 @@ function App() {
         <Route path="/products/:productId/calculator" element={<ProductRateCalculator />} />
         <Route path="/mypage" element={<MyPageRoute />} />
         
-        <Route
-          path="/"
-          element={
-            <AuthGuard>
-              <Main />
-            </AuthGuard>
-          }
-        />
+        <Route path="/" element={<Introduce />} />
         
         <Route path="/terms" element={
           <div className="min-h-screen bg-[#EFFFFD]">
