@@ -18,9 +18,8 @@ const SECTIONS = [
 ];
 
 export default function ProductList() {
-  const { accessToken, userRole } = useAuth();
+  const { accessToken } = useAuth();
   const isLoggedIn = Boolean(accessToken);
-  const hasRecommendationAccess = userRole === "RECOMMENDATION" || userRole === "ADMIN";
   const navigate = useNavigate();
   const location = useLocation();
   const sectionListRef = useRef(null);
@@ -32,6 +31,8 @@ export default function ProductList() {
     ? (recommendationResult.governmentRanked?.length || 0)
       + (recommendationResult.bankRanked?.length || 0)
     : null;
+  const rateTabEnabled = recommendationResult?.tabs?.tabBEnabled === true;
+  const rateTabDisabledReason = recommendationResult?.tabs?.tabBDisabledReason;
 
   useEffect(() => {
     if (!recommendationResult) {
@@ -42,8 +43,8 @@ export default function ProductList() {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("나에게 맞는 순");
   const [activeFilter, setActiveFilter] = useState("전체");
-  const [blockedModalReason, setBlockedModalReason] = useState(null); // "login" | "agree" | null
-  const effectiveActiveTab = !hasRecommendationAccess && activeTab === "내가 받을 수 있는 금리 순" ? "나에게 맞는 순" : activeTab;
+  const [blockedModalReason, setBlockedModalReason] = useState(null); // "login" | "profile" | null
+  const effectiveActiveTab = !rateTabEnabled && activeTab === "내가 받을 수 있는 금리 순" ? "나에게 맞는 순" : activeTab;
   const recommendationProducts = useMemo(
     () => buildProductListFromResult(recommendationResult),
     [recommendationResult],
@@ -57,8 +58,8 @@ export default function ProductList() {
   ];
 
   const handleTabClick = (tabName) => {
-    if (tabName === "내가 받을 수 있는 금리 순" && !hasRecommendationAccess) {
-      setBlockedModalReason(isLoggedIn ? "agree" : "login");
+    if (tabName === "내가 받을 수 있는 금리 순" && !rateTabEnabled) {
+      setBlockedModalReason(isLoggedIn ? "profile" : "login");
       return;
     }
     setActiveTab(tabName);
@@ -143,7 +144,7 @@ export default function ProductList() {
                     : "text-[#03BFA5] bg-white border-[#03BFA5]"
                 }`}
               >
-                {!hasRecommendationAccess && (
+                {!rateTabEnabled && (
                   <svg className="w-4 h-4 text-[#03BFA5]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                     <rect x="5" y="11" width="14" height="10" rx="2" ry="2" />
                     <path d="M7 11V7a5 5 0 0 1 10 0v4" />
@@ -200,7 +201,7 @@ export default function ProductList() {
 
               {/* 안내 문구 */}
               <div className="flex items-center gap-1.5 mt-5 text-[15px] font-medium text-[#03BFA5] text-[15px] font-bold">
-                {hasRecommendationAccess ? (
+                {rateTabEnabled ? (
                   <>
                     <div className="w-[16px] h-[16px] rounded-full bg-[#03BFA5] text-white flex items-center justify-center">✓</div>
                     <span>
@@ -210,7 +211,7 @@ export default function ProductList() {
                     </span>
                   </>
                 ) : (
-                  <><div className="w-[16px] h-[16px] rounded-full bg-[#03BFA5] text-white flex items-center justify-center">i</div><span>{isLoggedIn ? "약관 동의하면 자격요건 필터링 결과와 내가 받을 수 있는 금리를 확인할 수 있어요." : "로그인하면 자격요건 필터링 결과와 내가 받을 수 있는 금리를 확인할 수 있어요."}</span></>
+                  <><div className="w-[16px] h-[16px] rounded-full bg-[#03BFA5] text-white flex items-center justify-center">i</div><span>{rateTabDisabledReason || (isLoggedIn ? "상세 정보를 입력하면 자격요건 필터링 결과와 내가 받을 수 있는 금리를 확인할 수 있어요." : "로그인하면 자격요건 필터링 결과와 내가 받을 수 있는 금리를 확인할 수 있어요.")}</span></>
                 )}
               </div>
             </div>
@@ -240,7 +241,7 @@ export default function ProductList() {
                     myRate={product.myRate}
                     tags={product.tags}
                     isBest={index === 0}
-                    isLoggedIn={hasRecommendationAccess}
+                    isLoggedIn={rateTabEnabled}
                     contributionRate={product.contributionRate}
                     maturityContribution={product.maturityContribution}
                     contributionCaption={product.contributionCaption}
@@ -290,7 +291,7 @@ export default function ProductList() {
                             maxRate={product.maxRate}
                             myRate={product.myRate}
                             tags={product.tags}
-                            isLoggedIn={hasRecommendationAccess}
+                            isLoggedIn={rateTabEnabled}
                             variant={sec.name === "정부 청년 상품" ? "contribution" : "rate"}
                             contributionRate={product.contributionRate}
                             maturityContribution={product.maturityContribution}
@@ -320,10 +321,10 @@ export default function ProductList() {
             <div className="w-14 h-14 bg-[#F0FFFE] rounded-full flex items-center justify-center mx-auto mb-4">
               <svg className="w-7 h-7 text-[#03BFA5]" fill="currentColor" viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
             </div>
-            {blockedModalReason === "agree" ? (
+            {blockedModalReason === "profile" ? (
               <>
-                <p className="text-[22px] font-semibold text-[#03BFA5] mb-2">약관 동의 후 이용할 수 있어요</p>
-                <p className="text-[13px] text-[#03BFA5] mb-9 leading-relaxed">나에게 맞는 실질 우대금리를<br/>약관 동의 후 바로 확인해보세요.</p>
+                <p className="text-[22px] font-semibold text-[#03BFA5] mb-2">상세 정보 입력 후 이용할 수 있어요</p>
+                <p className="text-[13px] text-[#03BFA5] mb-9 leading-relaxed">나에게 맞는 실질 우대금리를<br/>상세 정보 입력 후 바로 확인해보세요.</p>
               </>
             ) : (
               <>
@@ -341,9 +342,9 @@ export default function ProductList() {
                 </div>
               ))}
             </div>
-            {blockedModalReason === "agree" ? (
+            {blockedModalReason === "profile" ? (
               <div className="flex flex-col gap-2.5">
-                <button onClick={() => navigate("/terms")} className="w-full py-3 rounded-lg border border-gray-300 text-gray-700 font-medium text-[14px] hover:bg-gray-50">약관 동의하러 가기</button>
+                <button onClick={() => navigate("/mypage", { state: { activeTab: "info" } })} className="w-full py-3 rounded-lg border border-gray-300 text-gray-700 font-medium text-[14px] hover:bg-gray-50">상세 정보 입력하기</button>
               </div>
             ) : (
               <div className="flex flex-col gap-2.5">

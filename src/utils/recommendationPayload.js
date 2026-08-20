@@ -162,7 +162,7 @@ export function buildRecommendationRequest(data, categories) {
       annualIncome: toWonFromTenThousand(data.income),
       householdSize: toNumber(data.householdCount) ?? 1,
       householdIncomePercent: toHouseholdIncomePercent(data.incomeLevel),
-      tenureMonths: employmentMonths && employmentMonths > 0 ? employmentMonths : null,
+      tenureMonths: employmentMonths !== null && employmentMonths >= 0 ? employmentMonths : null,
       isFirstJob: data.isFirstJob ? true : null,
       isHomeless:
         data.housingStatus === "무주택"
@@ -172,7 +172,6 @@ export function buildRecommendationRequest(data, categories) {
             : null,
       isHouseholder: data.isTenant ? true : null,
       monthlySavingsGoal: toWonFromTenThousand(data.monthlyAmount),
-      mainBanks: [],
       neverUsedBanks: toBankCodes(data.firstBanks || []),
       maturedSavingBanks: toBankCodes(data.maturedBanks || []),
       selectedInterestRateOptions: [],
@@ -205,7 +204,6 @@ export function buildRecommendationRequestFromProfile(profile, categories) {
       isHomeless: profile?.isHomeless ?? null,
       isHouseholder: profile?.isHouseholder ?? null,
       monthlySavingsGoal: toWonFromTenThousand(profile?.monthlySavingsGoal),
-      mainBanks: [],
       neverUsedBanks: toBankCodes(profile?.neverUsedBanks ?? []),
       maturedSavingBanks: toBankCodes(profile?.maturedSavingBanks ?? []),
       selectedInterestRateOptions: [],

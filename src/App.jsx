@@ -18,8 +18,10 @@ function isMockMode() {
 }
 
 function RecommendRoute() {
-  if (isMockMode()) return <Recommend />;
-  return <AuthGuard><Recommend /></AuthGuard>;
+  // 상품 추천의 적합도순(탭 A)은 비로그인 사용자도 이용할 수 있다.
+  // 로그인 및 상세 정보 입력 여부에 따른 금리순(탭 B) 제한은 결과 응답의
+  // `tabs.tabBEnabled`를 기준으로 추천 결과 화면에서 처리한다.
+  return <Recommend />;
 }
 
 function MyPageRoute() {

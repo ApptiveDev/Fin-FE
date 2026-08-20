@@ -8,7 +8,9 @@ const client = axios.create({
 });
 
 export function withAuth(accessToken) {
-  return { headers: { Authorization: `Bearer ${accessToken}` } };
+  return accessToken
+    ? { headers: { Authorization: `Bearer ${accessToken}` } }
+    : {};
 }
 
 export default client;

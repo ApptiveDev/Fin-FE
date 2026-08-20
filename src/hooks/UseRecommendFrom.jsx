@@ -76,7 +76,6 @@ export default function useRecommendForm() {
       return;
     }
 
-    if (!accessToken) return; // 토큰 없으면 대기... 인데 백엔드에서 수정 시 바꿈
     const fetchCategories = async () => {
       try {
         const res = await client.get("/api/categories", withAuth(accessToken));
@@ -101,12 +100,14 @@ export default function useRecommendForm() {
       return { request, result: null };
     }
 
-    const [recommendation] = await Promise.all([
-      runProductSearch(request, accessToken),
-      client
-        .put("/user/me/profile", buildProfileUpdateFromRequest(request), withAuth(accessToken))
-        .catch((e) => console.error("프로필 저장 실패:", e)),
-    ]);
+    const recommendationPromise = runProductSearch(request, accessToken);
+    const profileSavePromise = accessToken
+      ? client
+          .put("/user/me/profile", buildProfileUpdateFromRequest(request), withAuth(accessToken))
+          .catch((e) => console.error("프로필 저장 실패:", e))
+      : Promise.resolve();
+
+    const [recommendation] = await Promise.all([recommendationPromise, profileSavePromise]);
 
     return recommendation;
   };
