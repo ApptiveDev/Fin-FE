@@ -184,13 +184,17 @@ function buildCalculatorConfig({ detail, baseRateNum, achievableRateNum }) {
   const headlineRateNum = achievableRateNum ?? baseRateNum ?? 0;
   const bonusRate = baseRateNum !== null ? Math.max(headlineRateNum - baseRateNum, 0) : 0;
 
-  const chips = [
+  const conditions = [
     ...asArray(bank?.metConditions).map((condition) => ({
+      id: condition.keywordCode || condition.description,
       label: `${condition.description || keywordLabel(condition.keywordCode)} ${formatRate(condition.rate) ?? "0"}%`,
+      rate: toFiniteNumber(condition.rate) ?? 0,
       active: true,
     })),
     ...asArray(bank?.unmetConditions).map((condition) => ({
+      id: condition.keywordCode || condition.description,
       label: `${condition.description || keywordLabel(condition.keywordCode)} ${formatRate(condition.rate) ?? "0"}%`,
+      rate: toFiniteNumber(condition.rate) ?? 0,
       active: false,
     })),
   ];
@@ -198,7 +202,10 @@ function buildCalculatorConfig({ detail, baseRateNum, achievableRateNum }) {
   return {
     headlineRate: `${formatNumber(headlineRateNum)}%`,
     baseText: `기본 ${formatNumber(baseRateNum ?? 0)}% + 충족 우대 ${formatNumber(bonusRate)}%`,
-    chips,
+    baseRate: baseRateNum ?? 0,
+    conditions,
+    // 기존 화면과의 호환을 위해 유지합니다.
+    chips: conditions,
     monthlyAmount: Math.min(monthlyAmount, 3_000_000),
     months,
     accumulationType,

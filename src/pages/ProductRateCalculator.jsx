@@ -44,7 +44,7 @@ function parseRate(rateText) {
 function Chip({ label, active }) {
   return (
     <span
-      className={`flex h-[44px] items-center justify-center rounded-full px-[24px] text-[22px] font-medium leading-[1.2] ${
+      className={`flex h-[38px] items-center justify-center rounded-full px-[18px] text-[18px] font-medium leading-[1.2] ${
         active
           ? "border-2 border-[#03BFA5] bg-[#F7FFFE] text-[#03BFA5]"
           : "border border-[#E4E4E4] bg-white text-[#454545]"
@@ -55,7 +55,7 @@ function Chip({ label, active }) {
   );
 }
 
-function OptionButton({ active, children, onClick, className = "", activeTone = "mint" }) {
+function OptionButton({ active, children, onClick, className = "", activeTone = "mint", disabled = false }) {
   const activeClass = activeTone === "soft"
     ? "border border-[#E4E4E4] bg-[#EFEFEF] text-[#454545]"
     : "border-2 border-[#03BFA5] bg-[#F7FFFE] text-[#03BFA5]";
@@ -64,11 +64,12 @@ function OptionButton({ active, children, onClick, className = "", activeTone = 
     <button
       type="button"
       onClick={onClick}
-      className={`flex h-[58px] items-center justify-center rounded-[10px] text-[22px] font-medium leading-[1.2] transition-colors ${
+      disabled={disabled}
+      className={`flex h-[48px] items-center justify-center rounded-[8px] text-[18px] font-medium leading-[1.2] transition-colors ${
         active
           ? activeClass
           : "border border-[#E4E4E4] bg-white text-[#454545] hover:border-[#03BFA5]"
-      } ${className}`}
+      } ${disabled ? "cursor-not-allowed opacity-70 hover:border-[#E4E4E4]" : ""} ${className}`}
     >
       {children}
     </button>
@@ -83,35 +84,35 @@ function CalculatorCard({ children, className = "" }) {
   );
 }
 
-function AmountCard({ amount }) {
+function AmountCard({ amount, label }) {
   return (
-    <CalculatorCard className="relative h-[165px] px-[38px] py-[38px]">
-      <h2 className="text-[22px] font-semibold leading-[1.2] text-[#454545]">월 납입액</h2>
-      <div className="absolute bottom-[36px] right-[38px] flex items-end gap-[14px] text-[#454545]">
-        <span className="text-[45px] font-bold leading-[1.2]">{amount.toLocaleString("ko-KR")}</span>
-        <span className="pb-[10px] text-[26px] font-medium leading-[1.2]">원</span>
+    <CalculatorCard className="relative h-[135px] px-[30px] py-[30px]">
+      <h2 className="text-[18px] font-semibold leading-[1.2] text-[#454545]">{label}</h2>
+      <div className="absolute bottom-[28px] right-[30px] flex items-end gap-[10px] text-[#454545]">
+        <span className="text-[36px] font-bold leading-[1.2]">{amount.toLocaleString("ko-KR")}</span>
+        <span className="pb-[7px] text-[21px] font-medium leading-[1.2]">원</span>
       </div>
     </CalculatorCard>
   );
 }
 
-function PeriodCard({ months, onChange }) {
+function PeriodCard({ months, onChange, label = "저축 기간" }) {
   const options = [6, 12, 24, 36];
 
   return (
-    <CalculatorCard className="relative h-[220px] px-[42px] py-[38px]">
-      <h2 className="text-[22px] font-semibold leading-[1.2] text-[#454545]">저축 기간</h2>
-      <div className="absolute right-[38px] top-[65px] flex items-end gap-[10px] text-[#454545]">
-        <span className="text-[45px] font-bold leading-[1.2]">{months}</span>
-        <span className="pb-[10px] text-[26px] font-medium leading-[1.2]">개월</span>
+    <CalculatorCard className="relative h-[180px] px-[32px] py-[30px]">
+      <h2 className="text-[18px] font-semibold leading-[1.2] text-[#454545]">{label}</h2>
+      <div className="absolute right-[30px] top-[52px] flex items-end gap-[8px] text-[#454545]">
+        <span className="text-[36px] font-bold leading-[1.2]">{months}</span>
+        <span className="pb-[7px] text-[21px] font-medium leading-[1.2]">개월</span>
       </div>
-      <div className="absolute bottom-[36px] right-[38px] flex gap-[6px]">
+      <div className="absolute bottom-[28px] right-[30px] flex gap-[5px]">
         {options.map((option) => (
           <OptionButton
             key={option}
             active={months === option}
             onClick={() => onChange(option)}
-            className="h-[50px] rounded-full px-[24px]"
+            className="h-[42px] rounded-full px-[18px]"
           >
             {option}개월
           </OptionButton>
@@ -121,13 +122,13 @@ function PeriodCard({ months, onChange }) {
   );
 }
 
-function ToggleCard({ title, options, value, onChange, activeTone = "soft" }) {
+function ToggleCard({ title, options, value, onChange, activeTone = "soft", disabled = false }) {
   return (
-    <CalculatorCard className="h-[170px] px-[38px] py-[38px]">
-      <h2 className="text-[22px] font-semibold leading-[1.2] text-[#454545]">{title}</h2>
-      <div className="mt-[6px] grid grid-cols-2 gap-[5px]">
+    <CalculatorCard className="h-[140px] px-[30px] py-[30px]">
+      <h2 className="text-[18px] font-semibold leading-[1.2] text-[#454545]">{title}</h2>
+      <div className="mt-[5px] grid grid-cols-2 gap-[5px]">
         {options.map((option) => (
-          <OptionButton key={option} active={value === option} onClick={() => onChange(option)} activeTone={activeTone}>
+          <OptionButton key={option} active={value === option} onClick={() => onChange(option)} activeTone={activeTone} disabled={disabled}>
             {option}
           </OptionButton>
         ))}
@@ -136,29 +137,28 @@ function ToggleCard({ title, options, value, onChange, activeTone = "soft" }) {
   );
 }
 
-function RateHero({ product }) {
-  const navigate = useNavigate();
+function RateHero({ calculator, onEditRate }) {
 
   return (
-    <section className="relative flex min-h-[180px] items-center justify-between gap-8 rounded-[10px] bg-[#EFFFFD] px-[38px] py-[34px]">
+    <section className="relative flex min-h-[150px] items-center justify-between gap-6 rounded-[10px] bg-[#EFFFFD] px-[30px] py-[28px]">
       <button
         type="button"
-        onClick={() => navigate(`/products/${product.id}`)}
-        className="absolute right-[39px] top-[31px] flex items-center gap-[14px] text-[20px] font-medium leading-[1.2] text-[#454545] transition-colors hover:text-[#03BFA5]"
+        onClick={onEditRate}
+        className="absolute right-[30px] top-[25px] flex items-center gap-[10px] text-[16px] font-medium leading-[1.2] text-[#454545] transition-colors hover:text-[#03BFA5]"
       >
-        <ArrowLeftIcon className="size-[21px]" />
+        <ArrowLeftIcon className="size-[18px]" />
         계산 금리 수정하기
       </button>
       <div>
-        <p className="mb-[17px] text-[22px] font-semibold leading-[1.2] text-[#454545]">내가 받을 수 있는 금리</p>
-        <div className="flex flex-wrap items-end gap-[7px]">
-          <span className="text-[50px] font-bold leading-[1.2] text-[#03BFA5]">{product.calculator.headlineRate}</span>
-          <span className="pb-[10px] text-[22px] font-medium leading-[1.2] text-[#454545]">(연)</span>
-          <span className="pb-[11px] text-[20px] font-medium leading-[1.2] text-[#454545]">{product.calculator.baseText}</span>
+        <p className="mb-[12px] text-[18px] font-semibold leading-[1.2] text-[#454545]">내가 받을 수 있는 금리</p>
+        <div className="flex flex-wrap items-end gap-[6px]">
+          <span className="text-[40px] font-bold leading-[1.2] text-[#03BFA5]">{calculator.headlineRate}</span>
+          <span className="pb-[8px] text-[18px] font-medium leading-[1.2] text-[#454545]">(연)</span>
+          <span className="pb-[9px] text-[16px] font-medium leading-[1.2] text-[#454545]">{calculator.baseText}</span>
         </div>
       </div>
-      <div className="mt-[68px] flex flex-wrap justify-end gap-[6px]">
-        {product.calculator.chips.map((chip) => (
+      <div className="mt-[55px] flex flex-wrap justify-end gap-[5px]">
+        {calculator.conditions.map((chip) => (
           <Chip key={chip.label} label={chip.label} active={chip.active} />
         ))}
       </div>
@@ -166,11 +166,56 @@ function RateHero({ product }) {
   );
 }
 
+function RateEditModal({ calculator, onClose, onSave }) {
+  const [conditions, setConditions] = useState(calculator.conditions);
+  const rate = calculator.baseRate + conditions
+    .filter((condition) => condition.active)
+    .reduce((sum, condition) => sum + condition.rate, 0);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" role="presentation">
+      <section role="dialog" aria-modal="true" aria-labelledby="rate-edit-title" className="w-full max-w-[620px] rounded-[20px] bg-white p-8 shadow-xl">
+        <div className="flex items-start justify-between gap-6">
+          <div>
+            <h2 id="rate-edit-title" className="text-[28px] font-bold text-[#454545]">계산 금리 수정하기</h2>
+            <p className="mt-2 text-[18px] text-[#606060]">적용할 우대금리 조건을 선택해 주세요.</p>
+          </div>
+          <button type="button" onClick={onClose} aria-label="닫기" className="text-[28px] leading-none text-[#606060]">×</button>
+        </div>
+        <div className="mt-7 rounded-[10px] bg-[#EFFFFD] px-6 py-5">
+          <p className="text-[18px] font-medium text-[#454545]">적용 금리</p>
+          <p className="mt-1 text-[38px] font-bold text-[#03BFA5]">연 {rate.toLocaleString("ko-KR", { maximumFractionDigits: 2 })}%</p>
+        </div>
+        <div className="mt-5 flex flex-col gap-3">
+          {conditions.length > 0 ? conditions.map((condition, index) => (
+            <label key={`${condition.id}-${index}`} className="flex cursor-pointer items-center justify-between rounded-[10px] border border-[#E4E4E4] px-5 py-4 text-[18px] text-[#454545]">
+              <span className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  checked={condition.active}
+                  onChange={() => setConditions((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, active: !item.active } : item))}
+                  className="size-5 accent-[#03BFA5]"
+                />
+                {condition.label}
+              </span>
+              <span className="font-semibold text-[#03BFA5]">+{condition.rate}%</span>
+            </label>
+          )) : <p className="py-6 text-center text-[18px] text-[#606060]">수정할 우대금리 조건이 없어요.</p>}
+        </div>
+        <div className="mt-8 grid grid-cols-2 gap-3">
+          <button type="button" onClick={onClose} className="h-14 rounded-[10px] border border-[#D5D5D5] text-[18px] font-semibold text-[#454545]">취소</button>
+          <button type="button" onClick={() => onSave(conditions)} className="h-14 rounded-[10px] bg-[#03BFA5] text-[18px] font-semibold text-white">적용하기</button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
 function ResultRow({ label, value, tone = "default" }) {
   const colorClass = tone === "positive" ? "text-[#03BFA5]" : tone === "negative" ? "text-[#D3455B]" : "text-[#454545]";
 
   return (
-    <div className="flex h-[45px] items-start justify-between border-b border-[#D9D9D9] text-[24px] font-medium leading-[1.2]">
+    <div className="flex h-[38px] items-start justify-between border-b border-[#D9D9D9] text-[20px] font-medium leading-[1.2]">
       <span className="text-[#454545]">{label}</span>
       <span className={colorClass}>{value}</span>
     </div>
@@ -179,23 +224,23 @@ function ResultRow({ label, value, tone = "default" }) {
 
 function ResultCard({ principal, interest, tax, finalAmount }) {
   return (
-    <CalculatorCard className="h-[407px] px-[38px] py-[38px]">
-      <h2 className="text-[22px] font-semibold leading-[1.2] text-[#454545]">예상 수령액</h2>
-      <div className="mt-[35px] flex flex-col gap-[15px]">
+    <CalculatorCard className="h-[335px] px-[30px] py-[30px]">
+      <h2 className="text-[18px] font-semibold leading-[1.2] text-[#454545]">예상 수령액</h2>
+      <div className="mt-[28px] flex flex-col gap-[12px]">
         <ResultRow label="납입원금합계" value={formatWon(principal)} />
         <ResultRow label="세전 이자" value={`+ ${formatWon(interest)}`} tone="positive" />
-        <div className="flex items-center justify-between text-[24px] font-medium leading-[1.2]">
+        <div className="flex items-center justify-between text-[20px] font-medium leading-[1.2]">
           <span className="text-[#454545]">이자 과세 (15.4%)</span>
           <span className="flex items-center gap-[5px] text-[#D3455B]">
-            <TaxIcon className="size-[22px]" />
+            <TaxIcon className="size-[18px]" />
             - {formatWon(tax)}
           </span>
         </div>
       </div>
-      <div className="mt-[33px] border-t-2 border-[#D9D9D9] pt-[25px]">
+      <div className="mt-[27px] border-t-2 border-[#D9D9D9] pt-[20px]">
         <div className="flex items-center justify-between">
-          <span className="text-[24px] font-semibold leading-[1.2] text-[#454545]">세후 실수령액</span>
-          <span className="text-[40px] font-semibold leading-[1.2] text-[#03BFA5]">{formatWon(finalAmount)}</span>
+          <span className="text-[20px] font-semibold leading-[1.2] text-[#454545]">세후 실수령액</span>
+          <span className="text-[33px] font-semibold leading-[1.2] text-[#03BFA5]">{formatWon(finalAmount)}</span>
         </div>
       </div>
     </CalculatorCard>
@@ -211,7 +256,7 @@ function BottomActions({ product }) {
         <button
           type="button"
           onClick={() => navigate(`/products/${product.id}`)}
-          className="flex h-[78px] items-center justify-center gap-[10px] rounded-[10px] border-2 border-[#03BFA5] bg-white text-[25px] font-semibold leading-[1.2] text-[#03BFA5]"
+          className="flex h-[64px] items-center justify-center gap-[8px] rounded-[10px] border-2 border-[#03BFA5] bg-white text-[20px] font-semibold leading-[1.2] text-[#03BFA5]"
         >
           <ArrowLeftIcon className="size-[16px]" />
           상품 상세
@@ -219,14 +264,14 @@ function BottomActions({ product }) {
         <button
           type="button"
           onClick={() => openProductApplication(product)}
-          className="flex h-[78px] items-center justify-center rounded-[10px] border-2 border-[#03BFA5] bg-[#03BFA5] text-[25px] font-semibold leading-[1.2] text-white"
+          className="flex h-[64px] items-center justify-center rounded-[10px] border-2 border-[#03BFA5] bg-[#03BFA5] text-[20px] font-semibold leading-[1.2] text-white"
         >
           신청하러 가기
         </button>
       </div>
-      <div className="flex min-h-[93px] items-center rounded-[10px] border border-[#03BFA5] bg-[#F7FFFE] px-[37px] py-[22px]">
+      <div className="flex min-h-[76px] items-center rounded-[10px] border border-[#03BFA5] bg-[#F7FFFE] px-[30px] py-[18px]">
         <InfoCircleIcon className="mr-[9px] size-[20px] shrink-0 text-[#03BFA5]" />
-        <p className="text-[18px] font-normal leading-[1.3] text-[#454545]">
+        <p className="text-[15px] font-normal leading-[1.3] text-[#454545]">
           매월 초 ∙ 매월 동일액 납입 가정 기준 예상치입니다(첫 회차가 전 기간, 마지막 회차가 1개월치 이자) 실제 납입 시점 ∙ 금액에 따라 수령액이 달라질 수 있습니다.
         </p>
       </div>
@@ -257,14 +302,36 @@ export default function ProductRateCalculator() {
   const [accumulationType, setAccumulationType] = useState(product?.calculator?.accumulationType ?? "정액");
   const [interestType, setInterestType] = useState(product?.calculator?.interestType ?? "단리");
   const [taxType, setTaxType] = useState(product?.calculator?.taxType ?? "일반 15.4%");
+  const [conditions, setConditions] = useState(product?.calculator?.conditions ?? []);
+  const [isRateEditOpen, setIsRateEditOpen] = useState(false);
+  const isDeposit = product?.detail?.productType === "DEPOSIT";
+
+  const calculator = useMemo(() => {
+    if (!product) return null;
+
+    const baseRate = product.calculator.baseRate ?? 0;
+    const preferentialRate = conditions
+      .filter((condition) => condition.active)
+      .reduce((sum, condition) => sum + condition.rate, 0);
+    const headlineRate = baseRate + preferentialRate;
+
+    return {
+      ...product.calculator,
+      conditions,
+      headlineRate: `${headlineRate.toLocaleString("ko-KR", { maximumFractionDigits: 2 })}%`,
+      baseText: `기본 ${baseRate.toLocaleString("ko-KR", { maximumFractionDigits: 2 })}% + 충족 우대 ${preferentialRate.toLocaleString("ko-KR", { maximumFractionDigits: 2 })}%`,
+    };
+  }, [conditions, product]);
 
   const result = useMemo(() => {
     if (!product) return { principal: 0, interest: 0, tax: 0, finalAmount: 0 };
 
     const monthlyAmount = product.calculator.monthlyAmount;
-    const principal = monthlyAmount * months;
-    const rate = parseRate(product.calculator.headlineRate);
-    const simpleInterest = monthlyAmount * rate * months * (months + 1) / 24;
+    const principal = isDeposit ? monthlyAmount : monthlyAmount * months;
+    const rate = parseRate(calculator?.headlineRate);
+    const simpleInterest = isDeposit
+      ? monthlyAmount * rate * months / 12
+      : monthlyAmount * rate * months * (months + 1) / 24;
     const interest = interestType === "복리" ? simpleInterest * 1.015 : simpleInterest;
     const tax = taxType.includes("비과세") ? 0 : interest * 0.154;
 
@@ -274,7 +341,7 @@ export default function ProductRateCalculator() {
       tax,
       finalAmount: principal + interest - tax,
     };
-  }, [interestType, months, product, taxType]);
+  }, [calculator, interestType, isDeposit, months, product, taxType]);
 
   if (!recommendationResult) return null;
 
@@ -294,42 +361,58 @@ export default function ProductRateCalculator() {
   }
 
   return (
-    <main className="min-h-screen bg-white font-pretendard text-[#454545]">
-      <div className="mx-auto w-full max-w-[1535px]">
-        <h1 className="mb-[32px] pt-[74px] text-[32px] font-bold leading-[1.2] text-[#454545]">적금 수익률 계산기</h1>
-        <RateHero product={product} />
+    <main className="min-h-screen bg-white pb-[80px] font-pretendard text-[#454545]">
+      <div className="mx-auto mt-[13px] w-full max-w-[1320px] rounded-[3px] border border-[#D5D5D5] px-5 pb-[48px] pt-[32px] lg:px-[42px]">
+        <div className="mx-auto w-full max-w-[1236px]">
+          <h1 className="mb-[26px] text-[28px] font-bold leading-[1.2] text-[#454545]">{isDeposit ? "예금" : "적금"} 수익률 계산기</h1>
+          <RateHero calculator={calculator} onEditRate={() => setIsRateEditOpen(true)} />
 
-        <div className="mt-[28px] grid gap-[30px] xl:grid-cols-[752px_762px]">
-          <div className="flex flex-col gap-[20px]">
-            <AmountCard amount={product.calculator.monthlyAmount} />
-            <PeriodCard months={months} onChange={setMonths} />
-            <ToggleCard
-              title="적립 방식"
-              options={["정액", "자유"]}
-              value={accumulationType}
-              onChange={setAccumulationType}
-            />
-            <ToggleCard
-              title="이자 방식"
-              options={["단리", "복리"]}
-              value={interestType}
-              onChange={setInterestType}
-            />
-            <ToggleCard
-              title="과세 유형"
-              options={["일반 15.4%", "비과세 0%"]}
-              value={taxType}
-              onChange={setTaxType}
-              activeTone="mint"
-            />
-          </div>
+          <div className="mt-[24px] grid gap-[24px] min-[1100px]:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+            <div className="flex flex-col gap-[16px]">
+              <AmountCard amount={product.calculator.monthlyAmount} label={isDeposit ? "예치 금액" : "월 납입액"} />
+              <PeriodCard months={months} onChange={setMonths} label={isDeposit ? "예치 기간" : "저축 기간"} />
+              {!isDeposit && (
+                <ToggleCard
+                  title="적립 방식"
+                  options={["정액", "자유"]}
+                  value={accumulationType}
+                  onChange={setAccumulationType}
+                  disabled
+                />
+              )}
+              <ToggleCard
+                title="이자 방식"
+                options={["단리", "복리"]}
+                value={interestType}
+                onChange={setInterestType}
+                disabled
+              />
+              <ToggleCard
+                title="과세 유형"
+                options={["일반 15.4%", "비과세 0%"]}
+                value={taxType}
+                onChange={setTaxType}
+                activeTone="mint"
+              />
+            </div>
 
-          <div className="flex flex-col gap-[12px]">
-            <ResultCard {...result} />
-            <BottomActions product={product} />
+            <div className="flex flex-col gap-[10px]">
+              <ResultCard {...result} />
+              <BottomActions product={product} />
+            </div>
           </div>
         </div>
       </div>
+      {isRateEditOpen && (
+        <RateEditModal
+          calculator={calculator}
+          onClose={() => setIsRateEditOpen(false)}
+          onSave={(nextConditions) => {
+            setConditions(nextConditions);
+            setIsRateEditOpen(false);
+          }}
+        />
+      )}
     </main>
   );
 }

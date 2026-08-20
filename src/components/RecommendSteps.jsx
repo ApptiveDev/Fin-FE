@@ -184,11 +184,12 @@ const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1);
 const DAYS   = Array.from({ length: 31 }, (_, i) => i + 1);
 
 /* 4. 개인 기본 정보 (Step 2-1) */
-export function StepPersonalInfo({ data, setData, onPrev, onNext }) {
-  const isComplete = Boolean(data.birthYear && data.birthMonth && data.birthDay && data.income);
+export function StepPersonalInfo({ data, setData, onPrev, onNext, onSkip }) {
+  const hasIncome = data.income !== undefined && data.income !== null && data.income !== "";
+  const isComplete = Boolean(data.birthYear && data.birthMonth && data.birthDay) && hasIncome;
 
   return (
-      <StepLayout step={2} title="상세 정보" sub="Y-Fin.만의 정확한 적합도 분석과 예상 수익률 계산을 위해 필요한 정보입니다.">
+      <StepLayout step={2} title="상세 정보" sub="Y-Fin.만의 정확한 적합도 분석과 예상 수익률 계산을 위해 필요한 정보입니다." onSkip={onSkip}>
         <div className="mt-8 pl-4">
           <p className="text-[26px] text-[#454545] font-semibold mb-[30px]">개인 기본 정보</p>
 
@@ -230,7 +231,7 @@ export function StepPersonalInfo({ data, setData, onPrev, onNext }) {
                 <div className = "flex items-center">
                   <div className="flex h-[46px] w-[320px] items-center border border-[#D9D9D9] rounded-[4px] px-3 bg-white">
                     <FormInput type="number" placeholder="숫자(단위:만원)를 입력하세요."
-                      value={data.income || ""}
+                      value={data.income ?? ""}
                       onChange={(e) => {
                           let val = e.target.value.replace(/[^0-9]/g, '');
                           // 0 ~ 10000 범위 제한 적용
@@ -260,11 +261,11 @@ export function StepPersonalInfo({ data, setData, onPrev, onNext }) {
 }
 
 /* 5. 거주지역 (Step 2-2) */
-export function StepRegion({ data, setData, cats, onNext, onPrev }) {
+export function StepRegion({ data, setData, cats, onNext, onPrev, onSkip }) {
   const hasRegion = Boolean(data.region);
 
   return (
-      <StepLayout step={2} title="상세 정보" sub="Y-Fin.만의 정확한 적합도 분석과 예상 수익률 계산을 위해 필요한 정보입니다.">
+      <StepLayout step={2} title="상세 정보" sub="Y-Fin.만의 정확한 적합도 분석과 예상 수익률 계산을 위해 필요한 정보입니다." onSkip={onSkip}>
         <div className="mt-8 pl-4">
           <div className="flex items-center mb-[26px]">
             <p className="text-[26px] text-[#454545] font-semibold">거주지역</p>
@@ -291,10 +292,10 @@ export function StepRegion({ data, setData, cats, onNext, onPrev }) {
 }
 
 /* 6. 가구정보 (가구원 수, 가구 소득) (Step 2-3) */
-export function StepHouseholdIncome({ data, setData, cats, onPrev, onNext }) {
+export function StepHouseholdIncome({ data, setData, cats, onPrev, onNext, onSkip }) {
   const count = data.householdCount || 1;
   return (
-      <StepLayout step={2} title="상세 정보" sub="Y-Fin.만의 정확한 적합도 분석과 예상 수익률 계산을 위해 필요한 정보입니다.">
+      <StepLayout step={2} title="상세 정보" sub="Y-Fin.만의 정확한 적합도 분석과 예상 수익률 계산을 위해 필요한 정보입니다." onSkip={onSkip}>
         <div className="mt-8 pl-4">
           <p className="text-[26px] text-[#454545] font-semibold mb-[30px]">가구 정보</p>
 
@@ -304,7 +305,7 @@ export function StepHouseholdIncome({ data, setData, cats, onPrev, onNext }) {
               <button type="button"
                 onClick={() => setData({ ...data, householdCount: Math.max(1, count - 1) })}
                 className="flex h-[28px] w-10 items-center justify-center rounded-full border-2 border-[#454545] text-center font-pretendard text-[25px] leading-none text-[#454545] hover:bg-gray-50">-</button>
-              <span className="font-pretendard text-[28px] text-center text-[#000000]">
+              <span className="font-pretendard text-[25px] text-center text-[#000000]">
                 {count}인
               </span>
               <button type="button"
@@ -336,7 +337,7 @@ export function StepHouseholdIncome({ data, setData, cats, onPrev, onNext }) {
                       )}
                     </div>
 
-                    <span className={`w-[150px] text-center font-pretendard text-[22px] font-normal ${isSelected ? "text-white" : "text-[#454545]"}`}>
+                    <span className={`w-[150px] text-center font-pretendard text-[20px] font-normal ${isSelected ? "text-white" : "text-[#454545]"}`}>
                       {item.label}
                     </span>
                     {item.amount && (
@@ -360,11 +361,11 @@ export function StepHouseholdIncome({ data, setData, cats, onPrev, onNext }) {
 }
 
 /* 7. 가구정보 (무주택 여부) (Step 2-4) */
-export function StepHousing({ data, setData, onPrev, onNext }) {
+export function StepHousing({ data, setData, onPrev, onNext, onSkip }) {
   const hasHousingSelection = Boolean(data.housingStatus || data.isTenant);
 
   return (
-      <StepLayout step={2} title="상세 정보" sub="Y-Fin.만의 정확한 적합도 분석과 예상 수익률 계산을 위해 필요한 정보입니다.">
+      <StepLayout step={2} title="상세 정보" sub="Y-Fin.만의 정확한 적합도 분석과 예상 수익률 계산을 위해 필요한 정보입니다." onSkip={onSkip}>
         <div className="mt-8 pl-4">
           <div className="flex items-center gap-1.5 mb-[30px]">
             <p className="text-[26px] text-[#454545] font-semibold">가구 정보</p>
@@ -437,12 +438,12 @@ export function StepHousing({ data, setData, onPrev, onNext }) {
 }
 
 /* 8. 재직 정보 (근속 기간) (Step 2-5) */
-export function StepEmployment({ data, setData, onPrev, onNext }) {
+export function StepEmployment({ data, setData, onPrev, onNext, onSkip }) {
   const months = data.employmentMonths || 0;
   const hasEmploymentSelection = Number(months) > 0 || Boolean(data.isFirstJob);
   
   return (
-      <StepLayout step={2} title="상세 정보" sub="Y-Fin.만의 정확한 적합도 분석과 예상 수익률 계산을 위해 필요한 정보입니다.">
+      <StepLayout step={2} title="상세 정보" sub="Y-Fin.만의 정확한 적합도 분석과 예상 수익률 계산을 위해 필요한 정보입니다." onSkip={onSkip}>
         <div className="mt-8 pl-4">
           <div className="flex items-center gap-1.5 mb-[30px]">
             <p className="text-[26px] text-[#454545] font-semibold">재직 정보</p>
@@ -671,7 +672,7 @@ export function BankSelector({
 }
 
 /* 9. 거래 이력 은행 (최종 페이지 - 1, 2페이지 분할) */
-export function StepTransaction({ data, setData, cats, onPrev, onSubmit }) {
+export function StepTransaction({ data, setData, cats, onPrev, onSubmit, onSkip }) {
   const [subStep, setSubStep] = useState(1); 
 
   const firstBanks = data.firstBanks || [];
@@ -683,7 +684,7 @@ export function StepTransaction({ data, setData, cats, onPrev, onSubmit }) {
 
   return (
     <>
-      <StepLayout step={2} title="상세 정보" sub="Y-Fin.만의 정확한 적합도 분석과 예상 수익률 계산을 위해 필요한 정보입니다.">
+      <StepLayout step={2} title="상세 정보" sub="Y-Fin.만의 정확한 적합도 분석과 예상 수익률 계산을 위해 필요한 정보입니다." onSkip={onSkip}>
         <div className="flex items-center gap-1.5 mb-[30px] pl-4 mt-8">
           <p className="text-[24px] text-[#454545] font-semibold">거래 이력</p>
         </div>
@@ -720,29 +721,34 @@ export function StepTransaction({ data, setData, cats, onPrev, onSubmit }) {
 }
 
 /* 10. 로딩 스크린 컴포넌트 */
-export function LoadingScreen({ onAnimationComplete }) {
+export function LoadingScreen({ onAnimationComplete, isAnalysisReady = true, eligibleProductCount }) {
   const [progress, setProgress] = useState(55);
 
   useEffect(() => {
     const interval = setInterval(() => {
       setProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          if (onAnimationComplete) {
-            setTimeout(() => {
-              onAnimationComplete();
-            }, 700);
-          }
-          return 100;
+        const maxProgress = isAnalysisReady ? 100 : 95;
+        if (prev >= maxProgress) {
+          return maxProgress;
         }
-        return prev + 1;
+        return Math.min(prev + 1, maxProgress);
       });
     }, 25);
 
     return () => clearInterval(interval);
-  }, [onAnimationComplete]);
+  }, [isAnalysisReady]);
+
+  useEffect(() => {
+    if (progress !== 100 || !isAnalysisReady || !onAnimationComplete) return undefined;
+
+    const timeout = setTimeout(onAnimationComplete, 700);
+    return () => clearTimeout(timeout);
+  }, [isAnalysisReady, onAnimationComplete, progress]);
 
   const isDone = progress === 100;
+  const hasEligibleProductCount = eligibleProductCount !== null
+    && eligibleProductCount !== undefined
+    && eligibleProductCount !== "";
 
   return (
     <div
@@ -776,7 +782,9 @@ export function LoadingScreen({ onAnimationComplete }) {
               분석이 완료됐어요!
             </h2>
             <p className="absolute left-1/2 top-[244px] -translate-x-1/2 text-center text-[15.85px] leading-[1.2] whitespace-nowrap text-[#03BFA5]">
-              총 50개의 상품 중 나에게 맞는 상품을 찾았어요.
+              {hasEligibleProductCount
+                ? `총 ${Number(eligibleProductCount).toLocaleString("ko-KR")}개의 상품 중 나에게 맞는 상품을 찾았어요.`
+                : "나에게 맞는 상품을 찾았어요."}
             </p>
           </>
         ) : (

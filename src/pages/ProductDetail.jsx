@@ -1,10 +1,15 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import {
   findProductViewById,
   getActiveRecommendationResult,
 } from "../utils/recommendationResult";
-import { getProductApplicationBadge, getProductApplicationBadgeVariant, openProductApplication } from "../utils/productApplyLink";
+import { getProductApplicationBadge, getProductApplicationBadgeVariant, getProductApplyUrl, openProductApplication } from "../utils/productApplyLink";
+import applicationFallbackSearchIcon from "../assets/application-fallback/search.svg";
+import applicationFallbackInstitutionIcon from "../assets/application-fallback/institution.svg";
+import applicationFallbackCopyIcon from "../assets/application-fallback/copy.svg";
+import applicationFallbackLocationIcon from "../assets/application-fallback/location.svg";
 
 function ArrowLeftIcon({ className = "" }) {
   return (
@@ -124,17 +129,17 @@ function ProductInfoCard({ product }) {
   ];
 
   return (
-    <div className="rounded-[10px] border border-[#D5D5D5] px-6 py-8 lg:h-[552px] lg:px-[40px] lg:py-[57px]">
-      <div className="flex flex-col lg:w-[736px]">
+    <div className="rounded-[10px] border border-[#D5D5D5] px-6 py-8 lg:h-[470px] lg:px-[34px] lg:py-[42px]">
+      <div className="flex w-full max-w-[736px] flex-col">
         {rows.map((row, index) => (
           <div
             key={row.label}
-            className={`grid grid-cols-1 gap-2 py-[20px] text-[22px] leading-[1.3] lg:grid-cols-[134px_1fr] lg:gap-[114px] ${
+            className={`grid grid-cols-1 gap-2 py-[15px] text-[18px] leading-[1.3] lg:grid-cols-[108px_minmax(0,1fr)] lg:gap-[52px] ${
               index === 0 ? "pt-0" : "border-t border-[#E5E5E5]"
             } ${index === rows.length - 1 ? "pb-0" : ""}`}
           >
             <dt className="font-normal text-[#6B6B6B]">{row.label}</dt>
-            <dd className={`text-[23px] font-medium ${row.highlight ? "text-[#03BFA5]" : "text-[#454545]"}`}>
+            <dd className={`text-[19px] font-medium ${row.highlight ? "text-[#03BFA5]" : "text-[#454545]"}`}>
               {Array.isArray(row.value)
                 ? row.value.map((line) => <p key={line}>{line}</p>)
                 : row.value}
@@ -148,7 +153,7 @@ function ProductInfoCard({ product }) {
 
 function RateTable({ product }) {
   return (
-    <div className="w-full overflow-hidden rounded-[10px] text-[20px] font-medium leading-[1.2] lg:w-[736px]">
+    <div className="w-full max-w-[736px] overflow-hidden rounded-[10px] text-[18px] font-medium leading-[1.2]">
       <div className="grid h-[50px] grid-cols-3 items-center border border-b-0 border-[#03BFA5] bg-[#F7FFFE] px-[22px] text-[#6B6B6B]">
         <span>기간</span>
         <span className="text-center">기본금리</span>
@@ -207,12 +212,12 @@ function RateConditionRow({ item }) {
 
 function RateInfoCard({ product }) {
   return (
-    <div className="rounded-[10px] border border-[#D5D5D5] px-6 py-8 lg:h-[610px] lg:px-[40px] lg:py-[35px]">
-      <div className="flex flex-col gap-[30px] lg:w-[736px]">
+    <div className="rounded-[10px] border border-[#D5D5D5] px-6 py-8 lg:h-[530px] lg:px-[34px] lg:py-[30px]">
+      <div className="flex w-full max-w-[736px] flex-col gap-[24px]">
         <RateTable product={product} />
-        <div className="flex flex-col gap-[20px] lg:w-[710px]">
-          <SectionTitle icon={<StarIcon className="size-[26px] text-[#03BFA5]" />}>우대금리 조건</SectionTitle>
-          <div className="flex flex-col gap-[7px] lg:w-[736px]">
+        <div className="flex w-full max-w-[710px] flex-col gap-[16px]">
+          <SectionTitle icon={<StarIcon className="size-[23px] text-[#03BFA5]" />}>우대금리 조건</SectionTitle>
+          <div className="flex w-full max-w-[736px] flex-col gap-[7px]">
             {product.rateConditions.map((item) => (
               <RateConditionRow key={`${item.label}-${item.value}`} item={item} />
             ))}
@@ -225,7 +230,7 @@ function RateInfoCard({ product }) {
 
 function NoticeBox({ children }) {
   return (
-    <div className="flex min-h-[86px] items-center justify-center rounded-[10px] border border-[#03BFA5] bg-[#F7FFFE] px-[34px] py-[20px] text-[#454545] lg:w-[816px]">
+    <div className="flex min-h-[72px] w-full max-w-[700px] items-center justify-center rounded-[10px] border border-[#03BFA5] bg-[#F7FFFE] px-[24px] py-[16px] text-[#454545]">
       <div className="flex max-w-[645px] items-start gap-[11px]">
         <InfoCircleIcon className="mt-[1px] size-[20px] shrink-0 text-[#03BFA5]" />
         <p className="text-[18px] font-normal leading-[1.3]">{children}</p>
@@ -234,26 +239,26 @@ function NoticeBox({ children }) {
   );
 }
 
-function BankRateSummary({ product }) {
+function BankRateSummary({ product, isLoggedIn }) {
   const baseRate = product.baseRateDisplay || `${product.baseRate}%`;
   const maxRate = product.maxRateDisplay || `${product.maxRate}%`;
 
   return (
-    <div className="flex h-[303px] flex-col items-center justify-center rounded-[10px] border border-[#D5D5D5] px-6 py-8 lg:w-[699px] lg:px-[37px] lg:py-[48px]">
+    <div className="flex h-[238px] w-full max-w-[620px] flex-col items-center justify-center rounded-[10px] border border-[#D5D5D5] px-6 py-8 lg:px-[28px] lg:py-[32px]">
       <div className="grid w-full grid-cols-1 items-center justify-items-center gap-7 md:grid-cols-[1fr_1px_1fr] md:gap-0">
         <div className="w-fit max-w-full text-left">
-          <p className="whitespace-nowrap text-[27.62px] font-medium leading-[1.2] text-[#454545]">기본 금리</p>
-          <p className="mt-[13px] whitespace-nowrap text-[55.88px] font-bold leading-[1.2] text-[#454545]">{baseRate}</p>
+          <p className="whitespace-nowrap text-[21px] font-medium leading-[1.2] text-[#454545]">기본 금리</p>
+          <p className="mt-[8px] whitespace-nowrap text-[42px] font-bold leading-[1.2] text-[#454545]">{baseRate}</p>
         </div>
         <div className="hidden h-[121px] w-px bg-[#D5D5D5] md:block" />
         <div className="w-fit max-w-full text-left">
-          <p className="whitespace-nowrap text-[27.62px] font-medium leading-[1.2] text-[#454545]">최고 금리</p>
-          <p className="mt-[13px] whitespace-nowrap text-[55.88px] font-bold leading-[1.2] text-[#03BFA5]">{maxRate}</p>
+          <p className="whitespace-nowrap text-[21px] font-medium leading-[1.2] text-[#454545]">최고 금리</p>
+          <p className="mt-[8px] whitespace-nowrap text-[42px] font-bold leading-[1.2] text-[#03BFA5]">{maxRate}</p>
         </div>
       </div>
       <div className="mt-[16px] flex h-[44px] w-full max-w-[461px] items-center justify-center gap-[22px] rounded-full border border-[#03BFA5] bg-[#EFFFFD] px-[26px] leading-[1.2] text-[#03BFA5]">
         <span className="whitespace-nowrap text-center text-[21.93px] font-normal">내가 받을 수 있는 금리</span>
-        <span className="whitespace-nowrap text-center text-[24.37px] font-semibold">연 ??? %</span>
+        <span className="whitespace-nowrap text-center text-[24.37px] font-semibold">연 {isLoggedIn ? product.myRate : "???"} %</span>
       </div>
     </div>
   );
@@ -261,7 +266,7 @@ function BankRateSummary({ product }) {
 
 function ContributionSummary({ product }) {
   return (
-    <div className="flex min-h-[262px] flex-col items-center justify-center rounded-[10px] border border-[#D5D5D5] px-6 py-8 lg:w-[699px] lg:px-[37px] lg:py-[41px]">
+    <div className="flex min-h-[242px] w-full max-w-[699px] flex-col items-center justify-center rounded-[10px] border border-[#D5D5D5] px-6 py-8 lg:px-[32px] lg:py-[36px]">
       <div className="grid w-full grid-cols-1 items-center justify-items-center gap-7 md:grid-cols-[1fr_1px_1fr] md:gap-0">
         <div className="w-fit max-w-full text-left">
           <p className="whitespace-nowrap text-[24.7px] font-medium leading-[1.2] text-[#454545]">기여금 환산 수익률</p>
@@ -278,11 +283,112 @@ function ContributionSummary({ product }) {
   );
 }
 
-function ProductSummary({ product, isBankProduct }) {
-  return isBankProduct ? <BankRateSummary product={product} /> : <ContributionSummary product={product} />;
+function ProductSummary({ product, isBankProduct, isLoggedIn }) {
+  return isBankProduct ? <BankRateSummary product={product} isLoggedIn={isLoggedIn} /> : <ContributionSummary product={product} />;
 }
 
-function RightPanel({ product, onEditRate }) {
+function ApplicationFallbackModal({ product, onClose, onOpenInstitutionPage }) {
+  const [isCopied, setIsCopied] = useState(false);
+  const isGovernmentProduct = getProductApplicationBadgeVariant(product) === "government";
+  const channelLabel = isGovernmentProduct ? "복지로에서 검색하기" : `${product.institution} 홈페이지에서 검색하기`;
+  const institutionDescription = isGovernmentProduct
+    ? "담당 기관 ∙ 읍∙면∙동 행정복지센터 / 복지로"
+    : `담당 기관 ∙ ${product.institution}`;
+
+  const handleCopy = async () => {
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(product.title);
+      } else {
+        const textArea = document.createElement("textarea");
+        textArea.value = product.title;
+        textArea.style.position = "fixed";
+        textArea.style.opacity = "0";
+        document.body.appendChild(textArea);
+        textArea.select();
+        const copied = document.execCommand("copy");
+        document.body.removeChild(textArea);
+        if (!copied) throw new Error("Clipboard copy failed");
+      }
+      setIsCopied(true);
+    } catch {
+      setIsCopied(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 px-4 py-8" role="presentation" onMouseDown={onClose}>
+      <section
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="application-fallback-title"
+        className="w-full max-w-[587px] rounded-[28px] bg-white px-[46px] pb-[42px] pt-[70px] text-center shadow-2xl"
+        onMouseDown={(event) => event.stopPropagation()}
+      >
+        <img src={applicationFallbackInstitutionIcon} alt="" className="mx-auto size-[60px]" />
+        <h2 id="application-fallback-title" className="mt-5 text-[26px] font-semibold leading-[1.22] text-[#373737]">기관 공식 채널에서 신청해 주세요</h2>
+        <p className="mt-4 text-[18px] leading-[1.44] text-[#6B7571]">직접 연결 링크가 확인되지 않아<br />담당 기관 안내로 대체해 드려요.</p>
+
+        <div className="mt-10 rounded-[10px] bg-[#F0FFFE] px-[22px] py-[30px] text-left">
+          <div className="flex items-end justify-between gap-4 border-b border-[#D0DDDC] pb-[23px]">
+            <div>
+              <p className="text-[17px] font-medium text-[#6F7975]">상품명</p>
+              <p className="mt-[10px] text-[22px] font-semibold leading-[1.22] text-[#373737]">{product.title}</p>
+            </div>
+            <button type="button" onClick={handleCopy} className="flex h-[39px] shrink-0 items-center gap-1 rounded-[9px] border border-[#D0DDDC] bg-white px-[11px] text-[18px] font-medium text-[#03BFA5]">
+              {isCopied ? (
+                <svg viewBox="0 0 24 24" aria-hidden="true" className="size-[22px]" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m5 12 4.2 4.2L19 6.5" />
+                </svg>
+              ) : <img src={applicationFallbackCopyIcon} alt="" className="size-[22px]" />}
+              {isCopied ? "완료" : "복사"}
+            </button>
+          </div>
+          <div className="mt-[23px] flex items-start gap-[5px] text-[18px] font-medium leading-[1.22] text-[#6F7975]">
+            <img src={applicationFallbackLocationIcon} alt="" className="size-[22px] shrink-0" />
+            <span>{institutionDescription}</span>
+          </div>
+        </div>
+
+        <button type="button" onClick={onOpenInstitutionPage} className="mt-5 flex h-[64px] w-full items-center justify-center gap-5 rounded-[10px] bg-[#03BFA5] text-[22px] font-semibold text-white">
+          <img src={applicationFallbackSearchIcon} alt="" className="size-[26px]" />
+          {channelLabel}
+        </button>
+        <button type="button" onClick={onClose} className="mt-[18px] text-[20px] font-medium text-[#454545]/70">닫기</button>
+        <div className="mt-[36px] border-t border-[#D9D9D9] pt-[21px] text-[17px] leading-[1.3] text-[#9A9A9A]">
+          <p>Y-Fin은 해당 상품의 판매·중개 주체가 아니며,</p>
+          <p>신청은 기관 공식 페이지에서 진행됩니다.</p>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function LoginRequiredModal({ onClose, onLogin }) {
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 px-4 py-8" role="presentation" onMouseDown={onClose}>
+      <section
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="login-required-title"
+        className="w-full max-w-[420px] rounded-[20px] bg-white px-8 py-10 text-center shadow-2xl"
+        onMouseDown={(event) => event.stopPropagation()}
+      >
+        <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-[#EFFFFD] text-[#03BFA5]">
+          <HeartIcon className="size-7" />
+        </div>
+        <h2 id="login-required-title" className="mt-5 text-[22px] font-semibold text-[#454545]">로그인 후 찜할 수 있어요</h2>
+        <p className="mt-3 text-[16px] leading-[1.5] text-[#6B7571]">로그인하면 관심 있는 상품을<br />마이페이지에 저장할 수 있어요.</p>
+        <div className="mt-7 grid grid-cols-2 gap-3">
+          <button type="button" onClick={onClose} className="h-12 rounded-[10px] border border-[#D5D5D5] text-[16px] font-semibold text-[#454545]">닫기</button>
+          <button type="button" onClick={onLogin} className="h-12 rounded-[10px] bg-[#03BFA5] text-[16px] font-semibold text-white">로그인</button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function RightPanel({ product, onEditRate, onApply, onFavorite, isLoggedIn }) {
   const applicationBadgeVariant = getProductApplicationBadgeVariant(product);
   const isBankProduct = applicationBadgeVariant === "bank";
   const applicationBadgeClass = applicationBadgeVariant === "bank"
@@ -290,28 +396,28 @@ function RightPanel({ product, onEditRate }) {
     : "bg-[#F7FFFE] text-[#03BFA5]";
 
   return (
-    <aside className="relative flex flex-col lg:w-[699px] lg:pt-[295px]">
-      <ProductSummary product={product} isBankProduct={isBankProduct} />
+    <aside className="relative flex w-full max-w-[620px] flex-col min-[1100px]:pt-[222px]">
+      <ProductSummary product={product} isBankProduct={isBankProduct} isLoggedIn={isLoggedIn} />
 
       <div className={`${isBankProduct ? "mt-[30px]" : "mt-[21px]"} flex flex-col`}>
         <div className="grid grid-cols-[1fr_82px] gap-[10px]">
           <button
             type="button"
-            onClick={() => openProductApplication(product)}
-            className="flex h-[80px] items-center justify-center gap-[20px] rounded-[10px] border border-[#03BFA5] bg-[#03BFA5] text-[30px] font-medium leading-[1.2] text-white transition-colors hover:bg-[#02A892]"
+            onClick={onApply}
+            className="flex h-[64px] items-center justify-center gap-[14px] rounded-[10px] border border-[#03BFA5] bg-[#03BFA5] text-[22px] font-medium leading-[1.2] text-white transition-colors hover:bg-[#02A892]"
           >
             <ExternalLinkIcon className="size-[30px]" />
             신청하러 가기
           </button>
-          <button className="flex h-[80px] items-center justify-center rounded-[10px] border-2 border-[#D4D4D4] text-[#D4D4D4] transition-colors hover:border-[#03BFA5] hover:text-[#03BFA5]" aria-label="관심 상품">
-            <HeartIcon className="size-[40px]" />
+          <button type="button" onClick={onFavorite} className="flex h-[64px] items-center justify-center rounded-[10px] border-2 border-[#D4D4D4] text-[#D4D4D4] transition-colors hover:border-[#03BFA5] hover:text-[#03BFA5]" aria-label="관심 상품">
+            <HeartIcon className="size-[30px]" />
           </button>
         </div>
         {isBankProduct && product.calculator && (
           <button
             type="button"
             onClick={onEditRate}
-            className="mt-[10px] flex h-[80px] w-full items-center justify-center gap-[16px] rounded-[10px] border-2 border-[#03BFA5] bg-white text-[30px] font-medium leading-[1.2] text-[#03BFA5] transition-colors hover:bg-[#F7FFFE]"
+            className="mt-[10px] flex h-[64px] w-full items-center justify-center gap-[12px] rounded-[10px] border-2 border-[#03BFA5] bg-white text-[22px] font-medium leading-[1.2] text-[#03BFA5] transition-colors hover:bg-[#F7FFFE]"
           >
             <CalculatorIcon className="size-[30px]" />
             수익률 계산기
@@ -330,11 +436,11 @@ function RightPanel({ product, onEditRate }) {
           </div>
         )}
 
-        <div className={`${isBankProduct ? "mt-[24px] h-[60px]" : "mt-[30px] h-[58px]"} flex w-fit items-center justify-center rounded-[10px] px-[37px] text-[26px] font-semibold leading-[1.2] ${applicationBadgeClass}`}>
+        <div className={`${isBankProduct ? "mt-[20px] h-[48px]" : "mt-[24px] h-[48px]"} flex w-fit items-center justify-center rounded-[10px] px-[24px] text-[20px] font-semibold leading-[1.2] ${applicationBadgeClass}`}>
           {getProductApplicationBadge(product)}
         </div>
-        <div className="mt-[34px] h-px w-full bg-[#D5D5D5]" />
-        <p className="mt-[27px] text-[24px] font-normal leading-[1.35] text-[#9C9C9C]">
+        <div className="mt-[24px] h-px w-full bg-[#D5D5D5]" />
+        <p className="mt-[20px] text-[18px] font-normal leading-[1.4] text-[#9C9C9C]">
           Y-Fin은 해당 상품의 판매 ∙ 중개 주체가 아니며,<br />
           신청은 기관 공식 페이지에서 진행됩니다.
         </p>
@@ -353,8 +459,8 @@ function ProductHeader({ product }) {
       </div>
 
       <div className="flex flex-col gap-[15px]">
-        <h1 className="text-[40px] font-bold leading-[1.2] text-[#373737]">{product.detailTitle}</h1>
-        <div className="flex flex-wrap items-center gap-[18px] text-[22px] font-medium leading-[1.2] text-[#454545]">
+        <h1 className="text-[34px] font-bold leading-[1.2] text-[#373737]">{product.detailTitle}</h1>
+        <div className="flex flex-wrap items-center gap-[14px] text-[19px] font-medium leading-[1.2] text-[#454545]">
           <span className="flex items-center gap-[5px]">
             <BuildingIcon className="h-[18px] w-[16px]" />
             {product.metaInstitution}
@@ -375,7 +481,7 @@ function ProductHeader({ product }) {
 
 function LeftPanel({ product, onBack }) {
   return (
-    <div className="flex flex-col gap-[25px] lg:w-[816px]">
+    <div className="flex w-full max-w-[700px] flex-col gap-[18px]">
       <button
         type="button"
         onClick={onBack}
@@ -385,7 +491,7 @@ function LeftPanel({ product, onBack }) {
         상품 리스트로 돌아가기
       </button>
 
-      <div className="flex flex-col gap-[50px]">
+      <div className="flex flex-col gap-[30px]">
         <ProductHeader product={product} />
 
         <section className="flex flex-col gap-[20px]">
@@ -417,6 +523,9 @@ export default function ProductDetail() {
     () => findProductViewById(recommendationResult, productId),
     [recommendationResult, productId],
   );
+  const { accessToken } = useAuth();
+  const [isApplicationFallbackOpen, setIsApplicationFallbackOpen] = useState(false);
+  const [isFavoriteLoginOpen, setIsFavoriteLoginOpen] = useState(false);
 
   useEffect(() => {
     if (!recommendationResult) {
@@ -441,14 +550,41 @@ export default function ProductDetail() {
     );
   }
 
+  const handleApplication = () => {
+    if (getProductApplyUrl(product).isFallback) {
+      setIsApplicationFallbackOpen(true);
+      return;
+    }
+    openProductApplication(product);
+  };
+  const handleFavorite = () => {
+    if (!accessToken) setIsFavoriteLoginOpen(true);
+  };
+
   return (
-    <main className="min-h-screen bg-white font-pretendard text-[#454545]">
-      <div className="mx-auto mt-[13px] w-full max-w-[1670px] rounded-[3px] border border-[#D5D5D5] px-6 pb-[70px] pt-[46px] lg:px-[61px]">
-        <div className="mx-auto grid w-full max-w-[1548px] gap-[33px] xl:grid-cols-[816px_699px]">
+    <main className="min-h-screen bg-white pb-[80px] font-pretendard text-[#454545]">
+      <div className="mx-auto mt-[13px] w-full max-w-[1320px] rounded-[3px] border border-[#D5D5D5] px-5 pb-[48px] pt-[32px] lg:px-[42px]">
+        <div className="mx-auto grid w-full max-w-[1236px] gap-[24px] min-[1100px]:grid-cols-[minmax(0,1.17fr)_minmax(0,1fr)]">
           <LeftPanel product={product} onBack={() => navigate("/products")} />
-          <RightPanel product={product} onEditRate={() => navigate(`/products/${product.id}/calculator`)} />
+          <RightPanel product={product} onEditRate={() => navigate(`/products/${product.id}/calculator`)} onApply={handleApplication} onFavorite={handleFavorite} isLoggedIn={Boolean(accessToken)} />
         </div>
       </div>
+      {isApplicationFallbackOpen && (
+        <ApplicationFallbackModal
+          product={product}
+          onClose={() => setIsApplicationFallbackOpen(false)}
+          onOpenInstitutionPage={() => {
+            openProductApplication(product);
+            setIsApplicationFallbackOpen(false);
+          }}
+        />
+      )}
+      {isFavoriteLoginOpen && (
+        <LoginRequiredModal
+          onClose={() => setIsFavoriteLoginOpen(false)}
+          onLogin={() => navigate("/login")}
+        />
+      )}
     </main>
   );
 }

@@ -448,7 +448,7 @@ function InfoTab({ profile, optionTags, onEditField, onResubmit, resubmitting, r
 
   const requiredFilled = [
     Boolean(profile.birthdate),
-    Boolean(profile.annualIncome),
+    profile.annualIncome !== null && profile.annualIncome !== undefined,
     Boolean(profile.householdSize && profile.householdIncomePercent),
     hasTransactionHistory,
     Boolean(profile.monthlySavingsGoal),
@@ -493,7 +493,7 @@ function InfoTab({ profile, optionTags, onEditField, onResubmit, resubmitting, r
           <TextField
             required
             label="개인 연 소득"
-            value={profile.annualIncome ? `${profile.annualIncome.toLocaleString()} 만원` : ""}
+            value={profile.annualIncome !== null && profile.annualIncome !== undefined ? `${profile.annualIncome.toLocaleString()} 만원` : ""}
             emptyHelper="연 소득 입력이 필요해요."
             onEdit={() => onEditField("income")}
           />

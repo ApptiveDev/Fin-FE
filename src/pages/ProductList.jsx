@@ -95,7 +95,7 @@ export default function ProductList() {
   if (!recommendationResult) return null;
 
   return (
-    <div className="w-full bg-white select-none font-pretendard px-[clamp(16px,3vw,40px)]">
+    <div className="w-full bg-white pb-[80px] select-none font-pretendard px-[clamp(16px,3vw,40px)]">
 
       {/* 상단 고정 영역: 검색창 + 탭 + 필터 */}
       <div className="bg-white">
