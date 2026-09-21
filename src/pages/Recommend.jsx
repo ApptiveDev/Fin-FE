@@ -2,7 +2,6 @@ import useRecommendForm from "../hooks/UseRecommendFrom";
 import {
   StepSavingPlan,
   StepRegion,
-  StepBasicInfo,
   StepBenefits,
   StepPersonalInfo,
   StepHouseholdIncome,
@@ -228,26 +227,26 @@ export default function Recommend() {
 
   const steps = [
     <StepSavingPlan      data={formData} setData={setFormData} cats={cats} onNext={go(1)} />,
-    <StepBasicInfo       data={formData} setData={setFormData} cats={cats} onPrev={go(0)} onNext={go(2)} />,
     <StepBenefits
       data={formData}
       setData={setFormData}
       cats={cats}
-      onPrev={go(1)}
-      onNext={isLoggedIn ? go(3) : startAnalysis}
+      onPrev={go(0)}
+      onNext={isLoggedIn ? go(2) : startAnalysis}
+      nextLabel={isLoggedIn ? undefined : "분석하기"}
+      bankRequired={isLoggedIn}
     />,
-    <StepPersonalInfo    data={formData} setData={setFormData}             onPrev={go(2)} onNext={go(4)} onSkip={startAnalysis} />,
-    <StepRegion          data={formData} setData={setFormData} cats={cats} onPrev={go(3)} onNext={go(5)} onSkip={startAnalysis} />,
-    <StepHouseholdIncome data={formData} setData={setFormData} cats={cats} onPrev={go(4)} onNext={go(6)} onSkip={startAnalysis} />,
-    <StepHousing         data={formData} setData={setFormData}             onPrev={go(5)} onNext={go(7)} onSkip={startAnalysis} />,
-    <StepEmployment      data={formData} setData={setFormData}             onPrev={go(6)} onNext={go(8)} onSkip={startAnalysis} />,
-    <StepTransaction     data={formData} setData={setFormData} cats={cats} onPrev={go(7)} onSubmit={openProfileSaveConsent} onSkip={startAnalysis} />
+    <StepPersonalInfo    data={formData} setData={setFormData}             onPrev={go(1)} onNext={go(3)} onSkip={startAnalysis} />,
+    <StepRegion          data={formData} setData={setFormData} cats={cats} onPrev={go(2)} onNext={go(4)} onSkip={startAnalysis} />,
+    <StepHouseholdIncome data={formData} setData={setFormData} cats={cats} onPrev={go(3)} onNext={go(5)} onSkip={startAnalysis} />,
+    <StepHousing         data={formData} setData={setFormData}             onPrev={go(4)} onNext={go(6)} onSkip={startAnalysis} />,
+    <StepEmployment      data={formData} setData={setFormData}             onPrev={go(5)} onNext={go(7)} onSkip={startAnalysis} />,
+    <StepTransaction     data={formData} setData={setFormData} cats={cats} onPrev={go(6)} onSubmit={openProfileSaveConsent} onSkip={startAnalysis} />
   ];
   const stepContentScale = 0.8;
   const formVerticalPadding = 85;
   const formBodyMinHeights = [
-    654,
-    651,
+    880,
     685,
     737,
     566,

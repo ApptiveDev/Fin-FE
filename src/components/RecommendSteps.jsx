@@ -60,58 +60,94 @@ function toggleSingleField(data, setData, field, val) {
   });
 }
 
-/*  1. 저축 계획 (Step 1-1) */
-export function StepSavingPlan({ data, setData, onPrev, onNext }) {
-  const amount = data.monthlyAmount || 1;
-  const [amountText, setAmountText] = useState(String(amount));
-
-  useEffect(() => {
-    setAmountText(String(amount));
-  }, [amount]);
-
-  const commitAmount = (raw) => {
-    const parsed = Number(raw);
-    const next = raw === "" || !Number.isFinite(parsed) ? amount : Math.min(100, Math.max(1, parsed));
-    setData({ ...data, monthlyAmount: next });
-    setAmountText(String(next));
-  };
+function SavingPlanNotice({ type }) {
+  const isShortTerm = type === "short";
+  const label = isShortTerm ? "단기 예치" : "목돈 만들기";
+  const descriptionBefore = isShortTerm ? "3개월 이하라 " : "6개월 이상이라 ";
+  const descriptionAfter = isShortTerm
+    ? "로 분류돼요. 단기 예적금 · 파킹통장을 비교해 드려요."
+    : "로 분류돼요. 정부 청년 상품 · 시중 은행 상품을 비교해 드려요.";
 
   return (
-      <StepLayout step={1} title="기본 정보" sub="월 납입 희망액을 슬라이더로 조정하거나 직접 입력해주세요.">
-        <div className="pl-6 mt-8">
-          <FieldHeader title="월 납입 희망액" required className="mb-[34px]" />
-
-          <div className="w-full max-w-[592px] mb-[42px]">
-            <input type="range" min={1} max={100} value={amount}
-              onChange={(e) => setData({ ...data, monthlyAmount: Number(e.target.value) })}
-              className="recommend-range w-full mb-[18px]"
-              style={{ "--range-progress": getRangeProgress(amount, 1, 100) }} />
-            
-            <div className="flex font-pretendard justify-between text-[17px] font-semibold text-[#454545] px-1">
-              <span>1만원</span>
-              <span>100만원</span>
-            </div>
-          </div>
-
-          <div className="flex items-center border border-[#CACACA] rounded-full w-[198px] h-[46px] px-5 mb-16 bg-white shadow-sm">
-            <div className="flex items-center justify-center border border-[#CACACA] rounded-[4px] w-[66px] h-[25px] mr-4 bg-[#FBFBFB]">
-              <input type="number" value={amountText}
-                onFocus={(e) => e.target.select()}
-                onChange={(e) => setAmountText(e.target.value)}
-                onBlur={(e) => commitAmount(e.target.value)}
-                className="w-full text-center text-[#CACACA] text-[16px] font-bold bg-transparent outline-none"
-              />
-            </div>
-            <span className="text-[18px] font-semibold text-[#454545]">만원</span>
-          </div>
-        </div>
-        <NavButtons isFirst onPrev={onPrev} onNext={onNext} isLast={false} />
-      </StepLayout>
+    <div className="flex min-h-[64px] w-full items-center gap-4 rounded-[10px] border border-[#03BFA5] bg-[#F2FFFD] px-5 py-2">
+      <span className="shrink-0 rounded-[7px] bg-[#59C5B4] px-4 py-2 text-[18px] font-semibold text-white">
+        {label}
+      </span>
+      <p className="text-[18px] leading-[1.45] text-[#454545]">
+        {descriptionBefore}<span className="font-semibold text-[#03BFA5]">{label}</span>{descriptionAfter}
+      </p>
+    </div>
   );
 }
 
-/* 2. 현재 신분 + 희망 저축 기간 (Step 1-2) */
-export function StepBasicInfo({ data, setData, cats, onPrev, onNext }) {
+function SavingPeriodField({ data, setData, cats }) {
+  return (
+    <>
+      <FieldHeader title="저축 기간" choice="(단일 선택)" required requiredText={false} className="mb-[5px]" />
+      <p className="mb-[26px] text-[18px] text-[#767676]">넣어둘 기간을 하나만 골라주세요.</p>
+      <div className="flex flex-wrap gap-[13px]">
+        {cats.savingPeriod.map((period) => (
+          <Tag
+            key={period.optionId}
+            label={period.optionValue}
+            selected={(data.savingPeriod || []).includes(period.optionId)}
+            onClick={() => toggleSingleField(data, setData, "savingPeriod", period.optionId)}
+          />
+        ))}
+      </div>
+    </>
+  );
+}
+
+function AmountField({ data, setData, type }) {
+  const amount = data.monthlyAmount || 1;
+  const isShortTerm = type === "short";
+  const amountTitle = isShortTerm ? "예치 희망액" : "월 납입 희망액";
+  const amountDescription = isShortTerm
+    ? "한 번에 예치할 수 있는 금액이에요. (단기 예치 기준)"
+    : "매달 넣을 수 있는 금액이에요. (목돈 만들기 기준)";
+
+  return (
+    <div className="mt-10">
+      <FieldHeader title={amountTitle} required requiredText={false} className="mb-[5px]" />
+      <p className="mb-[20px] text-[18px] text-[#767676]">{amountDescription}</p>
+      <p className="mb-[16px] text-[38px] font-semibold leading-none text-[#03BFA5]">
+        {amount}<span className="ml-2 text-[20px] text-[#454545]">만원</span>
+      </p>
+      <div className="w-full max-w-[760px]">
+        <input
+          type="range"
+          min={1}
+          max={100}
+          value={amount}
+          onChange={(event) => setData({ ...data, monthlyAmount: Number(event.target.value) })}
+          className="recommend-range mb-[18px] w-full"
+          style={{ "--range-progress": getRangeProgress(amount, 1, 100) }}
+          aria-label={amountTitle}
+        />
+        <div className="flex justify-between px-1 font-pretendard text-[17px] font-semibold text-[#454545]">
+          <span>1만원</span>
+          <span>100만원</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function getSavingPlanType(savingPeriod) {
+  const label = savingPeriod?.optionValue || "";
+  const months = Number(label.match(/(\d+)\s*개월/)?.[1]);
+  const years = Number(label.match(/(\d+)\s*년/)?.[1]);
+  const totalMonths = Number.isFinite(months)
+    ? months
+    : Number.isFinite(years)
+      ? years * 12
+      : null;
+
+  return totalMonths !== null && totalMonths <= 3 ? "short" : "goal";
+}
+
+function useSavingPeriodValidation(data, onNext) {
   const [showKeywordAlert, setShowKeywordAlert] = useState(false);
   const handleNext = () => {
     if (!data.savingPeriod?.length) {
@@ -121,42 +157,41 @@ export function StepBasicInfo({ data, setData, cats, onPrev, onNext }) {
     onNext();
   };
 
+  return { handleNext, showKeywordAlert, closeAlert: () => setShowKeywordAlert(false) };
+}
+
+/* 1. 저축 기간에 따른 단기 예치·목돈 만들기 */
+export function StepSavingPlan({ data, setData, cats, onPrev, onNext }) {
+  const { handleNext, showKeywordAlert, closeAlert } = useSavingPeriodValidation(data, onNext);
+  const selectedPeriod = cats.savingPeriod.find((period) =>
+    (data.savingPeriod || []).includes(period.optionId),
+  );
+  const planType = getSavingPlanType(selectedPeriod);
+
   return (
     <>
-      <StepLayout step={1} title="기본 정보" sub="월 납입 희망액을 슬라이더로 조정하거나 직접 입력해주세요.">
+      <StepLayout step={1} title="기본 정보" sub="저축 기간에 따라 단기 예치·목돈 만들기로 자동 분류돼요.">
         <div className="mt-8 pl-4">
-          <FieldHeader title="현재 신분" choice="(단일 선택)" className="mb-[26px]" />
-          <div className="flex flex-wrap gap-[13px] mb-10">
-            {cats.status.map((s) => (
-              <Tag key={s.optionId} label={s.optionValue}
-                selected={(data.status || []).includes(s.optionId)}
-                onClick={() => toggleSingleField(data, setData, "status", s.optionId)} />
-            ))}
-          </div>
-
-          <FieldHeader title="저축 기간" choice="(단일 선택)" required className="mb-[31px]" />
-          <div className="flex flex-wrap gap-[13px] mb-12">
-            {cats.savingPeriod.map((p) => (
-              <Tag key={p.optionId} label={p.optionValue}
-                selected={(data.savingPeriod || []).includes(p.optionId)}
-                onClick={() => toggleSingleField(data, setData, "savingPeriod", p.optionId)}/>
-            ))}
-          </div>
+          <SavingPeriodField data={data} setData={setData} cats={cats} />
+          {selectedPeriod && (
+            <>
+              <div className="mt-7"><SavingPlanNotice type={planType} /></div>
+              <AmountField data={data} setData={setData} type={planType} />
+            </>
+          )}
         </div>
-        <NavButtons onPrev={onPrev} onNext={handleNext} isLast={false} />
+        <NavButtons isFirst onPrev={onPrev} onNext={handleNext} isLast={false} />
       </StepLayout>
-      {showKeywordAlert && (
-        <KeywordAlertModal onClose={() => setShowKeywordAlert(false)} />
-      )}
+      {showKeywordAlert && <KeywordAlertModal onClose={closeAlert} />}
     </>
   );
 }
 
-/* 3. 핵심 혜택 + 은행 거래 (Step 1-3) */
-export function StepBenefits({ data, setData, cats, onPrev, onNext }) {
+/* 2. 현재 신분 + 핵심 혜택 + 은행 우대 조건 */
+export function StepBenefits({ data, setData, cats, onPrev, onNext, nextLabel, bankRequired = true }) {
   const [showKeywordAlert, setShowKeywordAlert] = useState(false);
   const handleNext = () => {
-    if (!data.bankRelation?.length) {
+    if (bankRequired && !data.bankRelation?.length) {
       setShowKeywordAlert(true);
       return;
     }
@@ -167,6 +202,18 @@ export function StepBenefits({ data, setData, cats, onPrev, onNext }) {
     <>
       <StepLayout step={1} title="기본 정보" sub="몇 가지 간단한 키워드 태그로 당신에게 Fin. 한 상품을 찾아드립니다.">
         <div className="mt-8 pl-4">
+          <FieldHeader title="현재 신분" choice="(단일 선택)" className="mb-[26px]" />
+          <div className="mb-10 flex flex-wrap gap-[13px]">
+            {cats.status.map((status) => (
+              <Tag
+                key={status.optionId}
+                label={status.optionValue}
+                selected={(data.status || []).includes(status.optionId)}
+                onClick={() => toggleSingleField(data, setData, "status", status.optionId)}
+              />
+            ))}
+          </div>
+
           <FieldHeader title="핵심 혜택" choice="(복수 선택)" className="mb-[26px]" />
           <div className="flex flex-wrap gap-[13px] mb-10">
             {cats.benefits.map((b) => (
@@ -176,7 +223,13 @@ export function StepBenefits({ data, setData, cats, onPrev, onNext }) {
             ))}
           </div>
 
-          <FieldHeader title="은행 거래" choice="(복수 선택)" required className="mb-[26px]" />
+          <FieldHeader
+            title="은행 우대 조건"
+            choice="(복수 선택)"
+            required={bankRequired}
+            requiredText={false}
+            className="mb-[26px]"
+          />
           <div className="flex flex-wrap gap-[13px] mb-12">
             {cats.bankRelation.map((b) => (
               <Tag key={b.optionId} label={b.optionValue}
@@ -185,7 +238,7 @@ export function StepBenefits({ data, setData, cats, onPrev, onNext }) {
             ))}
           </div>
         </div>
-        <NavButtons onPrev={onPrev} onNext={handleNext} isLast={false} />
+        <NavButtons onPrev={onPrev} onNext={handleNext} nextLabel={nextLabel} isLast={false} />
       </StepLayout>
       {showKeywordAlert && (
         <KeywordAlertModal onClose={() => setShowKeywordAlert(false)} />
