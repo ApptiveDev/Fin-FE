@@ -160,7 +160,7 @@ export function buildRecommendationRequest(data, categories) {
     detailedOptions: {
       birthdate: toBirthdate(data),
       annualIncome: toWonFromTenThousand(data.income),
-      householdSize: toNumber(data.householdCount) ?? 1,
+      householdSize: toNumber(data.householdCount),
       householdIncomePercent: toHouseholdIncomePercent(data.incomeLevel),
       tenureMonths: employmentMonths !== null && employmentMonths >= 0 ? employmentMonths : null,
       isFirstJob: data.isFirstJob ? true : null,
