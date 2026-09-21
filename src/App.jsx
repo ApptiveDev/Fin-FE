@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { BrowserRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import Header from './components/Header'
 import Footer from './components/Footer';
@@ -45,10 +45,16 @@ function AuthGate({ children }) {
     && Boolean(accessToken)
     && userRole === 'BEFORE_AGREED'
     && location.pathname !== '/terms';
+  const hasInsertedHomeHistoryRef = useRef(false);
 
+  // 카카오/구글 로그인은 외부 도메인을 거쳐 실제 페이지 이동으로 돌아오기 때문에,
+  // 콜백 도착 지점을 /terms로 replace만 하면 뒤로가기 시 그 외부 도메인 히스토리로
+  // 튕겨나간다. 홈을 한 번 끼워 넣어 뒤로가기 한 번에 홈으로 돌아오게 한다.
   useEffect(() => {
-    if (needsTermsRedirect) {
-      navigate('/terms', { replace: true });
+    if (needsTermsRedirect && !hasInsertedHomeHistoryRef.current) {
+      hasInsertedHomeHistoryRef.current = true;
+      navigate('/', { replace: true });
+      navigate('/terms');
     }
   }, [needsTermsRedirect, navigate]);
 
