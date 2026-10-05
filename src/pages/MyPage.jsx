@@ -761,13 +761,13 @@ export default function MyPage() {
   return (
     <div className="flex min-h-screen flex-col bg-white font-pretendard">
       <div className="border border-[#EBEBEB]">
-        <div className="mx-auto max-w-400 py-0.5">
+        <div className="mx-auto max-w-400 px-12 py-0.5">
           <Tabs active={activeTab} onChange={setActiveTab} likedCount={favorites.length} />
         </div>
       </div>
 
       <div className="flex-1 bg-[#F8FAF9]">
-        <main className="mx-auto max-w-400 px-4 py-8">
+        <main className="mx-auto max-w-400 px-12 py-8">
           {loading ? (
             <p className="py-24 text-center text-[#8A8A8A]">불러오는 중이에요...</p>
           ) : activeTab === "liked" ? (
