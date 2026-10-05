@@ -362,6 +362,16 @@ export function StepRegion({ data, setData, cats, onNext, onPrev, onSkip }) {
 /* 6. 가구정보 (가구원 수, 가구 소득) (Step 2-3) */
 export function StepHouseholdIncome({ data, setData, cats, onPrev, onNext, onSkip }) {
   const count = data.householdCount || 1;
+  // 2단계를 건너뛴 게 아니라 이 화면까지 실제로 들어왔다면, 화면에 보이는 "1인"이
+  // 곧 사용자가 확인한 값이므로 state에도 반영한다. 이미 값이 있으면(스테퍼 조작 또는
+  // 재마운트 전 선택) 덮어쓰지 않는다.
+  useEffect(() => {
+    if (data.householdCount == null) {
+      setData((prev) => ({ ...prev, householdCount: 1 }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
       <StepLayout step={2} title="상세 정보" sub="Y-Fin.만의 정확한 적합도 분석과 예상 수익률 계산을 위해 필요한 정보입니다." onSkip={onSkip}>
         <div className="mt-8 pl-4">
