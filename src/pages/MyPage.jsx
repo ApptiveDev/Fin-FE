@@ -1,12 +1,17 @@
 import { useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import useMyPage, { splitTrailingParen } from "../hooks/UseMyPage";
+import useMyPage, { findCategoryOptions } from "../hooks/UseMyPage";
 import EditFieldModal from "../components/MyPageEditModals";
+import { MOCK_SAVINGS_GOALS } from "../data/mypage";
 import heartIcon from "../assets/green_heart.png";
 import { useAuth } from "../context/AuthContext";
 import { buildRecommendationRequestFromProfile } from "../utils/recommendationPayload";
 import { runProductSearch } from "../utils/productSearch";
 import { keywordLabel } from "../utils/productLabels";
+
+function isMockMode() {
+  return import.meta.env.DEV && new URLSearchParams(window.location.search).get("mock") === "true";
+}
 
 function ChevronDownIcon({ className = "" }) {
   return (
@@ -29,6 +34,16 @@ function PencilIcon({ className = "" }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
       <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+    </svg>
+  );
+}
+
+function TargetIcon({ className = "" }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="12" cy="12" r="9.8" stroke="currentColor" strokeWidth="2.4" />
+      <circle cx="12" cy="12" r="5" stroke="currentColor" strokeWidth="2.4" />
+      <circle cx="12" cy="12" r="1.6" fill="currentColor" />
     </svg>
   );
 }
@@ -370,18 +385,18 @@ function FieldShell({ label, required, empty, emptyHelper, onEdit, className = "
   return (
     <div
       className={`relative rounded-[10px] border px-5 py-4 pr-12 ${
-        empty ? "border-dashed border-[#03BFA5]" : "bg-[#FAFBFB] border-[#EDF1EF]"
+        empty ? "border-dashed border-[#03BFA5]" : "bg-white border-[#E6E9E8]"
       } ${className}`}
     >
-      <p className="mb-0.5 flex items-center gap-1 text-[14px] font-medium text-[#626866]">
+      <p className={`mb-1 flex items-center gap-1 text-[17px] font-medium ${empty ? "text-[#8A8F99]" : "text-[#626866]"}`}>
         {label}
-        {required && <span className="text-[#03BFA5]">*</span>}
+        {required && <span className="text-[#EF5B6E]">*</span>}
       </p>
 
       {empty ? (
         <>
-          <p className="text-[18px] font-semibold text-[#9BA39F]">미입력</p>
-          {emptyHelper && <p className="text-[14px] text-[#9BA39F]">{emptyHelper}</p>}
+          <p className="text-[21px] font-semibold text-[#8A8F99]">미입력</p>
+          {emptyHelper && <p className="text-[17px] text-[#8A8F99]">{emptyHelper}</p>}
         </>
       ) : (
         children
@@ -391,37 +406,44 @@ function FieldShell({ label, required, empty, emptyHelper, onEdit, className = "
         type="button"
         onClick={onEdit}
         aria-label={`${label} 수정`}
-        className={`absolute right-3 top-3 flex size-7 items-center justify-center rounded-md border text-[#03BFA5] transition-colors hover:border-[#03BFA5] ${
-          empty ? "border-[#03BFA5]" : "border-[#D8D8D8]"
+        className={`absolute right-3 top-3 flex size-8 items-center justify-center rounded-md border text-[#03BFA5] transition-colors hover:border-[#03BFA5] ${
+          empty ? "border-[#03BFA5]" : "bg-white border-[#E6E9E8]"
         }`}
       >
-        <PencilIcon className="size-3.5" />
+        <PencilIcon className="size-4" />
       </button>
     </div>
   );
 }
 
-function TextField({ label, required, value, caption, emptyHelper, onEdit }) {
+function TextField({ label, required, value, caption, emptyHelper, onEdit, inlineCaption = false }) {
   return (
     <FieldShell label={label} required={required} empty={!value} emptyHelper={emptyHelper} onEdit={onEdit}>
-      <p className="text-[18px] font-bold leading-[1.3] text-[#26313A]">
+      <p className="text-[21px] font-bold leading-[1.3] text-[#26313A]">
         {value}
-        <br />
-        {caption && <span className="text-[14px] font-medium text-[#8A8A8A]">{caption}</span>}
+        {inlineCaption ? (
+          caption && <span className="text-[17px] font-medium text-[#8A928F]"> · {caption}</span>
+        ) : (
+          <>
+            <br />
+            {caption && <span className="text-[17px] font-medium text-[#8A8A8A]">{caption}</span>}
+          </>
+        )}
       </p>
     </FieldShell>
   );
 }
 
-function Pill({ children }) {
-  return (
-    <span className="rounded-md border border-[#DCE3E0] bg-white px-2.5 py-1 text-[13.5px] font-semibold text-[#454545]">
-      {children}
-    </span>
-  );
+function Pill({ children, variant = "outline" }) {
+  const variantClass =
+    variant === "solid"
+      ? "rounded-full bg-[#03BFA5] text-[16.5px] font-normal text-white"
+      : "rounded-md border border-[#DCE3E0] bg-white text-[18.5px] font-bold text-black";
+
+  return <span className={`px-3.5 py-1.25 ${variantClass}`}>{children}</span>;
 }
 
-function TagField({ label, required, tags, caption, groups, emptyHelper, onEdit, className = "" }) {
+function TagField({ label, required, tags, caption, groups, emptyHelper, onEdit, className = "", pillVariant = "outline" }) {
   const hasGroups = Array.isArray(groups);
   const visibleGroups = hasGroups ? groups.filter((group) => group.tags.length > 0) : [];
   const empty = hasGroups ? visibleGroups.length === 0 : !tags || tags.length === 0;
@@ -432,21 +454,114 @@ function TagField({ label, required, tags, caption, groups, emptyHelper, onEdit,
         {hasGroups
           ? visibleGroups.map((group, index) => (
               <span key={group.label} className="flex flex-wrap items-center gap-2">
-                {index > 0 && <span className="h-4 mx-1 w-px bg-[#E4E9E6]" aria-hidden="true" />}
-                <span className="text-[13.5px] font-semibold text-[#626866]">{group.label}</span>
+                {index > 0 && <span className="h-6 mx-1 w-px bg-[#E4E9E6]" aria-hidden="true" />}
+                <span className="text-[16.5px] font-bold text-[#626866]">{group.label}</span>
                 {group.tags.map((tag) => (
-                  <Pill key={tag}>{tag}</Pill>
+                  <Pill key={tag} variant={pillVariant}>{tag}</Pill>
                 ))}
               </span>
             ))
-          : tags.map((tag) => <Pill key={tag}>{tag}</Pill>)}
-        {caption && <span className="text-[13px] text-[#8A8A8A]">{caption}</span>}
+          : tags.map((tag) => <Pill key={tag} variant={pillVariant}>{tag}</Pill>)}
+        {caption && <span className="text-[16px] text-[#8A8A8A]">{caption}</span>}
       </div>
     </FieldShell>
   );
 }
 
-function InfoTab({ profile, optionTags, onEditField, onResubmit, resubmitting, resubmitError }) {
+const SAVINGS_GOAL_COPY = {
+  shortTerm: {
+    title: "단기 예치",
+    amountLabel: "예치 희망액",
+    description: "1 · 3개월 저축 가능한 상품 추천도 받아보세요.",
+    addHint: "저축기간 · 월 저축액만 추가하면 돼요.",
+    addLabel: "+ 저축기간 · 예치 희망액 추가",
+  },
+  longTerm: {
+    title: "목돈 만들기",
+    amountLabel: "월 납입 희망액",
+    description: "6개월 이상 저축 가능한 상품 추천도 받아보세요.",
+    addHint: "저축기간 · 월 납입 희망액만 추가하면 돼요.",
+    addLabel: "+ 저축기간 · 월 저축액 추가",
+  },
+};
+
+function SavingsGoalBox({ goalKey, goal, categories, onEdit }) {
+  const copy = SAVINGS_GOAL_COPY[goalKey];
+  const period = goal
+    ? findCategoryOptions(categories, "savingPeriod").find((option) => option.optionId === goal.savingPeriodOptionId)
+    : null;
+
+  if (!goal) {
+    return (
+      <div className="flex flex-col rounded-[10px] border border-dashed border-[#D5D5D5] bg-[#FAFAFA] p-5">
+        <div className="mb-2 flex items-center gap-2">
+          <span className="text-[20px] font-bold text-[#8A8F99]">{copy.title}</span>
+          <span className="rounded-full bg-[#F5F5F5] px-2 py-0.5 text-[15px] font-semibold text-[#8A8F99]">미입력</span>
+        </div>
+        <p className="mb-4 text-[16px] leading-relaxed text-[#8A8F99]">
+          {copy.description}
+          <br />
+          {copy.addHint}
+        </p>
+        <button
+          type="button"
+          onClick={onEdit}
+          className="mt-auto rounded-full border border-[#03BFA5] bg-white py-2.5 text-[17px] font-medium text-[#03BFA5] transition-colors hover:bg-[#F7FFFE]"
+        >
+          {copy.addLabel}
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-[10px] border-[2.5px] border-[#03BFA5] bg-white p-5">
+      <div className="mb-3 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-[20px] font-bold text-[#26313A]">{copy.title}</span>
+          <span className="rounded-full bg-[#EFFFFD] px-2 py-0.5 text-[15px] font-semibold text-[#03BFA5]">추천 중</span>
+        </div>
+        <button
+          type="button"
+          onClick={onEdit}
+          aria-label={`${copy.title} 수정`}
+          className="flex size-8 items-center justify-center rounded-md border bg-white border-[#E6E9E8] text-[#03BFA5] transition-colors hover:border-[#03BFA5]"
+        >
+          <PencilIcon className="size-4" />
+        </button>
+      </div>
+      <p className="mb-2.5 text-[16px] text-[#8A8A8A]">저축 기간</p>
+      <Pill variant="solid">#{period?.optionValue || ""}</Pill>
+      <p className="mb-1 mt-3 text-[16px] text-[#8A8A8A]">{copy.amountLabel}</p>
+      <div className="flex items-center gap-1">
+        <span className="text-[25px] font-bold text-[#03BFA5]">{goal.amount}</span>
+        <span className="text-[17px] font-medium text-black">만원</span>
+      </div>
+    </div>
+  );
+}
+
+function SavingsGoalsField({ savingsGoals, categories, onEditShortTerm, onEditLongTerm }) {
+  return (
+    <div className="mb-4 rounded-[10px] border border-[#E6E9E8] bg-white p-5">
+      <div className="mb-1.5 flex items-center gap-1.5">
+        <TargetIcon className="size-5 shrink-0 text-[#03BFA5]" />
+        <h4 className="text-[19px] font-bold text-[#26313A]">대분류별 저축 목표</h4>
+        <span className="text-[18px] font-semibold text-[#EF5B6E]">*</span>
+      </div>
+      <p className="mb-4 text-[16px] leading-relaxed text-[#767676]">
+        저축기간에 따라 상품군 대분류가 정해져요. 설정한 대분류만 추천 리스트에 나오고, 두 개를 다 채우면 결과에서{" "}
+        <span className="font-semibold text-[#03BFA5]">단기 예치 | 목돈 만들기</span> 탭을 전환하며 볼 수 있어요.
+      </p>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <SavingsGoalBox goalKey="shortTerm" goal={savingsGoals.shortTerm} categories={categories} onEdit={onEditShortTerm} />
+        <SavingsGoalBox goalKey="longTerm" goal={savingsGoals.longTerm} categories={categories} onEdit={onEditLongTerm} />
+      </div>
+    </div>
+  );
+}
+
+function InfoTab({ profile, categories, optionTags, savingsGoals, onEditField, onResubmit, resubmitting, resubmitError }) {
   if (!profile) {
     return <p className="py-24 text-center text-[#8A8A8A]">개인정보를 불러오지 못했어요.</p>;
   }
@@ -454,11 +569,8 @@ function InfoTab({ profile, optionTags, onEditField, onResubmit, resubmitting, r
   const display = profile.display || {};
   const transactionHistory = display.transactionHistory || {};
 
-  const savingPeriodRaw = optionTags.savingPeriod[0] || "";
-  const { main: savingPeriodMain, caption: savingPeriodCaption } = splitTrailingParen(savingPeriodRaw);
   const statusRaw = optionTags.status[0] || "";
 
-  const hasHousingInfo = profile.isHomeless != null && profile.isHouseholder != null;
   const hasTransactionHistory =
     (transactionHistory.firstTransactionBanks || []).length > 0 || (transactionHistory.redepositBanks || []).length > 0;
 
@@ -467,36 +579,32 @@ function InfoTab({ profile, optionTags, onEditField, onResubmit, resubmitting, r
     profile.annualIncome !== null && profile.annualIncome !== undefined,
     Boolean(profile.householdSize && profile.householdIncomePercent),
     hasTransactionHistory,
-    Boolean(profile.monthlySavingsGoal),
-    Boolean(savingPeriodRaw),
+    Boolean(savingsGoals.shortTerm),
+    Boolean(savingsGoals.longTerm),
     optionTags.bankRelation.length > 0,
   ].filter(Boolean).length;
 
   const optionalFilled = [
     Boolean(display.region),
     Boolean(profile.tenureMonths),
-    hasHousingInfo,
     Boolean(statusRaw),
     optionTags.benefits.length > 0,
   ].filter(Boolean).length;
 
   const totalFilled = requiredFilled + optionalFilled;
-  const summaryCaption =
-    totalFilled === 12
-      ? "저장된 12개 입력값이 정보 입력 화면에 미리 입력돼요."
-      : `필수 ${requiredFilled}개는 입력됐어요 · 선택 항목은 언제든 추가할 수 있어요.`;
+  const summaryCaption = `저장된 ${totalFilled}개 입력값이 정보 입력 화면에 미리 입력돼요.`;
 
   return (
-    <section className="flex flex-col gap-6">
-      <div className="rounded-lg bg-[#EFFFFD] border border-[#03BFA5] px-5 py-4 text-[15px] leading-relaxed text-[#0C7C6E]">
+    <section className="flex flex-col gap-4">
+      <div className="rounded-lg bg-[#EFFFFD] px-5 py-3 text-[18px] leading-snug text-[#03BFA5]">
         <p>다음 추천 시 자동으로 채워지는 정보예요.</p>
         <p className="flex flex-wrap items-center gap-1 font-semibold">
           항목 편집은 각 항목의 <PencilIcon className="size-3.5" /> 버튼을 눌러 진행할 수 있어요.
         </p>
       </div>
 
-      <div className="rounded-lg border border-[#E7ECEA] bg-white px-5 py-4">
-        <h3 className="mb-5 text-[19px] font-extrabold text-[#26313A]">자격 정보</h3>
+      <div className="pt-2">
+        <h3 className="mb-5 text-[21px] font-extrabold text-[#26313A]">자격 정보</h3>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <TextField
             required
@@ -534,20 +642,10 @@ function InfoTab({ profile, optionTags, onEditField, onResubmit, resubmitting, r
             label="근속 기간"
             value={profile.tenureMonths ? `${profile.tenureMonths}개월` : ""}
             caption={profile.isFirstJob ? "첫 직장" : ""}
+            inlineCaption
             emptyHelper="재직 기간 우대 상품 추천에 필요해요."
             onEdit={() => onEditField("tenure")}
           />
-          <TextField
-            label="무주택 여부 · 세대주"
-            value={
-              hasHousingInfo
-                ? `${profile.isHomeless ? "무주택" : "유주택"} · ${profile.isHouseholder ? "세대주 본인" : "세대원"}`
-                : ""
-            }
-            emptyHelper="청약 상품 추천에 필요해요."
-            onEdit={() => onEditField("housing")}
-          />
-
           <TagField
             required
             className="sm:col-span-3"
@@ -562,38 +660,30 @@ function InfoTab({ profile, optionTags, onEditField, onResubmit, resubmitting, r
         </div>
       </div>
 
-      <div className="rounded-lg border border-[#E7ECEA] bg-white px-5 py-4">
-        <h3 className="mb-5 text-[19px] font-extrabold text-[#26313A]">추천 조건</h3>
+      <div className="pt-2">
+        <h3 className="mb-5 text-[21px] font-extrabold text-[#26313A]">추천 조건</h3>
+
+        <SavingsGoalsField
+          savingsGoals={savingsGoals}
+          categories={categories}
+          onEditShortTerm={() => onEditField("shortTermGoal")}
+          onEditLongTerm={() => onEditField("longTermGoal")}
+        />
+
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <TextField
-            required
-            label="월 납입 희망액"
-            value={profile.monthlySavingsGoal ? `${profile.monthlySavingsGoal.toLocaleString()}만 원` : ""}
-            emptyHelper="월 납입 희망액 입력이 필요해요."
-            onEdit={() => onEditField("monthlyGoal")}
-          />
-          <TagField
-            required
-            label="저축 기간"
-            tags={savingPeriodMain ? [`#${savingPeriodMain}`] : []}
-            caption={savingPeriodCaption}
-            emptyHelper="저축 기간 선택이 필요해요."
-            onEdit={() => onEditField("savingPeriod")}
-          />
           <TagField
             label="현재 신분"
             tags={statusRaw ? [`#${statusRaw}`] : []}
             emptyHelper="신분별 맞춤 상품 추천에 필요해요."
             onEdit={() => onEditField("status")}
+            pillVariant="solid"
           />
-        </div>
-
-        <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
           <TagField
             label="핵심 혜택(선호)"
             tags={optionTags.benefits.map((tag) => `#${tag}`)}
             emptyHelper="선호 혜택을 고르면 정렬이 정확해져요."
             onEdit={() => onEditField("benefits")}
+            pillVariant="solid"
           />
           <TagField
             required
@@ -601,6 +691,7 @@ function InfoTab({ profile, optionTags, onEditField, onResubmit, resubmitting, r
             tags={optionTags.bankRelation.map((tag) => `#${tag}`)}
             emptyHelper="은행 거래 우대 선택이 필요해요."
             onEdit={() => onEditField("bankRelation")}
+            pillVariant="solid"
           />
         </div>
       </div>
@@ -610,12 +701,12 @@ function InfoTab({ profile, optionTags, onEditField, onResubmit, resubmitting, r
           type="button"
           onClick={onResubmit}
           disabled={resubmitting}
-          className="flex h-14 w-full items-center justify-center gap-2 rounded-lg bg-[#03BFA5] text-[18px] font-medium text-white transition-colors hover:bg-[#02A892] disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex h-15 w-full items-center justify-center gap-2 rounded-lg bg-[#03BFA5] text-[21px] font-medium text-white transition-colors hover:bg-[#02A892] disabled:cursor-not-allowed disabled:opacity-60"
         >
           {resubmitting ? "분석 중이에요..." : "이 정보로 다시 추천 받기 →"}
         </button>
-        {resubmitError && <p className="text-[13px] text-[#D3455B]">{resubmitError}</p>}
-        <p className="text-[13px] text-[#8A8A8A]">{summaryCaption}</p>
+        {resubmitError && <p className="text-[16px] text-[#D3455B]">{resubmitError}</p>}
+        <p className="text-[16px] text-[#8A8A8A]">{summaryCaption}</p>
       </div>
     </section>
   );
@@ -631,12 +722,21 @@ export default function MyPage() {
   const [editingField, setEditingField] = useState(null);
   const [resubmitting, setResubmitting] = useState(false);
   const [resubmitError, setResubmitError] = useState(null);
+  // 대분류별 저축 목표는 아직 백엔드가 저장하지 못해 화면에서만 들고 있는 상태다.
+  const [savingsGoals, setSavingsGoals] = useState(
+    isMockMode() ? MOCK_SAVINGS_GOALS : { shortTerm: null, longTerm: null },
+  );
   const { profile, categories, optionTagsByCategory, favorites, showComparisonNotice, loading, updateProfile, removeFavorite } =
     useMyPage();
 
   const handleSaveField = async (patch) => {
     const result = await updateProfile(patch);
     if (result.ok) setEditingField(null);
+  };
+
+  const handleSaveSavingsGoal = (key, goal) => {
+    setSavingsGoals((prev) => ({ ...prev, [key]: goal }));
+    setEditingField(null);
   };
 
   const handleResubmit = async () => {
@@ -661,13 +761,13 @@ export default function MyPage() {
   return (
     <div className="flex min-h-screen flex-col bg-white font-pretendard">
       <div className="border border-[#EBEBEB]">
-        <div className="mx-auto max-w-400 py-0.5">
+        <div className="mx-auto max-w-400 px-12 py-0.5">
           <Tabs active={activeTab} onChange={setActiveTab} likedCount={favorites.length} />
         </div>
       </div>
 
       <div className="flex-1 bg-[#F8FAF9]">
-        <main className="mx-auto max-w-370 px-6 py-8">
+        <main className="mx-auto max-w-400 px-12 py-8">
           {loading ? (
             <p className="py-24 text-center text-[#8A8A8A]">불러오는 중이에요...</p>
           ) : activeTab === "liked" ? (
@@ -680,7 +780,9 @@ export default function MyPage() {
           ) : (
             <InfoTab
               profile={profile}
+              categories={categories}
               optionTags={optionTagsByCategory}
+              savingsGoals={savingsGoals}
               onEditField={setEditingField}
               onResubmit={handleResubmit}
               resubmitting={resubmitting}
@@ -695,8 +797,10 @@ export default function MyPage() {
           fieldKey={editingField}
           profile={profile}
           categories={categories}
+          savingsGoals={savingsGoals}
           onClose={() => setEditingField(null)}
           onSave={handleSaveField}
+          onSaveGoal={handleSaveSavingsGoal}
         />
       )}
     </div>

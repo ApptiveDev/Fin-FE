@@ -43,7 +43,7 @@ function NavMenu() {
   }
 
   return (
-    <ul className="hidden flex-1 items-center justify-between px-20 md:flex lg:px-30 xl:px-50">
+    <ul className="mx-auto hidden max-w-[1200px] flex-1 items-center justify-between px-20 md:flex">
       {navItems.map((item, i) => {
         const paths = item.activePaths ?? [item.path]
         const isActive = paths.some((p) => location.pathname === p || location.pathname.startsWith(`${p}/`))

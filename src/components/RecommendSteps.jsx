@@ -80,7 +80,7 @@ function SavingPlanNotice({ type }) {
   );
 }
 
-function SavingPeriodField({ data, setData, cats }) {
+export function SavingPeriodField({ data, setData, cats }) {
   return (
     <>
       <FieldHeader title="저축 기간" choice="(단일 선택)" required requiredText={false} className="mb-[5px]" />
@@ -99,7 +99,7 @@ function SavingPeriodField({ data, setData, cats }) {
   );
 }
 
-function AmountField({ data, setData, type }) {
+export function AmountField({ data, setData, type }) {
   const amount = data.monthlyAmount || 1;
   const isShortTerm = type === "short";
   const amountTitle = isShortTerm ? "예치 희망액" : "월 납입 희망액";
