@@ -127,7 +127,7 @@ export default function ProductList() {
 
         <div className="max-w-370 w-full mx-auto flex flex-col">
 
-          <div className="flex items-end gap-4 h-auto relative z-50">
+          <div className="flex items-end gap-4 h-auto relative z-10">
 
             {/* 탭 버튼 묶음 */}
             <div className="flex items-end mb-[-1px] relative z-10">
