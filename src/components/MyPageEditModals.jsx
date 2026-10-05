@@ -63,13 +63,13 @@ function ModalShell({
   saveDisabled,
   saveLabel = "저장",
   wide = false,
-  titleSize = 19,
+  titleSize = 24,
   contentTopGap = "mt-4",
-  padding = "p-8",
-  buttonTextSize = "text-[16px]",
-  buttonPadding = "px-6 py-1",
-  closeIconSize = "size-5",
-  closeIconColor = "text-[#A5A5A5]",
+  padding = "px-10 py-12",
+  buttonTextSize = "text-[20px]",
+  buttonPadding = "px-8 py-1.5",
+  closeIconSize = "size-7",
+  closeIconColor = "text-[#454545]",
   children,
 }) {
   return (
@@ -365,14 +365,8 @@ function SavingGoalModal({ type, goal, categories, onClose, onSave }) {
       title={`${label} 목표 ${isEdit ? "수정" : "추가"}`}
       required
       requiredText={false}
-      titleSize={24}
-      contentTopGap="mt-1"
-      padding="px-10 py-12"
       showRequiredMark={false}
-      buttonTextSize="text-[20px]"
-      buttonPadding="px-8 py-1.5"
-      closeIconSize="size-7"
-      closeIconColor="text-[#454545]"
+      contentTopGap="mt-1"
       onClose={onClose}
       onSave={handleSave}
       saveDisabled={!selectedPeriodId}
