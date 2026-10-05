@@ -128,6 +128,16 @@ export default function useMyPage() {
   const [loading, setLoading] = useState(!mockMode);
   const [error, setError] = useState(null);
 
+  const refreshFavorites = async (profileForRequest, categoriesForRequest) => {
+    if (mockMode || !accessToken) return;
+    // /favorites는 프로필 미반영 원본 기록만 내려주므로, 사용자 프로필을 실어
+    // /favorites/list(getFavoritesWithProfile)를 호출해 개인화된 fitScore/금리를 받아온다.
+    const favoritesRequest = buildRecommendationRequestFromProfile(profileForRequest, categoriesForRequest || []);
+    const favoritesRes = await client.post("/favorites/list", favoritesRequest, withAuth(accessToken));
+    setFavorites(favoritesRes.data?.items || []);
+    setShowComparisonNotice(Boolean(favoritesRes.data?.showComparisonNotice));
+  };
+
   useEffect(() => {
     if (mockMode || !accessToken) return;
     let cancelled = false;
@@ -144,8 +154,6 @@ export default function useMyPage() {
         setProfile(profileRes.data);
         setCategories(categoriesRes.data || []);
 
-        // /favorites는 프로필 미반영 원본 기록만 내려주므로, 사용자 프로필을 실어
-        // /favorites/list(getFavoritesWithProfile)를 호출해 개인화된 fitScore/금리를 받아온다.
         const favoritesRequest = buildRecommendationRequestFromProfile(profileRes.data, categoriesRes.data || []);
         const favoritesRes = await client.post("/favorites/list", favoritesRequest, withAuth(accessToken));
         if (cancelled) return;
@@ -193,6 +201,11 @@ export default function useMyPage() {
       await client.put("/user/me/profile", body, withAuth(accessToken));
       const res = await client.get("/user/me/profile", withAuth(accessToken));
       setProfile(res.data);
+      try {
+        await refreshFavorites(res.data, categories);
+      } catch (e) {
+        console.error("찜 목록 재계산에 실패했습니다:", e);
+      }
       return { ok: true };
     } catch (e) {
       console.error("개인정보 수정에 실패했습니다:", e);
