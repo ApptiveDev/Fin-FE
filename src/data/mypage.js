@@ -27,13 +27,23 @@ export const MOCK_PROFILE = {
   },
 };
 
+// 대분류별 저축 목표(단기 예치 / 목돈 만들기)는 아직 백엔드 스키마에 없어 프론트 상태로만 들고 있다.
+// mock 모드에서 화면을 미리 보여주기 위한 시드 값이다.
+export const MOCK_SAVINGS_GOALS = {
+  shortTerm: { savingPeriodOptionId: 901, amount: 300 },
+  longTerm: null,
+};
+
 export const MOCK_OPTION_CATEGORIES = [
   {
     categoryName: "저축기간",
     options: [
-      { optionId: 900, optionValue: "1년 내외(단기)" },
-      { optionId: 901, optionValue: "2~3년(중기)" },
-      { optionId: 907, optionValue: "3년 초과(장기)" },
+      { optionId: 900, optionValue: "1개월" },
+      { optionId: 901, optionValue: "3개월" },
+      { optionId: 907, optionValue: "6개월" },
+      { optionId: 940, optionValue: "1년" },
+      { optionId: 941, optionValue: "2년" },
+      { optionId: 942, optionValue: "3년" },
     ],
   },
   {

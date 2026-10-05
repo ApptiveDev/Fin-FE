@@ -2,7 +2,7 @@ import { useState } from "react";
 import Tag from "./Tag";
 import { FormInput, FormSelect } from "./FormFields";
 import InfoBox from "./InfoBox";
-import { BankSelector } from "./RecommendSteps";
+import { AmountField, BankSelector, SavingPeriodField } from "./RecommendSteps";
 import { findCategoryOptions, findSelectedOptionIds, replaceCategorySelection } from "../hooks/UseMyPage";
 
 const BANK_CATEGORIES = [
@@ -52,7 +52,26 @@ function parseBirthdate(birthdate) {
   return { year, month: Number(month), day: Number(day) };
 }
 
-function ModalShell({ title, required, choiceHint, onClose, onSave, saveDisabled, wide = false, children }) {
+function ModalShell({
+  title,
+  required,
+  requiredText = true,
+  showRequiredMark = true,
+  choiceHint,
+  onClose,
+  onSave,
+  saveDisabled,
+  saveLabel = "저장",
+  wide = false,
+  titleSize = 19,
+  contentTopGap = "mt-4",
+  padding = "p-8",
+  buttonTextSize = "text-[16px]",
+  buttonPadding = "px-6 py-1",
+  closeIconSize = "size-5",
+  closeIconColor = "text-[#A5A5A5]",
+  children,
+}) {
   return (
     <div
       className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 px-4"
@@ -62,28 +81,28 @@ function ModalShell({ title, required, choiceHint, onClose, onSave, saveDisabled
       <div
         role="dialog"
         aria-modal="true"
-        className={`max-h-[calc(100vh-48px)] w-full overflow-y-auto rounded-[20px] bg-white p-8 ${wide ? "max-w-[640px]" : "max-w-[460px]"}`}
+        className={`max-h-[calc(100vh-48px)] w-full overflow-y-auto rounded-[20px] bg-white ${padding} ${wide ? "max-w-[640px]" : "max-w-[460px]"}`}
         onMouseDown={(event) => event.stopPropagation()}
       >
         <div className="mb-1 flex items-start justify-between gap-4">
           <div className="flex flex-wrap items-baseline gap-1.5">
-            <h3 className="text-[19px] font-bold text-[#181818]">{title}</h3>
-            {required && <span className="text-[15px] font-semibold text-[#03BFA5]">*</span>}
+            <h3 className="font-bold text-[#181818]" style={{ fontSize: titleSize }}>{title}</h3>
+            {required && showRequiredMark && <span className="text-[15px] font-semibold text-[#EF5B6E]">*</span>}
             {choiceHint && <span className="text-[13px] font-normal text-[#454545]">{choiceHint}</span>}
           </div>
-          <button type="button" onClick={onClose} aria-label="닫기" className="shrink-0 text-[#A5A5A5] hover:text-[#606060]">
-            <CloseIcon className="size-5" />
+          <button type="button" onClick={onClose} aria-label="닫기" className={`shrink-0 ${closeIconColor} hover:text-[#606060]`}>
+            <CloseIcon className={closeIconSize} />
           </button>
         </div>
-        {required && <p className="mb-5 text-[14px] text-[#454545]">필수 입력 항목입니다.</p>}
+        {required && requiredText && <p className="mb-5 text-[14px] text-[#454545]">필수 입력 항목입니다.</p>}
 
-        <div className={required ? "" : "mt-4"}>{children}</div>
+        <div className={required && requiredText ? "" : contentTopGap}>{children}</div>
 
         <div className="mt-9 flex justify-end gap-2">
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full border border-[#E0DFDF] px-6 py-1 text-[16px] font-medium text-[#454545] transition-colors hover:border-[#03BFA5] hover:text-[#03BFA5]"
+            className={`rounded-full border border-[#E0DFDF] ${buttonPadding} ${buttonTextSize} font-medium text-[#454545] transition-colors hover:border-[#03BFA5] hover:text-[#03BFA5]`}
           >
             취소
           </button>
@@ -91,9 +110,9 @@ function ModalShell({ title, required, choiceHint, onClose, onSave, saveDisabled
             type="button"
             onClick={onSave}
             disabled={saveDisabled}
-            className="rounded-full bg-[#03BFA5] px-6 py-1 text-[16px] font-medium text-white transition-colors hover:bg-[#02A892] disabled:cursor-not-allowed disabled:bg-[#BFEAE3]"
+            className={`rounded-full bg-[#03BFA5] ${buttonPadding} ${buttonTextSize} font-medium text-white transition-colors hover:bg-[#02A892] disabled:cursor-not-allowed disabled:bg-[#BFEAE3]`}
           >
-            저장
+            {saveLabel}
           </button>
         </div>
       </div>
@@ -301,6 +320,72 @@ function RegionModal({ profile, categories, onClose, onSave }) {
       <InfoBox type="mint-region" className="mt-3 h-auto w-full py-2.5">
         지자체별 청년 금융상품 필터링에 활용됩니다.
       </InfoBox>
+    </ModalShell>
+  );
+}
+
+// RecommendSteps.jsx의 getSavingPlanType과 동일한 분류 규칙(모듈 간 non-component export를
+// 피하기 위해 복제 — getRangeProgress와 같은 방식).
+function getSavingPlanType(savingPeriod) {
+  const label = savingPeriod?.optionValue || "";
+  const months = Number(label.match(/(\d+)\s*개월/)?.[1]);
+  const years = Number(label.match(/(\d+)\s*년/)?.[1]);
+  const totalMonths = Number.isFinite(months)
+    ? months
+    : Number.isFinite(years)
+      ? years * 12
+      : null;
+
+  return totalMonths !== null && totalMonths <= 3 ? "short" : "goal";
+}
+
+const SAVING_GOAL_LABEL = { short: "단기 예치", goal: "목돈 만들기" };
+
+function SavingGoalModal({ type, goal, categories, onClose, onSave }) {
+  const label = SAVING_GOAL_LABEL[type];
+  const periodOptions = findCategoryOptions(categories, "savingPeriod").filter(
+    (option) => getSavingPlanType(option) === type,
+  );
+  const periodLabels = periodOptions.map((option) => option.optionValue).join("·");
+
+  const [data, setData] = useState({
+    savingPeriod: goal?.savingPeriodOptionId ? [goal.savingPeriodOptionId] : [],
+    monthlyAmount: goal?.amount || 1,
+  });
+
+  const selectedPeriodId = data.savingPeriod[0] ?? null;
+  const isEdit = Boolean(goal);
+
+  const handleSave = () => {
+    onSave({ savingPeriodOptionId: selectedPeriodId, amount: Number(data.monthlyAmount) });
+  };
+
+  return (
+    <ModalShell
+      title={`${label} 목표 ${isEdit ? "수정" : "추가"}`}
+      required
+      requiredText={false}
+      titleSize={24}
+      contentTopGap="mt-1"
+      padding="px-10 py-12"
+      showRequiredMark={false}
+      buttonTextSize="text-[20px]"
+      buttonPadding="px-8 py-1.5"
+      closeIconSize="size-7"
+      closeIconColor="text-[#454545]"
+      onClose={onClose}
+      onSave={handleSave}
+      saveDisabled={!selectedPeriodId}
+      saveLabel={isEdit ? "저장" : "추가"}
+      wide
+    >
+      <p className="mb-5 text-[17px] leading-snug text-[#454545]">
+        저축기간에 따라 대분류가 정해져요.
+        <br />
+        <span className="font-semibold text-[#03BFA5]">{label}</span>는 {periodLabels} 중 선택 가능해요.
+      </p>
+      <SavingPeriodField data={data} setData={setData} cats={{ savingPeriod: periodOptions }} />
+      <AmountField data={data} setData={setData} type={type} />
     </ModalShell>
   );
 }
@@ -559,10 +644,30 @@ function TransactionModal({ profile, onClose, onSave }) {
   );
 }
 
-export default function EditFieldModal({ fieldKey, profile, categories, onClose, onSave }) {
+export default function EditFieldModal({ fieldKey, profile, categories, savingsGoals, onClose, onSave, onSaveGoal }) {
   if (!profile || !categories) return null;
 
   switch (fieldKey) {
+    case "shortTermGoal":
+      return (
+        <SavingGoalModal
+          type="short"
+          goal={savingsGoals?.shortTerm}
+          categories={categories}
+          onClose={onClose}
+          onSave={(goal) => onSaveGoal("shortTerm", goal)}
+        />
+      );
+    case "longTermGoal":
+      return (
+        <SavingGoalModal
+          type="goal"
+          goal={savingsGoals?.longTerm}
+          categories={categories}
+          onClose={onClose}
+          onSave={(goal) => onSaveGoal("longTerm", goal)}
+        />
+      );
     case "birthdate":
       return <BirthdateModal profile={profile} onClose={onClose} onSave={onSave} />;
     case "income":
