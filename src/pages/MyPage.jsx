@@ -67,10 +67,16 @@ function Tabs({ active, onChange, likedCount }) {
 
 /* ---------- 찜해둔 Fin. 탭 ---------- */
 
-// excludeFromRateComparison만으로는 백엔드에서 정부 상품 분류가 누락될 수 있어
-// sourceCode("GOV")도 함께 확인해 방어적으로 판단한다.
+// sourceCode는 "GOV" 외에도 "ONTONG" 등 다양한 값으로 내려오고 excludeFromRateComparison도
+// 누락될 수 있어, 정부 상품에서만 채워지는 기여금 환산 지표(metrics)도 함께 확인해 판단한다.
 function isGovernmentItem(item) {
-  return item.sourceCode === "GOV" || Boolean(item.excludeFromRateComparison);
+  const metrics = item.metrics || {};
+  return (
+    item.sourceCode === "GOV" ||
+    Boolean(item.excludeFromRateComparison) ||
+    metrics.contributionYieldRate != null ||
+    metrics.expectedMaturityAmount != null
+  );
 }
 
 function mapFavoriteItem(item) {
