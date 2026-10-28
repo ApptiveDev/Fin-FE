@@ -4,11 +4,10 @@ import {
   productTypeLabel,
   reserveTypeLabel,
   reserveTypeShortLabel,
-} from "./productLabels";
+} from "./productLabels.js";
 
 const RECOMMENDATION_SESSION_KEY = "fin:last-recommendation";
-const DUMMY_CONTRIBUTION_RATE = "연 4.00%";
-const DUMMY_CONTRIBUTION_AMOUNT = "100 만원";
+
 const RATE_NOTICE = "취급기관 공시 기반 참고용입니다. 실제 적용 금리 및 조건은 신청 시점 기준으로 상이할 수 있어요.";
 
 function asArray(value) {
@@ -98,12 +97,39 @@ export function getActiveRecommendationResult(location) {
 }
 
 export function contributionDisplayValue(value, isLoggedIn) {
-  if (isLoggedIn && String(value || "").includes("?")) {
-    return String(value).includes("만원")
-      ? DUMMY_CONTRIBUTION_AMOUNT
-      : DUMMY_CONTRIBUTION_RATE;
-  }
-  return value;
+  const isAmount = /만원|원/.test(String(value || ""));
+  if (!isLoggedIn) return isAmount ? "??? 만원" : "연 ??? %";
+  return value && !String(value).includes("?") ? value : "계산 정보 없음";
+}
+
+// 실수령액은 같은 상품군 안에서만 비교한다. 금액이 없는 상품은 마지막에 둔다.
+export function compareProductPayout(a, b) {
+  const value = (product) => product.category === "정부 청년 상품"
+    ? product.contributionAmountWon : product.netMaturityAmountWon;
+  return (value(b) ?? -Infinity) - (value(a) ?? -Infinity) || b.suitability - a.suitability;
+}
+
+function bankPayout(detail, rate, monthlySavingsGoal, savingPlan) {
+  const terms = asArray(detail?.saveTrms).map(toFiniteNumber).filter((p) => p !== null && p > 0 && (savingPlan !== "short" || p <= 3));
+  const months = Math.max(...terms, 0);
+  const amount = toFiniteNumber(monthlySavingsGoal);
+  if (rate === null || !months || amount === null || amount <= 0) return null;
+  const max = toFiniteNumber(detail?.maxMonthlyLimit);
+  const min = toFiniteNumber(detail?.minMonthlyLimit) ?? 0;
+  const deposit = detail?.productType === "DEPOSIT";
+  const requestedPayment = savingPlan === "short" && !deposit ? amount / months : amount;
+  if (requestedPayment < min) return null;
+  const payment = Math.min(requestedPayment, max ?? requestedPayment);
+  const monthlyRate = rate / 1200;
+  const compound = asArray(detail?.rateTable)[0]?.intrRateType === "COMPOUND_INTEREST";
+  const principal = deposit ? payment : payment * months;
+  const gross = compound
+    ? deposit
+      ? payment * ((1 + monthlyRate) ** months - 1)
+      : Array.from({ length: months }, (_, i) => payment * ((1 + monthlyRate) ** (i + 1) - 1)).reduce((a, b) => a + b, 0)
+    : deposit ? payment * monthlyRate * months : payment * monthlyRate * months * (months + 1) / 2;
+  const taxRate = asArray(detail?.keywords).includes("BENEFIT_TAX_FREE") ? 0 : 0.154;
+  return { amount: Math.floor(principal + gross * (1 - taxRate)), principal, payment, months };
 }
 
 function indexByProductId(items) {
@@ -119,6 +145,7 @@ function indexByProductId(items) {
 function buildIndices(result) {
   return {
     govMatches: indexByProductId(result?.governmentRanked),
+    parkingMatches: indexByProductId(result?.parkingRanked ?? result?.parkingProducts),
     bankMatches: indexByProductId(result?.bankRanked),
     govRates: indexByProductId(result?.governmentRateRanked),
     bankRates: indexByProductId(result?.bankRateRanked),
@@ -130,6 +157,7 @@ function buildIndices(result) {
 function collectAllIds(indices) {
   return new Set([
     ...indices.govMatches.keys(),
+    ...indices.parkingMatches.keys(),
     ...indices.bankMatches.keys(),
     ...indices.govRates.keys(),
     ...indices.bankRates.keys(),
@@ -140,14 +168,16 @@ function collectAllIds(indices) {
 
 function buildSubtitle(providerName, detail) {
   const periods = asArray(detail?.saveTrms).map(toFiniteNumber).filter((p) => p !== null);
-  const period = periods.length > 0 ? `${Math.max(...periods)}개월` : null;
+  const isParking = ["PARKING", "PARKING_ACCOUNT", "DEMAND_DEPOSIT"].includes(detail?.productType);
+  const period = isParking ? "기간 자유" : periods.length > 0 ? `${Math.max(...periods)}개월 만기` : null;
   const minLimit = formatMonthlyDeposit(detail?.minMonthlyLimit);
   const maxLimit = formatMonthlyDeposit(detail?.maxMonthlyLimit);
+  const deposit = detail?.productType === "DEPOSIT" || isParking;
   const amountRange = minLimit && maxLimit
-    ? `월 ${minLimit}~${maxLimit}`
+    ? `${deposit ? "" : "월 "}${minLimit}~${maxLimit}`
     : maxLimit
-      ? `월 최대 ${maxLimit}`
-      : null;
+      ? `${deposit ? "" : "월 "}최대 ${maxLimit}`
+      : isParking ? "한도 자유" : null;
 
   return [providerName, period, amountRange].filter(Boolean).join(" · ") || providerName || "";
 }
@@ -219,10 +249,10 @@ function buildCalculatorConfig({ detail, baseRateNum, achievableRateNum, monthly
   };
 }
 
-function buildProductView(id, indices, monthlySavingsGoal) {
-  const { govMatches, bankMatches, govRates, bankRates, subscriptionRates, details } = indices;
+function buildProductView(id, indices, monthlySavingsGoal, savingPlan) {
+  const { govMatches, bankMatches, parkingMatches, govRates, bankRates, subscriptionRates, details } = indices;
 
-  const match = govMatches.get(id) || bankMatches.get(id);
+  const match = govMatches.get(id) || bankMatches.get(id) || parkingMatches.get(id);
   const rate = govRates.get(id) || bankRates.get(id) || subscriptionRates.get(id);
   const detail = details.get(id);
 
@@ -237,8 +267,8 @@ function buildProductView(id, indices, monthlySavingsGoal) {
   const productName = match?.productName || rate?.productName || detail?.productName || "";
   const providerName = match?.providerName || rate?.providerName || detail?.providerName || "";
   const score = toFiniteNumber(match?.totalScore ?? detail?.matchScore);
-  const baseRateNum = toFiniteNumber(rate?.baseRate ?? detail?.bank?.baseRate);
-  const maxRateNum = toFiniteNumber(detail?.bank?.maxRate) ?? baseRateNum;
+  const baseRateNum = toFiniteNumber(rate?.baseRate ?? detail?.bank?.baseRate ?? match?.baseRate);
+  const maxRateNum = toFiniteNumber(detail?.bank?.maxRate ?? match?.maxRate) ?? baseRateNum;
   const achievableRateNum = toFiniteNumber(rate?.achievableRate ?? detail?.bank?.achievableRate);
 
   const government = detail?.government;
@@ -263,8 +293,22 @@ function buildProductView(id, indices, monthlySavingsGoal) {
   const minLimit = formatMonthlyDeposit(detail?.minMonthlyLimit);
   const maxLimit = formatMonthlyDeposit(detail?.maxMonthlyLimit);
 
+  const isParking = parkingMatches.has(id) || ["PARKING", "PARKING_ACCOUNT", "DEMAND_DEPOSIT"].includes(detail?.productType);
+  const payout = bankPayout(detail, achievableRateNum, monthlySavingsGoal, savingPlan);
+  const parkingLimit = detail?.bank?.maxRateLimit ?? match?.maxRateLimit;
+  const parkingLimitText = detail?.bank?.maxRateLimitText ?? match?.maxRateLimitText;
+
   return {
     id,
+    isParking,
+    maxRateLimitDisplay: parkingLimitText || (parkingLimit != null ? formatMonthlyDeposit(parkingLimit) : "한도 정보 확인 필요"),
+    contributionAmountWon: toFiniteNumber(government?.expectedTotalContribution),
+    netMaturityAmountWon: payout?.amount ?? null,
+    netMaturityAmount: payout ? `${formatNumber(payout.amount / 10_000, 1)}만원` : "계산 정보 없음",
+    payoutCaption: payout ? `원금 ${formatNumber(payout.principal / 10_000, 1)}만원 · 본인 ${detail?.productType === "DEPOSIT" ? "예치" : "월"} ${formatMonthlyDeposit(payout.payment)}, ${payout.months}개월 기준` : "납입 금액과 금리 정보가 필요해요.",
+    productTypeCode: detail?.productType ?? (isGovernment ? "POLICY" : null),
+    saveMonths: maxTerm,
+    saveTerms: saveTrms,
     productId: id,
     productPropertyId: toFiniteNumber(match?.productPropertyId ?? detail?.productPropertyId),
     category,
@@ -280,8 +324,8 @@ function buildProductView(id, indices, monthlySavingsGoal) {
     myRate: achievableRateNum !== null ? formatNumber(achievableRateNum) : "0",
     suitability: score ?? 0,
     tags: tags.length > 0 ? tags : ["추천 상품"],
-    contributionRate: rawContributionRate ?? DUMMY_CONTRIBUTION_RATE,
-    maturityContribution: rawMaturityContribution ?? DUMMY_CONTRIBUTION_AMOUNT,
+    contributionRate: rawContributionRate ?? "연 ??? %",
+    maturityContribution: rawMaturityContribution ?? "??? 만원",
     contributionCaption,
     hasCalculatedContribution,
 
@@ -314,14 +358,14 @@ function buildProductView(id, indices, monthlySavingsGoal) {
   };
 }
 
-export function buildProductListFromResult(result) {
+export function buildProductListFromResult(result, savingPlan = result?.savingPlan) {
   if (!result) return [];
 
   const indices = buildIndices(result);
   const ids = collectAllIds(indices);
 
   return [...ids]
-    .map((id) => buildProductView(id, indices, result?.monthlySavingsGoal))
+    .map((id) => buildProductView(id, indices, result?.monthlySavingsGoal, savingPlan))
     .sort((a, b) => b.suitability - a.suitability);
 }
 
@@ -332,5 +376,5 @@ export function findProductViewById(result, productId) {
   const id = String(productId);
   if (!collectAllIds(indices).has(id)) return null;
 
-  return buildProductView(id, indices, result?.monthlySavingsGoal);
+  return buildProductView(id, indices, result?.monthlySavingsGoal, result?.savingPlan);
 }

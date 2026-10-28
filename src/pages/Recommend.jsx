@@ -152,7 +152,7 @@ function ProfileSaveConsentModal({ onClose, onViewTerms, onContinueWithoutSaving
 }
 
 export default function Recommend() {
-  const { step, formData, setFormData, cats, loading, go, handleSubmit } = useRecommendForm();
+  const { step, formData, setFormData, cats, loading, categoryError, go, handleSubmit } = useRecommendForm();
   const { accessToken } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -225,7 +225,7 @@ export default function Recommend() {
     startAnalysis({ saveProfile });
   };
 
-  const steps = [
+  const steps = cats ? [
     <StepSavingPlan      data={formData} setData={setFormData} cats={cats} onNext={go(1)} />,
     <StepBenefits
       data={formData}
@@ -242,7 +242,7 @@ export default function Recommend() {
     <StepHousing         data={formData} setData={setFormData}             onPrev={go(4)} onNext={go(6)} onSkip={startAnalysis} />,
     <StepEmployment      data={formData} setData={setFormData}             onPrev={go(5)} onNext={go(7)} onSkip={startAnalysis} />,
     <StepTransaction     data={formData} setData={setFormData} cats={cats} onPrev={go(6)} onSubmit={openProfileSaveConsent} onSkip={startAnalysis} />
-  ];
+  ] : [];
   const stepContentScale = 0.8;
   const formVerticalPadding = 85;
   const formBodyMinHeights = [
@@ -346,7 +346,12 @@ export default function Recommend() {
                 "--scaled-step-layout-min-height": `${scaledStepLayoutMinHeight}px`,
               }}
             >
-              {!loading && steps[step]}
+              {!loading && categoryError && (
+                <div role="alert" className="rounded-[10px] border border-red-200 bg-red-50 px-5 py-4 text-[16px] text-red-700">
+                  {categoryError}
+                </div>
+              )}
+              {!loading && !categoryError && steps[step]}
               {analysisError && (
                 <div
                   role="alert"

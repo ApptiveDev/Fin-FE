@@ -5,6 +5,8 @@ function collectDetailTargets(result) {
   const candidates = [
     ...(Array.isArray(result?.governmentRanked) ? result.governmentRanked : []),
     ...(Array.isArray(result?.bankRanked) ? result.bankRanked : []),
+    ...(Array.isArray(result?.parkingRanked) ? result.parkingRanked : []),
+    ...(Array.isArray(result?.parkingProducts) ? result.parkingProducts : []),
     ...(Array.isArray(result?.subscriptionProducts) ? result.subscriptionProducts : []),
   ].filter((item) => item?.productId !== undefined && item?.productId !== null);
 

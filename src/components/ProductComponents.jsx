@@ -1,185 +1,51 @@
 import { contributionDisplayValue } from "../utils/recommendationResult";
+import lockIcon from "../assets/product-list/lock.svg";
+import dividerIcon from "../assets/product-list/divider.svg";
 
 function handleCardKeyDown(event, onClick) {
-  if (!onClick) return;
-  if (event.key === "Enter" || event.key === " ") {
-    event.preventDefault();
-    onClick();
-  }
+  if (event.target !== event.currentTarget || !onClick) return;
+  if (event.key === "Enter" || event.key === " ") { event.preventDefault(); onClick(); }
 }
 
-function getTagStyle(tag) {
-  let tagStyle = "bg-[#F5F5F5] text-[#7A7A7A]";
-  if (tag.includes("적합도")) tagStyle = "bg-[#FFF4E6] text-[#FF8A00]";
-  if (tag.includes("정부기여금") || tag.includes("비과세") || tag.includes("우대")) tagStyle = "bg-[#F2FBF9] text-[#03BFA5]";
-  if (tag.includes("내집마련")) tagStyle = "bg-[#F0F2FF] text-[#6B4EFF]";
-  return tagStyle;
+function tagTone(tag, government) {
+  if (tag.includes("적합도")) return government ? "match-government" : "match-bank";
+  if (tag.includes("기여금") || tag.includes("정부 지원")) return "support";
+  if (/마케팅|우대/.test(tag)) return "benefit";
+  return "neutral";
 }
 
-// 상단 TOP 3 카드
-export function TopCard({
-  rank,
-  title,
-  subtitle,
-  baseRate,
-  maxRate,
-  myRate,
-  tags,
-  isBest,
-  isLoggedIn,
-  onClick,
-  contributionRate,
-  maturityContribution,
-  contributionCaption,
-  showContribution = false,
-}) {
-  const hasContribution = showContribution && contributionRate && maturityContribution;
-  const isInteractive = Boolean(onClick);
-  const displayedContributionRate = contributionDisplayValue(contributionRate, isLoggedIn);
-  const displayedMaturityContribution = contributionDisplayValue(
-    maturityContribution,
-    isLoggedIn,
-  );
-
-  return (
-    <div
-      role={isInteractive ? "button" : undefined}
-      tabIndex={isInteractive ? 0 : undefined}
-      onClick={onClick}
-      onKeyDown={(event) => handleCardKeyDown(event, onClick)}
-      className={`px-13 py-8 bg-white rounded-xl border-[2px] shadow-sm flex flex-col justify-between min-h-[300px] w-full transition-all ${
-        isInteractive ? "hover:shadow-md cursor-pointer" : ""
-      } ${
-        isBest ? "border-[#03BFA5]" : "border-[#E0DFDF] hover:border-[#03BFA5]"
-      }`}
-    >
-      <div>
-        <h3 className="text-[24px] font-bold text-[#03BFA5] mb-2.5">TOP {rank}</h3>
-        <div className="flex gap-1.5 mb-6 flex-wrap">
-          {tags.map((tag, i) => (
-            <span key={i} className={`px-2 py-0.5 rounded-sm text-[15px] shrink-0 ${getTagStyle(tag)}`}>{tag}</span>
-          ))}
-        </div>
-        <h4 className="text-[28px] font-bold text-[#333333] mb-1 break-keep">{title}</h4>
-        <p className="text-[14px] text-[#333333] leading-normal mb-8">{subtitle}</p>
-      </div>
-
-      {hasContribution ? (
-        <div>
-          <div className="flex justify-between items-stretch px-2 mb-3">
-            <div>
-              <p className="text-[14px] text-[#7A7A7A]">기여금 환산 수익률</p>
-              <p className="text-[32px] font-bold text-[#454545]">{displayedContributionRate}</p>
-            </div>
-            <div className="w-px bg-[#E0E0E0]" />
-            <div>
-              <p className="text-[14px] text-[#7A7A7A]">예상 만기 기여금 총액</p>
-              <p className="text-[32px] font-bold text-[#03BFA5]">{displayedMaturityContribution}</p>
-            </div>
-          </div>
-          <p className="text-[13px] text-[#7A7A7A] text-center mb-1">{contributionCaption}</p>
-        </div>
-      ) : (
-        <div>
-          <div className="flex justify-between items-stretch px-2 mb-3">
-            <div>
-              <p className="text-[14px] text-[#7A7A7A]">기본 금리</p>
-              <p className="text-[32px] font-bold text-[#454545]">연 {baseRate}%</p>
-            </div>
-            <div className="w-px bg-[#E0E0E0]" />
-            <div>
-              <p className="text-[14px] text-[#7A7A7A]">최고 금리</p>
-              <p className="text-[32px] font-bold text-[#03BFA5]">연 {maxRate}%</p>
-            </div>
-          </div>
-          {/* 💡 비로그인 시 회색 처리 오류 수정 반영 */}
-          <div className={`w-full py-1 rounded-full border text-center text-[15px] ${
-            isLoggedIn ? "border-[#03BFA5] text-[#03BFA5] bg-[#EFFFFD]" : "border-gray-300 text-gray-400 bg-white"
-          }`}>
-            내가 받을 수 있는 금리 <span className="ml-2 font-bold whitespace-nowrap">{isLoggedIn ? `연 ${myRate}%` : "연 ??? %"}</span>
-          </div>
-        </div>
-      )}
-    </div>
-  );
+function ProductTags({ tags = [], government, hideSuitability }) {
+  return <div className="product-tags">{tags.filter((tag) => !hideSuitability || !tag.includes("적합도")).map((tag, index) => <span key={`${tag}-${index}`} className={tagTone(tag, government)}>{tag}</span>)}</div>;
 }
 
-// 하단 세로형 리스트 아이템
-export function ListItem({
-  title,
-  subtitle,
-  baseRate,
-  maxRate,
-  myRate,
-  tags,
-  isLoggedIn,
-  onClick,
-  variant = "rate",
-  contributionRate,
-  maturityContribution,
-  contributionCaption,
-}) {
-  const isContribution = variant === "contribution";
-  const isInteractive = Boolean(onClick);
-  const displayedContributionRate = contributionDisplayValue(contributionRate, isLoggedIn);
-  const displayedMaturityContribution = contributionDisplayValue(
-    maturityContribution,
-    isLoggedIn,
-  );
+function ProductSummary({ product, contribution, payout, parking, onLogin }) {
+  const { isLoggedIn, baseRate, maxRate, myRate, contributionRate, maturityContribution, contributionCaption, netMaturityAmount, payoutCaption, maxRateLimitDisplay } = product;
+  const labelA = contribution ? "기여금 환산 수익률" : payout ? "내가 받을 금리" : "기본 금리";
+  const labelB = contribution ? "예상 만기 기여금 총액" : payout ? "예상 세후 실수령액" : "최고 금리";
+  const valueA = contribution ? contributionDisplayValue(contributionRate, isLoggedIn) : `연 ${payout ? myRate : baseRate}%`;
+  const valueB = contribution ? contributionDisplayValue(maturityContribution, isLoggedIn) : payout ? netMaturityAmount : `연 ${maxRate}%`;
+  const needsLogin = !parking && !isLoggedIn;
+  return <div className="product-summary">
+    <div className="product-metrics"><div><p>{labelA}</p><strong>{valueA}</strong></div><img src={dividerIcon} alt="" /><div><p>{labelB}</p><strong>{valueB}</strong></div></div>
+    {needsLogin ? <button type="button" className="product-summary-pill" onClick={(event) => { event.stopPropagation(); onLogin?.(); }}><img src={lockIcon} alt="" />로그인하고 내 {contribution ? "기여금" : "금리"} 확인하기</button>
+      : <p className="product-summary-pill">{parking ? <>최고금리 적용한도 <b>{maxRateLimitDisplay}</b></> : contribution ? contributionCaption : payout ? payoutCaption : <>내가 받을 금리 <b>연 {myRate}%</b></>}</p>}
+  </div>;
+}
 
-  return (
-    <div
-      role={isInteractive ? "button" : undefined}
-      tabIndex={isInteractive ? 0 : undefined}
-      onClick={onClick}
-      onKeyDown={(event) => handleCardKeyDown(event, onClick)}
-      className={`py-5 px-8 bg-white rounded-xl border-[2px] border-[#E0DFDF] mb-3 flex flex-col lg:flex-row lg:items-center justify-between transition-all gap-4 ${
-        isInteractive ? "hover:border-[#03BFA5] hover:shadow-md cursor-pointer" : ""
-      }`}
-    >
-      <div>
-        <div className="flex gap-2 mb-2 flex-wrap">
-          {tags.map((tag, i) => (
-            <span key={i} className={`px-2 py-0.5 rounded-[4px] text-[15px] ${getTagStyle(tag)}`}>{tag}</span>
-          ))}
-        </div>
-        <h4 className="text-[28px] font-bold text-[#333333] mb-1">{title}</h4>
-        <p className="text-[15px] text-[#7A7A7A]">{subtitle}</p>
-      </div>
+export function TopCard(props) {
+  const { rank, title, subtitle, tags, isBest, onClick, showContribution = false, payoutMode = false, parking = false, onLogin } = props;
+  return <article role={onClick ? "button" : undefined} tabIndex={onClick ? 0 : undefined} onClick={onClick} onKeyDown={(event) => handleCardKeyDown(event, onClick)} className={`product-top-card ${isBest ? "best" : ""}`}>
+    <div className="product-card-copy"><h3>TOP {rank}</h3><ProductTags tags={tags} government={showContribution} hideSuitability={payoutMode || parking} /><h4>{title}</h4><p>{subtitle}</p></div>
+    <ProductSummary product={props} contribution={showContribution} payout={payoutMode} parking={parking} onLogin={onLogin} />
+  </article>;
+}
 
-      {isContribution ? (
-        <div className="flex flex-col items-end mb-3">
-          <div className="flex flex-row gap-10">
-            <div className="text-right">
-              <p className="text-[14px] text-[#7A7A7A] mb-0.5">기여금 환산 수익률</p>
-              <p className="text-[32px] font-bold text-[#454545] whitespace-nowrap">{displayedContributionRate}</p>
-            </div>
-            <div className="text-right">
-              <p className="text-[14px] text-[#7A7A7A] mb-0.5">예상 만기 기여금 총액</p>
-              <p className="text-[32px] font-bold text-[#03BFA5] whitespace-nowrap">{displayedMaturityContribution}</p>
-            </div>
-          </div>
-          <p className="text-[13px] text-[#7A7A7A] whitespace-nowrap">{contributionCaption}</p>
-        </div>
-      ) : (
-        <div className="flex flex-col items-end mb-3">
-          <div className="flex flex-row gap-10">
-            <div className="text-right">
-              <p className="text-[14px] text-[#7A7A7A] mb-0.5">기본 금리</p>
-              <p className="text-[32px] font-bold text-[#454545] whitespace-nowrap">연 {baseRate}%</p>
-            </div>
-            <div className="text-right">
-              <p className="text-[14px] text-[#7A7A7A] mb-0.5">최고 금리</p>
-              <p className="text-[32px] font-bold text-[#03BFA5] whitespace-nowrap">연 {maxRate}%</p>
-            </div>
-          </div>
-          <div className={`w-full py-1 rounded-full border text-center text-[15px] ${
-            isLoggedIn ? "border-[#03BFA5] text-[#03BFA5] bg-[#EFFFFD]" : "border-gray-300 text-gray-400 bg-white"
-          }`}>
-            내가 받을 수 있는 금리 <span className="ml-1 whitespace-nowrap">{isLoggedIn ? `연 ${myRate}%` : "연 ??? %"}</span>
-          </div>
-        </div>
-      )}
-    </div>
-  );
+export function ListItem(props) {
+  const { title, subtitle, tags, onClick, variant = "rate", payoutMode = false, parking = false, rank, onLogin } = props;
+  const government = variant === "contribution";
+  return <article role={onClick ? "button" : undefined} tabIndex={onClick ? 0 : undefined} onClick={onClick} onKeyDown={(event) => handleCardKeyDown(event, onClick)} className="product-list-item">
+    {rank && <span className={`product-list-rank ${rank > 3 ? "secondary" : ""}`}>{rank}</span>}
+    <div className="product-list-description"><ProductTags tags={tags} government={government} hideSuitability={payoutMode || parking} /><h4>{title}</h4><p>{subtitle}</p></div>
+    <ProductSummary product={props} contribution={government} payout={payoutMode} parking={parking} onLogin={onLogin} />
+  </article>;
 }

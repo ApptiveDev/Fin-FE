@@ -6,6 +6,7 @@ import {
   buildRecommendationRequest,
   mapRecommendCategories,
 } from "../utils/recommendationPayload";
+import { persistRecommendation } from "../utils/recommendationResult";
 import { runProductSearch } from "../utils/productSearch";
 
 const BANK_CATEGORIES = [
@@ -74,6 +75,7 @@ export default function useRecommendForm() {
   const [formData, setFormData] = useState({});
   const [cats, setCats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [categoryError, setCategoryError] = useState("");
   const mockMode = isMockRecommendMode();
 
   useEffect(() => {
@@ -85,6 +87,7 @@ export default function useRecommendForm() {
 
     const fetchCategories = async () => {
       try {
+        setCategoryError("");
         const res = await client.get("/api/categories", withAuth(accessToken));
         setCats(mapRecommendCategories(res.data, {
           bankCategories: BANK_CATEGORIES,
@@ -92,6 +95,7 @@ export default function useRecommendForm() {
         }));
       } catch (e) {
         console.error("카테고리 불러오기 실패:", e);
+        setCategoryError("추천 정보를 불러오지 못했어요. 잠시 후 다시 시도해주세요.");
       } finally {
         setLoading(false);
       }
@@ -114,10 +118,15 @@ export default function useRecommendForm() {
 
     const [recommendation] = await Promise.all([recommendationPromise, profileSavePromise]);
 
+    const selectedPeriod = cats?.savingPeriod?.find((period) => formData.savingPeriod?.includes(period.optionId));
+    const label = selectedPeriod?.optionValue || "";
+    const months = label.match(/(\d+)\s*개월/)?.[1];
+    recommendation.result.savingPlan = months && Number(months) <= 3 ? "short" : "goal";
+    persistRecommendation({ result: recommendation.result });
     return recommendation;
   };
 
   const go = (n) => () => setStep(n);
 
-  return { step, formData, setFormData, cats, loading, go, handleSubmit };
+  return { step, formData, setFormData, cats, loading, categoryError, go, handleSubmit };
 }
