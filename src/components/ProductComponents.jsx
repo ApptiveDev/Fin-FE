@@ -1,5 +1,5 @@
 import { contributionDisplayValue } from "../utils/recommendationResult";
-import lockIcon from "../assets/product-list/lock.svg";
+import mintLockIcon from "../assets/product-list/lock-mint.svg";
 import dividerIcon from "../assets/product-list/divider.svg";
 
 function handleCardKeyDown(event, onClick) {
@@ -27,7 +27,7 @@ function ProductSummary({ product, contribution, payout, parking, onLogin }) {
   const needsLogin = !parking && !isLoggedIn;
   return <div className="product-summary">
     <div className="product-metrics"><div><p>{labelA}</p><strong>{valueA}</strong></div><img src={dividerIcon} alt="" /><div><p>{labelB}</p><strong>{valueB}</strong></div></div>
-    {needsLogin ? <button type="button" className="product-summary-pill" onClick={(event) => { event.stopPropagation(); onLogin?.(); }}><img src={lockIcon} alt="" />로그인하고 내 {contribution ? "기여금" : "금리"} 확인하기</button>
+    {needsLogin ? <button type="button" className="product-summary-pill" onClick={(event) => { event.stopPropagation(); onLogin?.(); }}><img src={mintLockIcon} alt="" />로그인하고 내 {contribution ? "기여금" : "금리"} 확인하기</button>
       : <p className="product-summary-pill">{parking ? <>최고금리 적용한도 <b>{maxRateLimitDisplay}</b></> : contribution ? contributionCaption : payout ? payoutCaption : <>내가 받을 금리 <b>연 {myRate}%</b></>}</p>}
   </div>;
 }

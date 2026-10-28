@@ -169,7 +169,11 @@ function collectAllIds(indices) {
 function buildSubtitle(providerName, detail) {
   const periods = asArray(detail?.saveTrms).map(toFiniteNumber).filter((p) => p !== null);
   const isParking = ["PARKING", "PARKING_ACCOUNT", "DEMAND_DEPOSIT"].includes(detail?.productType);
-  const period = isParking ? "기간 자유" : periods.length > 0 ? `${Math.max(...periods)}개월 만기` : null;
+  const longestPeriod = periods.length > 0 ? Math.max(...periods) : null;
+  const periodLabel = longestPeriod && longestPeriod >= 12 && longestPeriod % 12 === 0
+    ? `${longestPeriod / 12}년`
+    : longestPeriod ? `${longestPeriod}개월` : null;
+  const period = isParking ? "기간 자유" : periodLabel ? `${periodLabel} 만기` : null;
   const minLimit = formatMonthlyDeposit(detail?.minMonthlyLimit);
   const maxLimit = formatMonthlyDeposit(detail?.maxMonthlyLimit);
   const deposit = detail?.productType === "DEPOSIT" || isParking;

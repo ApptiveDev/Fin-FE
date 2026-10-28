@@ -116,7 +116,7 @@ export default function ProductList() {
         <p className="product-result-notice"><span className="product-notice-icon"><img src={infoIcon} alt="" /></span>{isShort ? (parking ? "파킹통장은 잔액 전체가 아니라 한도 금액까지만 최고금리가 붙는 경우가 많아요. 가입 전 최고금리의 적용한도를 꼭 확인하세요." : "세후 실수령액이란? 만기까지 넣었을 때 세금(이자소득세 15.4%)을 빼고 실제로 받는 금액이에요. 우대조건을 반영한 ‘내가 받을 금리’로 실수령액을 계산해요.") : personalized
           ? `총 ${total}개 상품 중 자격요건 미충족 상품 ${excluded}개가 제외되었어요.`
           : isLoggedIn ? (result?.tabs?.tabBDisabledReason || "상세 정보를 입력하면 내가 받을 금리와 기여금을 확인할 수 있어요.")
-            : "로그인하면 자격요건 필터링 결과 및 내가 받을 금리와 기여금을 확인할 수 있어요."}</p>
+            : "로그인하면 자격요건 필터링 결과와 내가 달성 가능한 금리를 확인할 수 있어요."}</p>
         {topThree.length > 0 && <div className="product-top-grid">{topThree.map((product, index) => <TopCard key={product.id} {...commonProps(product)} rank={index + 1} isBest={index === 0} showContribution={product.category === "정부 청년 상품"} />)}</div>}
         {filtered.length === 0 && <div className="product-empty">선택한 조건에 맞는 상품이 없어요.</div>}
         <div className="product-sections">
@@ -141,12 +141,11 @@ export default function ProductList() {
           if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
           else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
         }} role="dialog" aria-modal="true" aria-labelledby="product-gate-title" onClick={(event) => event.stopPropagation()}>
-          <button autoFocus className="product-gate-close" aria-label="닫기" onClick={() => setBlocked(null)}>×</button>
           <img src={gateLockIcon} alt="" />
           <h2 id="product-gate-title">{blocked === "login" ? "로그인 후 이용할 수 있어요" : "상세 정보 입력 후 이용할 수 있어요"}</h2>
           <p>내가 받을 금리와 실수령액을<br />{blocked === "login" ? "로그인 후" : "상세 정보 입력 후"} 바로 확인해보세요.</p>
           <ul><li><img src={checkIcon} alt="" /><span>실제 충족 가능한 우대조건만 적용해 내가 받을 금리와 실수령액을 계산해드려요.</span></li><li><img src={checkIcon} alt="" /><span>단계2 정보 입력 후 가입할 수 있는 상품을 기준으로 더 정밀한 맞춤 추천이 활성화됩니다.</span></li></ul>
-          {blocked === "login" ? <><button onClick={() => navigate("/terms")}>회원가입 후 이용하기</button><button onClick={() => navigate("/login")}>로그인하고 확인하기</button></> : <button onClick={edit}>상세 정보 입력하기</button>}
+          {blocked === "login" ? <><button autoFocus onClick={() => navigate("/terms")}>회원가입 후 이용하기</button><button onClick={() => navigate("/login")}>로그인하고 확인하기</button></> : <button autoFocus onClick={edit}>상세 정보 입력하기</button>}
         </section>
       </div>}
     </main>

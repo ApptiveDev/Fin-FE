@@ -21,15 +21,16 @@
 .product-filters button { border: 2px solid #e0dfdf; border-radius: 45px; padding: 7px 20px; font-size: 21px; line-height: 1.3; }
 .product-filters button.selected { border-color: var(--product-green); background: #f0fffe; color: var(--product-green); }
 .product-results-body { padding: 0 7px; }
-.product-result-notice { display: flex; align-items: center; gap: 8px; font-size: 18px; color: #606060; margin: 6px 0 28px; }
+.product-result-notice { display: flex; align-items: center; gap: 7px; font-size: 20px; font-weight: 500; color: #606060; margin: 6px 0 28px; }
 .product-notice-icon { flex-shrink: 0; display: flex; padding: 3px; border-radius: 50%; background: var(--product-green); }
 .product-top-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; }
-.product-top-card { padding: 38px 60px 34px; border: 1px solid #d5d5d5; border-radius: 10px; display: flex; flex-direction: column; justify-content: space-between; min-height: 423px; gap: 30px; transition: box-shadow .2s; }
+.product-top-card { padding: 38px 60px 34px; border: 2px solid #e0dfdf; border-radius: 10px; display: flex; flex-direction: column; justify-content: space-between; min-height: 425px; gap: 40px; transition: box-shadow .2s; }
 .product-top-card.best { border-color: var(--product-green); }
 .product-top-card:hover { box-shadow: 0 4px 18px #0000000b; }
 .product-top-card h3 { font-size: 28px; font-weight: 600; color: var(--product-green); margin-bottom: 19px; }
 .product-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 18px; }
-.product-tags span { padding: 4px 10px; border-radius: 3px; font-size: 17px; line-height: 1.2; }
+.product-tags span { padding: 4px 10px; border-radius: 5px; font-size: 17px; line-height: 1.2; }
+.product-top-card .product-tags span { font-size: 20px; padding: 5px 13px; }
 .product-tags .neutral { background: #f2f3f5; color: #333; }
 .product-tags .match-government { background: #fff4e0; color: #e65200; }
 .product-tags .match-bank { background: #fee7ff; color: #7a20a2; }
@@ -37,44 +38,44 @@
 .product-tags .support { background: #e0fdf9; color: #333; }
 .product-tags .benefit { background: #e2f3fd; color: #1664c0; }
 .product-card-copy h4 { font-size: 32px; font-weight: 600; color: #181818; line-height: 1.25; word-break: keep-all; margin-bottom: 14px; }
-.product-card-copy > p { font-size: 18px; color: #333; line-height: 1.4; }
+.product-card-copy > p { font-size: 19px; font-weight: 500; color: #333; line-height: 1.4; }
 .product-summary { flex-shrink: 0; }
 .product-metrics { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .product-metrics > div { text-align: center; min-width: 0; }
-.product-metrics p { font-size: 16px; color: #606060; white-space: nowrap; margin-bottom: 4px; }
+.product-metrics p { font-size: 17px; color: #606060; white-space: nowrap; margin-bottom: 4px; }
 .product-metrics strong { font-size: 34px; line-height: 1.2; color: #454545; white-space: nowrap; }
 .product-metrics > div:last-child strong { color: var(--product-green); }
-.product-summary-pill { display: flex; align-items: center; justify-content: center; gap: 10px; border: 1px solid var(--product-green); border-radius: 100px; background: #effffd; color: var(--product-green); padding: 6px 12px; font-size: 16px; margin: 20px auto 0; text-align: center; line-height: 1.3; }
+.product-summary-pill { display: flex; align-items: center; justify-content: center; gap: 15px; width: 100%; max-width: 337px; min-height: 40px; border: 1px solid var(--product-green); border-radius: 100px; background: #effffd; color: var(--product-green); padding: 6px 15px; font-size: 18px; margin: 20px auto 0; text-align: center; line-height: 1.2; }
 .product-summary-pill b { font-weight: 600; }
 .product-sections { margin-top: 60px; }
 .product-section + .product-section { margin-top: 60px; }
 .product-section-heading { display: flex; align-items: center; gap: 15px; margin-bottom: 18px; flex-wrap: wrap; }
 .product-section-heading h2, .product-short-heading { color: var(--product-green); font-size: 30px; font-weight: 700; }
+.product-short-heading { font-size: 32px; }
 .product-short-heading { margin: 22px 0 20px; }
 .product-section-heading > span { border-radius: 5px; background: #effffd; color: var(--product-green); padding: 6px 12px; font-size: 18px; }
-.product-list-item { display: flex; align-items: center; gap: 26px; padding: 24px 12px; min-height: 165px; border-bottom: 1px solid #ddd; }
+.product-list-item { display: flex; align-items: center; gap: 26px; padding: 20px 10px; min-height: 160px; border-bottom: 1px solid #ddd; }
 .product-list-description { flex: 1; min-width: 0; }
 .product-list-description .product-tags { margin-bottom: 12px; }
-.product-list-description h4 { font-size: 30px; font-weight: 600; line-height: 1.3; margin-bottom: 10px; }
+.product-list-description h4 { font-size: 31px; font-weight: 600; line-height: 1.3; margin-bottom: 10px; }
 .product-list-description > p { font-size: 18px; color: #333; }
 .product-list-item .product-summary { width: 400px; max-width: 100%; }
 .product-list-item .product-metrics { justify-content: flex-end; gap: 28px; }
 .product-list-item .product-metrics strong { font-size: 34px; }
-.product-list-item .product-summary-pill { margin: 12px 0 0 auto; width: fit-content; }
+.product-list-item .product-summary-pill { width: 323px; max-width: 100%; min-height: 36px; margin: 12px 0 0 auto; font-size: 16px; gap: 10px; }
 .product-list-rank { display: flex; align-items: center; justify-content: center; background: #effffd; color: var(--product-green); border-radius: 5px; min-width: 48px; height: 48px; font-size: 26px; font-weight: 700; }
 .product-list-rank.secondary { color: #888; background: #f2f3f5; }
 .product-payout-notice { padding: 12px 18px; border-radius: 8px; background: #fff4e0; color: #e65200; font-size: 17px; margin-bottom: 20px; }
 .product-empty { padding: 70px 20px; text-align: center; color: #7a7a7a; }
-.product-gate-backdrop { position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; padding: 20px; background: #0005; }
-.product-gate { position: relative; width: 587px; max-height: 90vh; overflow: auto; border-radius: 18px; background: white; padding: 70px 70px 55px; text-align: center; }
-.product-gate > img { margin: 0 auto 30px; }
-.product-gate h2 { color: var(--product-green); font-size: 28px; font-weight: 600; }
-.product-gate > p { font-size: 20px; line-height: 1.4; margin: 36px 0 48px; color: var(--product-green); }
-.product-gate ul { text-align: left; display: grid; gap: 12px; margin-bottom: 24px; }
-.product-gate li { display: flex; align-items: center; gap: 16px; padding: 16px; border: 1px solid var(--product-green); background: #f0fffe; border-radius: 6px; }
+.product-gate-backdrop { position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; padding: 20px; background: rgba(152, 152, 152, .53); }
+.product-gate { position: relative; width: 587px; min-height: 687px; max-height: 90vh; overflow: auto; border-radius: 18px; background: white; padding: 85px 91px 50px; text-align: center; }
+.product-gate > img { margin: 0 auto 20px; }
+.product-gate h2 { color: var(--product-green); font-size: 27px; line-height: 1.22; font-weight: 600; }
+.product-gate > p { font-size: 18px; line-height: 1.44; margin: 20px 0 47px; color: var(--product-green); }
+.product-gate ul { text-align: left; display: grid; gap: 12px; margin-bottom: 12px; }
+.product-gate li { display: flex; align-items: center; gap: 13px; min-height: 72px; padding: 16px 20px; border: 1px solid var(--product-green); background: #f0fffe; border-radius: 10px; font-size: 16px; line-height: 1.22; }
 .product-gate li img { flex-shrink: 0; }
-.product-gate > button:not(.product-gate-close) { display: block; width: 100%; padding: 12px; border: 1px solid #d5d5d5; border-radius: 6px; margin-top: 12px; }
-.product-gate .product-gate-close { position: absolute; top: 12px; right: 20px; font-size: 28px; }
+.product-gate > button { display: block; width: 100%; height: 48px; border: 1px solid #d5d5d5; border-radius: 10px; margin-top: 12px; font-size: 17px; font-weight: 500; color: #454545; }
 .product-results button:focus-visible, .product-results [role=button]:focus-visible { outline: 3px solid #03bfa5; outline-offset: 4px; }
 @media (max-width: 1500px) {
  .product-top-card { padding: 30px 26px; min-height: 380px; }
@@ -127,5 +128,6 @@
  .product-metrics p { font-size: 13px; }
  .product-summary-pill { font-size: 12px; padding-inline: 8px; }
  .product-list-rank { min-width: 34px; height: 34px; font-size: 20px; }
- .product-gate { padding: 45px 20px 25px; }
+ .product-gate { width: min(100%, 587px); min-height: 0; padding: 52px 20px 28px; }
+ .product-gate > p { margin-bottom: 32px; }
 }
