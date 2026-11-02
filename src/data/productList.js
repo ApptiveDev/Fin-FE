@@ -6,7 +6,7 @@ export const MOCK_LONG_TERM_RESULT = {
     tabBEnabled: true,
     tabBDisabledReason: null,
     tabCEnabled: false,
-    tabCDisabledReason: "단기예치 금액을 입력하면 확인할 수 있어요.",
+    tabCDisabledReason: null,
     tabDEnabled: false,
   },
   eligibleProductCount: 15,
@@ -225,13 +225,14 @@ export const MOCK_LONG_TERM_RESULT = {
 // ProductList에서 임시로 원시 필드를 그대로 나열하는 용도로만 쓴다 (A2/A3에서 정식 컴포넌트로 교체 예정).
 export const MOCK_SHORT_TERM_RESULT = {
   category: "SHORT_TERM",
+  // 탭C=단기 예·적금(로그인 시 실수령액 정렬, 잠금 사유 있음), 탭D=파킹통장(항상 열림, 잠금 사유 필드 자체가 없음).
+  // 실제 백엔드 응답(/search/products) 기준으로 확인한 매핑.
   tabs: {
     tabAEnabled: false,
     tabBEnabled: false,
     tabCEnabled: true,
     tabCDisabledReason: null,
     tabDEnabled: true,
-    tabDDisabledReason: null,
   },
   eligibleProductCount: 8,
   needsDepositAmount: false,

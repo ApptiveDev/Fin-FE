@@ -72,12 +72,13 @@ export default function ProductList() {
     : recommendationResult;
 
   const isShortTerm = activeCategory === "SHORT_TERM";
+  // 실제 백엔드 응답으로 확인: 단기예치는 탭C가 단기 예·적금(로그인 시 실수령액 정렬 가능, 잠금 사유 있음),
+  // 탭D가 파킹통장(비로그인도 항상 열림, 스키마에 잠금 사유 필드 자체가 없음)이다.
   const rateTabEnabled = isShortTerm
-    ? displayResult?.tabs?.tabDEnabled === true
+    ? displayResult?.tabs?.tabCEnabled === true
     : displayResult?.tabs?.tabBEnabled === true;
-  // 단기예치(탭D)는 백엔드가 잠금 사유 문구를 내려주지 않아 목돈만들기(탭B)와 달리 항상 null.
   const rateTabDisabledReason = isShortTerm
-    ? null
+    ? displayResult?.tabs?.tabCDisabledReason
     : displayResult?.tabs?.tabBDisabledReason;
   const needsAmountForCategory = activeCategory === "SHORT_TERM"
     ? displayResult?.needsDepositAmount
