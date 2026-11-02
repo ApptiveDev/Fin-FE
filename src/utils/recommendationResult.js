@@ -247,9 +247,12 @@ function buildProductView(id, indices, monthlySavingsGoal) {
   const monthlyDeposit = formatMonthlyDeposit(government?.effectiveMonthlyDeposit);
   const contributionMonths = toFiniteNumber(government?.contributionPeriodMonths);
   const hasCalculatedContribution = Boolean(government && rawContributionRate && rawMaturityContribution);
-  const contributionCaption = monthlyDeposit && contributionMonths
-    ? `월 ${monthlyDeposit} 납입 · ${contributionMonths}개월 기준`
-    : rate?.subscriptionNote || "입력 정보를 기준으로 계산했어요.";
+  const contributionPeriodLabel = contributionMonths
+    ? (contributionMonths % 12 === 0 ? `${contributionMonths / 12}년` : `${contributionMonths}개월`)
+    : null;
+  const contributionCaption = monthlyDeposit && contributionPeriodLabel
+    ? `${reserveTypeShortLabel(detail?.reserveType)} 매칭 · 본인 월 ${monthlyDeposit}, ${contributionPeriodLabel} 납입 기준`
+    : rate?.subscriptionNote || null;
 
   const tags = [
     ...(score !== null ? [`적합도 ${Math.round(score)}%`] : []),
@@ -257,6 +260,11 @@ function buildProductView(id, indices, monthlySavingsGoal) {
       .filter((code) => !code.startsWith("REGION_"))
       .map(keywordLabel),
   ];
+
+  const filterTags = [
+    detail?.productType ? productTypeLabel(detail.productType) : null,
+    isGovernment ? "정부 지원" : null,
+  ].filter(Boolean);
 
   const saveTrms = asArray(detail?.saveTrms).map(toFiniteNumber).filter((p) => p !== null);
   const maxTerm = saveTrms.length > 0 ? Math.max(...saveTrms) : null;
@@ -280,6 +288,7 @@ function buildProductView(id, indices, monthlySavingsGoal) {
     myRate: achievableRateNum !== null ? formatNumber(achievableRateNum) : "0",
     suitability: score ?? 0,
     tags: tags.length > 0 ? tags : ["추천 상품"],
+    filterTags,
     contributionRate: rawContributionRate ?? DUMMY_CONTRIBUTION_RATE,
     maturityContribution: rawMaturityContribution ?? DUMMY_CONTRIBUTION_AMOUNT,
     contributionCaption,
@@ -323,6 +332,90 @@ export function buildProductListFromResult(result) {
   return [...ids]
     .map((id) => buildProductView(id, indices, result?.monthlySavingsGoal))
     .sort((a, b) => b.suitability - a.suitability);
+}
+
+// 최고금리가 적용되는 잔액 구간. 백엔드는 금액(won) 상/하한만 내려주고 비율(%) 필드는 없다.
+function buildMaxRateLimitCaption(p) {
+  const minAmount = toFiniteNumber(p.maxRateApplicableMinAmount);
+  const maxAmount = toFiniteNumber(p.maxRateApplicableMaxAmount);
+  if (!maxAmount) return null;
+
+  const maxLabel = formatMonthlyDeposit(maxAmount);
+  const value = minAmount
+    ? `${formatMonthlyDeposit(minAmount)}~${maxLabel}`
+    : maxLabel;
+  return value;
+}
+
+function buildParkingProductView(p) {
+  const limitCaption = buildMaxRateLimitCaption(p);
+
+  return {
+    id: String(p.productId),
+    productId: p.productId,
+    category: "파킹통장",
+    title: p.productName,
+    institution: p.providerName,
+    subtitle: [p.providerName, p.interestPaymentMethod, p.depositProtection ? "예금자보호" : null]
+      .filter(Boolean)
+      .join(" · "),
+    baseRate: formatNumber(toFiniteNumber(p.baseRate) ?? 0),
+    maxRate: formatNumber(toFiniteNumber(p.maxRate) ?? 0),
+    myRate: formatNumber(toFiniteNumber(p.maxRate) ?? 0),
+    suitability: toFiniteNumber(p.maxRate) ?? 0,
+    tags: [p.depositProtection ? "예금자보호" : null, p.interestPaymentMethod].filter(Boolean),
+    filterTags: ["예금"],
+    applyUrl: p.applyUrl || null,
+    // 파킹통장은 로그인 여부와 무관하게 공개되는 공시금리라 "내가 받을 금리" 대신
+    // 최고금리가 실제로 적용되는 잔액 구간을 보여준다.
+    ratePillLabel: "최고금리 적용한도",
+    ratePillValue: limitCaption ? `${limitCaption}까지` : null,
+  };
+}
+
+function buildDepositSavingsProductView(p) {
+  const typeLabel = productTypeLabel(p.productType) || null;
+  const saveTrm = toFiniteNumber(p.saveTrm);
+  const principal = toFiniteNumber(p.principal);
+  const principalLabel = formatContributionAmount(principal);
+  const monthlyAmount = p.productType === "SAVING" && saveTrm ? Math.round(principal / saveTrm) : null;
+  const principalCaption = principalLabel && saveTrm
+    ? (monthlyAmount
+        ? `원금 ${principalLabel} · 본인 월 ${formatMonthlyDeposit(monthlyAmount)}, ${saveTrm}개월 납입 기준`
+        : `원금 ${principalLabel} · ${saveTrm}개월 예치 기준`)
+    : null;
+
+  return {
+    id: String(p.productId),
+    productId: p.productId,
+    category: "단기 예·적금",
+    title: p.productName,
+    institution: p.providerName,
+    subtitle: [p.providerName, p.saveTrm ? `${p.saveTrm}개월` : null, typeLabel].filter(Boolean).join(" · "),
+    baseRate: formatNumber(toFiniteNumber(p.baseRate) ?? 0),
+    maxRate: formatNumber(toFiniteNumber(p.achievableRate) ?? 0),
+    myRate: formatNumber(toFiniteNumber(p.achievableRate) ?? 0),
+    suitability: toFiniteNumber(p.achievableRate) ?? 0,
+    tags: [typeLabel].filter(Boolean),
+    filterTags: [typeLabel].filter(Boolean),
+    applyUrl: null,
+    // 기존 "내가 받을 금리" 바는 그대로 두고, 그 아래에 원금·납입 조건을 추가로 보여준다.
+    contributionCaption: principalCaption,
+  };
+}
+
+// 단기예치(SHORT_TERM)의 파킹통장(탭C) 전용 평면 목록. 백엔드가 섹터 구분을 내려주지 않아
+// 정부/은행 구분 없이 최고 금리 기준 하나의 목록으로만 보여준다.
+export function buildParkingProductListFromResult(result) {
+  if (!result) return [];
+  return asArray(result.parkingProducts).map(buildParkingProductView).sort((a, b) => b.suitability - a.suitability);
+}
+
+// 단기예치(SHORT_TERM)의 단기 예·적금(탭D) 전용 평면 목록. 마찬가지로 섹터 구분 없이
+// 세후 실수령액(achievableRate) 기준 하나의 목록으로만 보여준다.
+export function buildDepositSavingsProductListFromResult(result) {
+  if (!result) return [];
+  return asArray(result.depositSavingsProducts).map(buildDepositSavingsProductView).sort((a, b) => b.suitability - a.suitability);
 }
 
 export function findProductViewById(result, productId) {
