@@ -5,12 +5,15 @@ import logo from '../assets/logo.png'
 import { clearPersistedRecommendation, readPersistedRecommendation } from '../utils/recommendationResult'
 
 export default function Header() {
+  const location = useLocation()
+  const isCalendarHeader = location.pathname === '/calendar'
+
   return (
     <header className="sticky top-0 z-50 w-full bg-white">
-      <div className="mx-auto flex h-14 max-w-480 items-center justify-between px-4 sm:h-16 sm:px-6 lg:h-18 lg:px-[3.5%]">
+      <div className={`mx-auto flex h-14 max-w-480 items-center justify-between px-4 sm:h-16 sm:px-6 lg:px-[3.5%] ${isCalendarHeader ? 'lg:h-[100px]' : 'lg:h-18'}`}>
         <Logo />
         <NavMenu />
-        <UserButtons />
+        <UserButtons isCalendarHeader={isCalendarHeader} />
       </div>
     </header>
   )
@@ -26,7 +29,7 @@ function Logo() {
 const navItems = [
   { label: '서비스 소개', path: '/introduce' },
   { label: '금융상품 추천', path: '/recommend', activePaths: ['/recommend', '/products'] },
-  { label: '정보 커뮤니티', path: '/community' },
+  { label: 'Fin 캘린더', path: '/calendar' },
   { label: '마이페이지', path: '/mypage' },
 ]
 
@@ -63,7 +66,7 @@ function NavMenu() {
   )
 }
 
-function UserButtons() {
+function UserButtons({ isCalendarHeader }) {
   const { accessToken, setAccessToken } = useAuth()
   const navigate = useNavigate()
 
@@ -84,7 +87,7 @@ function UserButtons() {
       <div className="flex shrink-0 items-center gap-3 font-pretendard text-[14.5px]">
         <button
           onClick={() => navigate('/mypage')}
-          className="text-[#515151] border border-gray-300 rounded-lg h-9 px-4 hover:border-[#03BFA5] hover:text-[#03BFA5] transition-colors whitespace-nowrap"
+          className={`text-[#515151] border border-gray-300 rounded-lg h-9 px-4 hover:border-[#03BFA5] hover:text-[#03BFA5] transition-colors whitespace-nowrap ${isCalendarHeader ? 'lg:h-[49px] lg:w-28' : ''}`}
         >
           프로필
         </button>
@@ -100,32 +103,32 @@ function UserButtons() {
 
   return (
     <div className="flex shrink-0 items-center gap-3 font-pretendard text-[14.5px]">
-      <LoginButton />
-      <JoinButton />
+      <LoginButton isCalendarHeader={isCalendarHeader} />
+      <JoinButton isCalendarHeader={isCalendarHeader} />
     </div>
   )
 }
 
-function LoginButton() {
+function LoginButton({ isCalendarHeader }) {
   const navigate = useNavigate()
   return (
     <button
       type="button"
       onClick={() => navigate('/login')}
-      className="text-[#515151] border border-gray-300 rounded-lg h-9 w-19.5 hover:border-[#03BFA5] hover:text-[#03BFA5] transition-colors whitespace-nowrap"
+      className={`text-[#515151] border border-gray-300 rounded-lg h-9 w-19.5 hover:border-[#03BFA5] hover:text-[#03BFA5] transition-colors whitespace-nowrap ${isCalendarHeader ? 'lg:h-[49px] lg:w-28' : ''}`}
     >
       로그인
     </button>
   )
 }
 
-function JoinButton() {
+function JoinButton({ isCalendarHeader }) {
   const navigate = useNavigate()
   return (
     <button
       type="button"
       onClick={() => navigate('/terms')}
-      className="text-white bg-[#03BFA5] rounded-lg h-9 w-19.5 hover:bg-[#02a892] transition-colors whitespace-nowrap"
+      className={`text-white bg-[#03BFA5] rounded-lg h-9 w-19.5 hover:bg-[#02a892] transition-colors whitespace-nowrap ${isCalendarHeader ? 'lg:h-[49px] lg:w-28' : ''}`}
     >
       회원가입
     </button>

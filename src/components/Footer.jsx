@@ -1,6 +1,10 @@
 import React from 'react';
+import { useLocation } from 'react-router-dom';
 
 export default function Footer() {
+  const location = useLocation();
+  if (location.pathname === '/calendar') return null;
+
   return (
     <footer className="font-pretendard bg-[#94AFAC] py-16 px-6 sm:px-10">
       <div className="max-w-6xl mx-auto text-white">
