@@ -16,6 +16,15 @@ import listIcon from "../assets/calendar/87b82.svg";
 import prevIcon from "../assets/calendar/6b3dc.svg";
 import nextIcon from "../assets/calendar/4be05.svg";
 import lockIcon from "../assets/calendar/80622.svg";
+import activeConditionIcon from "../assets/calendar/afb6a.svg";
+import activeBellIcon from "../assets/calendar/46502.svg";
+import caretIcon from "../assets/calendar/1b1fd.svg";
+import editIcon from "../assets/calendar/48452.svg";
+import chevronIcon from "../assets/calendar/5e9c5.svg";
+import favoriteIcon from "../assets/calendar/a1aea.svg";
+import activeFavoriteIcon from "../assets/calendar/1f548.svg";
+import closeIcon from "../assets/calendar/b8e4b.svg";
+import infoIcon from "../assets/calendar/61b3e.svg";
 import "./Calendar.css";
 
 const STATUS_FILTERS = [
@@ -179,6 +188,7 @@ export default function Calendar() {
       setConditionsActive(false);
       return undefined;
     }
+    setConditionsActive(true);
     let cancelled = false;
     client.get("/user/me/profile", withAuth(accessToken))
       .then((response) => { if (!cancelled) setProfile(response.data); })
@@ -449,7 +459,7 @@ export default function Calendar() {
               </div>
               <div className="fc-conditions-wrap">
                 <button className={`fc-button fc-button--conditions${conditionsActive ? " is-on" : ""}`} onClick={() => setConditionsOpen((previous) => !previous)}>
-                  {!isLoggedIn && <Icon src={lockIcon} />}내 조건 맞춤 <span className="fc-caret">⌄</span>
+                  {!isLoggedIn && <Icon src={lockIcon} />}내 조건 맞춤 <Icon src={conditionsActive ? activeConditionIcon : caretIcon} className="fc-condition-caret" />
                 </button>
                 {conditionsOpen && (
                   <div className="fc-condition-popover">
@@ -463,7 +473,7 @@ export default function Calendar() {
                         {profile.display?.region && <span>{profile.display.region} 거주</span>}
                       </div>
                     ) : <span className="fc-profile-empty">프로필 정보를 불러오는 중이에요</span>}
-                    <button className="fc-text-button" onClick={() => navigate("/mypage", { state: { activeTab: "info" } })}>✎ 내 정보 수정</button>
+                    <button className="fc-text-button" onClick={() => navigate("/mypage", { state: { activeTab: "info" } })}><Icon src={editIcon} />내 정보 수정</button>
                   </div>
                 )}
               </div>
@@ -545,7 +555,7 @@ export default function Calendar() {
                 />
               )}
               {isLoggedIn && <MaturityCard onDetails={() => openDetails(MATURITY_EVENT)} isNotified={notifiedIds.has(MATURITY_EVENT.id)} onNotify={() => handleNotify(MATURITY_EVENT)} />}
-              <OngoingCard onOpen={() => setShowOngoingDrawer(true)} />
+              <OngoingCard onOpen={(tab) => { setDrawerTab(tab); setShowOngoingDrawer(true); }} />
             </aside>
           )}
         </section>
@@ -586,7 +596,7 @@ function EmptyState({ onShowAll, onNotify }) {
 }
 
 function AvailableCard({ programs, onSelect }) {
-  return <section className="fc-panel fc-available"><div className="fc-panel-heading"><h3>지금 신청 가능</h3><span>전체 {programs.length}건 <b>›</b></span></div><div className="fc-available-list">{programs.slice(0, 3).map((program) => <button key={program.id} className="fc-available-row" onClick={() => onSelect(program)}><span className="fc-status-badge">진행 중</span><span className="fc-available-copy"><strong>{program.name}</strong><small>~{program.endDate.slice(5).replace("-", ".")} 마감 · {program.institution}</small></span><b className={daysBetween(CALENDAR_REFERENCE_DATE, parseDateKey(program.endDate)) <= 7 ? "fc-red" : ""}>{ddayLabel(program.endDate)}</b><span className="fc-row-arrow">›</span></button>)}</div></section>;
+  return <section className="fc-panel fc-available"><div className="fc-panel-heading"><h3>지금 신청 가능</h3><span>전체 {programs.length}건 <Icon src={chevronIcon} /></span></div><div className="fc-available-list">{programs.slice(0, 3).map((program) => <button key={program.id} className="fc-available-row" onClick={() => onSelect(program)}><span className="fc-status-badge">진행 중</span><span className="fc-available-copy"><strong>{program.name}</strong><small>~{program.endDate.slice(5).replace("-", ".")} 마감 · {program.institution}</small></span><b className={daysBetween(CALENDAR_REFERENCE_DATE, parseDateKey(program.endDate)) <= 7 ? "fc-red" : ""}>{ddayLabel(program.endDate)}</b><span className="fc-row-arrow"><Icon src={chevronIcon} /></span></button>)}</div></section>;
 }
 
 function SelectedProgramCard({ program, selectedDate, occurrence, isLoggedIn, isNotified, isFavorite, conditionsActive, onNotify, onFavorite, onDetails, onLogin }) {
@@ -597,26 +607,26 @@ function SelectedProgramCard({ program, selectedDate, occurrence, isLoggedIn, is
   return (
     <section className="fc-panel fc-selected-program">
       <div className="fc-panel-heading"><h3>{formatSelectedDay(selectedDate)}</h3><span>1건</span></div>
-      <div className="fc-program-badges"><span className={`fc-status-pill fc-status-pill--${eventTone(occurrence.type)}`}>{label}</span><span className={`fc-category-pill${program.category === "support" ? " is-muted" : ""}`}>{program.category === "support" ? "금융 지원 정책" : "Y-Fin 정책상품"}</span><button className={`fc-favorite${isFavorite ? " is-active" : ""}`} aria-label="관심 상품" onClick={isLoggedIn ? onFavorite : onLogin}>{isFavorite ? "♥" : "♡"}</button></div>
+      <div className="fc-program-badges"><span className={`fc-status-pill fc-status-pill--${eventTone(occurrence.type)}`}>{label}</span><span className={`fc-category-pill${program.category === "support" ? " is-muted" : ""}`}>{program.category === "support" ? "금융 지원 정책" : "Y-Fin 정책상품"}</span><button className={`fc-favorite${isFavorite ? " is-active" : ""}`} aria-label="관심 상품" onClick={isLoggedIn ? onFavorite : onLogin}><Icon src={isFavorite ? activeFavoriteIcon : favoriteIcon} /></button></div>
       <h4>{program.name}</h4>
       <p className="fc-program-summary">{program.region || program.institution}{program.summary ? ` · ${program.summary}` : ""}</p>
       <dl className="fc-detail-rows"><div><dt>신청 기간</dt><dd>{dateRange}</dd></div><div><dt>대상</dt><dd>{program.age}{program.region && program.region !== "전국" ? ` · ${program.region}` : ""}</dd></div>{isLoggedIn && conditionsActive && <div><dt>내 조건 맞춤</dt><dd className="fc-green">충족</dd></div>}</dl>
-      <div className="fc-card-actions"><button className="fc-button fc-button--light" onClick={onDetails}>{program.tier === 2 ? "온통청년 보기 ↗" : "상세 보기"}</button><button className={`fc-button fc-button--outline${isNotified ? " is-on" : ""}`} onClick={isLoggedIn ? onNotify : onLogin}><Icon src={isNotified ? bellIcon : lockIcon} />{isLoggedIn ? (isNotified ? "알림 받는 중" : "알림 받기") : "로그인하고 알림 받기"}</button></div>
+      <div className="fc-card-actions"><button className="fc-button fc-button--light" onClick={onDetails}>{program.tier === 2 ? "온통청년 보기 ↗" : "상세 보기"}</button><button className={`fc-button fc-button--outline${isNotified ? " is-on" : ""}`} onClick={isLoggedIn ? onNotify : onLogin}><Icon src={isLoggedIn ? (isNotified ? activeBellIcon : bellIcon) : lockIcon} />{isLoggedIn ? (isNotified ? "알림 받는 중" : "알림 받기") : "로그인하고 알림 받기"}</button></div>
       <small className="fc-data-source">온통청년 10.05 기준</small>
     </section>
   );
 }
 
 function MaturityCard({ onDetails, isNotified, onNotify }) {
-  return <section className="fc-panel fc-maturity-card"><h3>내 만기</h3><div className="fc-maturity-inner"><div className="fc-program-badges"><span className="fc-status-pill fc-status-pill--maturity">만기</span><span className="fc-maturity-dday">{ddayLabel(MATURITY_EVENT.endDate)}</span></div><h4>{MATURITY_EVENT.name}</h4><p>10.22 (목) 만기 · 12개월 · 내가 등록한 가입 상품</p><div className="fc-card-actions"><button className="fc-button fc-button--light" onClick={onDetails}>상세 보기</button><button className={`fc-button fc-button--outline${isNotified ? " is-on" : ""}`} onClick={onNotify}><Icon src={bellIcon} />{isNotified ? "알림 받는 중" : "알림 받기"}</button></div></div></section>;
+  return <section className="fc-panel fc-maturity-card"><h3>내 만기</h3><div className="fc-maturity-inner"><div className="fc-program-badges"><span className="fc-status-pill fc-status-pill--maturity">만기</span><span className="fc-maturity-dday">{ddayLabel(MATURITY_EVENT.endDate)}</span></div><h4>{MATURITY_EVENT.name}</h4><p>10.22 (목) 만기 · 12개월 · 내가 등록한 가입 상품</p><div className="fc-card-actions"><button className="fc-button fc-button--light" onClick={onDetails}>상세 보기</button><button className={`fc-button fc-button--outline${isNotified ? " is-on" : ""}`} onClick={onNotify}><Icon src={isNotified ? activeBellIcon : bellIcon} />{isNotified ? "알림 받는 중" : "알림 받기"}</button></div></div></section>;
 }
 
 function OngoingCard({ onOpen }) {
-  return <section className="fc-panel fc-ongoing-card"><h3>연중 · 상시 일정</h3><button className="fc-ongoing-row" onClick={onOpen}><span>연중</span><strong>연중 접수 중인 정책 9건</strong><b>›</b></button><button className="fc-ongoing-row" onClick={onOpen}><span>상시</span><strong>상시 신청 가능한 정책 7건</strong><b>›</b></button><p>연중 접수는 예산 소진 시 조기 마감될 수 있어요</p></section>;
+  return <section className="fc-panel fc-ongoing-card"><h3>연중 · 상시 일정</h3><button className="fc-ongoing-row" onClick={() => onOpen("year-round")}><span>연중</span><strong>연중 접수 중인 정책 9건</strong><Icon src={chevronIcon} /></button><button className="fc-ongoing-row" onClick={() => onOpen("always")}><span>상시</span><strong>상시 신청 가능한 정책 7건</strong><Icon src={chevronIcon} /></button><p>연중 접수는 예산 소진 시 조기 마감될 수 있어요</p></section>;
 }
 
 function NextScheduleCard({ programs, onGoToMonth }) {
-  return <section className="fc-panel fc-next-schedule"><h3>가장 가까운 다음 일정</h3>{programs.map((program) => <div className="fc-next-row" key={program.id}><span className={`fc-status-pill fc-status-pill--${program.plannedDate ? "planned" : "deadline"}`}>{program.plannedDate ? "예정" : "마감"}</span><strong>{program.name}</strong><span>{program.period || program.endDate?.slice(5).replace("-", ".")}</span></div>)}<button className="fc-button fc-button--outline" onClick={() => onGoToMonth(programs[0]?.plannedDate || programs[0]?.endDate)}>12월로 이동 <b>›</b></button></section>;
+  return <section className="fc-panel fc-next-schedule"><h3>가장 가까운 다음 일정</h3>{programs.map((program) => <div className="fc-next-row" key={program.id}><span className={`fc-status-pill fc-status-pill--${program.plannedDate ? "planned" : "deadline"}`}>{program.plannedDate ? "예정" : "마감"}</span><strong>{program.name}</strong><span>{program.period || program.endDate?.slice(5).replace("-", ".")}</span></div>)}<button className="fc-button fc-button--outline" onClick={() => onGoToMonth(programs[0]?.plannedDate || programs[0]?.endDate)}>12월로 이동 <Icon src={chevronIcon} /></button></section>;
 }
 
 function CalendarList({ occurrences, showPast, onTogglePast, isLoggedIn, notifiedIds, onNotify, onDetails, onSelect, onLogin }) {
@@ -626,19 +636,19 @@ function CalendarList({ occurrences, showPast, onTogglePast, isLoggedIn, notifie
     return result;
   }, {});
   const keys = Object.keys(groups).sort();
-  return <div className="fc-list-view"><div className="fc-list-toolbar"><span>오늘 이후 일정 <strong>{keys.length}건</strong>을 날짜순으로 보여드려요</span><button onClick={onTogglePast}>{showPast ? "지난 일정 접기" : "지난 일정 2건 보기"}⌄</button></div>{keys.length === 0 ? <EmptyState onShowAll={() => {}} onNotify={() => onLogin()} /> : keys.map((date) => {
+  return <div className="fc-list-view"><div className="fc-list-toolbar"><span>오늘 이후 일정 <strong>{keys.length}건</strong>을 날짜순으로 보여드려요</span><button onClick={onTogglePast}>{showPast ? "지난 일정 접기" : "지난 일정 2건 보기"}<Icon src={caretIcon} /></button></div>{keys.length === 0 ? <EmptyState onShowAll={() => {}} onNotify={() => onLogin()} /> : keys.map((date) => {
     const parsed = parseDateKey(date);
-    return <div className="fc-list-date-group" key={date}><div className="fc-list-date"><strong>{date.slice(5).replace("-", ".")}</strong><span>{WEEKDAYS[parsed.getDay()]}요일</span></div><div className="fc-list-cards">{groups[date].map((occurrence) => <article className="fc-list-card" key={occurrence.id} onClick={() => onSelect(occurrence)}><EventLabel occurrence={occurrence} /><div className="fc-list-info"><strong>{occurrence.program.name}</strong><span className={`fc-category-pill${occurrence.program.category === "support" ? " is-muted" : ""}`}>{occurrence.program.category === "support" ? "금융 지원 정책" : "Y-Fin 정책상품"}</span><small>{occurrence.program.institution} · {occurrence.program.period || "전국"}</small></div><b className="fc-list-dday">{occurrence.type === "deadline" ? ddayLabel(occurrence.date) : ""}</b><button className="fc-button fc-button--light" onClick={(event) => { event.stopPropagation(); onDetails(occurrence.program); }}>{occurrence.program.tier === 2 ? "온통청년 ↗" : "상세 보기"}</button><button className="fc-button fc-button--outline" onClick={(event) => { event.stopPropagation(); isLoggedIn ? onNotify(occurrence.program) : onLogin(occurrence.program); }}><Icon src={bellIcon} />{isLoggedIn && notifiedIds.has(occurrence.program.id) ? "알림 받는 중" : "알림 받기"}</button></article>)}</div></div>;
+    return <div className="fc-list-date-group" key={date}><div className="fc-list-date"><strong>{date.slice(5).replace("-", ".")}</strong><span>{WEEKDAYS[parsed.getDay()]}요일</span></div><div className="fc-list-cards">{groups[date].map((occurrence) => { const isNotified = isLoggedIn && notifiedIds.has(occurrence.program.id); return <article className="fc-list-card" key={occurrence.id} onClick={() => onSelect(occurrence)}><EventLabel occurrence={occurrence} /><div className="fc-list-info"><strong>{occurrence.program.name}</strong><span className={`fc-category-pill${occurrence.program.category === "support" ? " is-muted" : ""}`}>{occurrence.program.category === "support" ? "금융 지원 정책" : "Y-Fin 정책상품"}</span><small>{occurrence.program.institution} · {occurrence.program.period || "전국"}</small></div><b className="fc-list-dday">{occurrence.type === "deadline" ? ddayLabel(occurrence.date) : ""}</b><button className="fc-button fc-button--light" onClick={(event) => { event.stopPropagation(); onDetails(occurrence.program); }}>{occurrence.program.tier === 2 ? "온통청년 ↗" : "상세 보기"}</button><button className={`fc-button fc-button--outline${isNotified ? " is-on" : ""}`} onClick={(event) => { event.stopPropagation(); isLoggedIn ? onNotify(occurrence.program) : onLogin(occurrence.program); }}><Icon src={isNotified ? activeBellIcon : bellIcon} />{isNotified ? "알림 받는 중" : "알림 받기"}</button></article>; })}</div></div>;
   })}</div>;
 }
 
 function LoginPrompt({ onClose, onJoin, onLogin }) {
-  return <div className="fc-modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}><section className="fc-login-modal" role="dialog" aria-modal="true" aria-labelledby="fc-login-title"><button className="fc-modal-close" onClick={onClose} aria-label="닫기">×</button><span className="fc-login-lock"><Icon src={lockIcon} /></span><h2 id="fc-login-title">로그인 후 이용할 수 있어요</h2><p>마감 알림은 로그인한 회원에게 보내드려요</p><ul><li>내 자격 정보에 맞는 일정만 골라 보기</li><li>마감 7일·3일·1일 전에 이메일로 알림 받기</li><li>가입한 상품의 만기일도 캘린더에 표시</li></ul><button className="fc-button fc-button--primary" onClick={onJoin}>회원가입 후 이용하기</button><button className="fc-button fc-button--light" onClick={onLogin}>로그인하고 확인하기</button></section></div>;
+  return <div className="fc-modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}><section className="fc-login-modal" role="dialog" aria-modal="true" aria-labelledby="fc-login-title"><button className="fc-modal-close" onClick={onClose} aria-label="닫기"><Icon src={closeIcon} /></button><span className="fc-login-lock"><Icon src={lockIcon} /></span><h2 id="fc-login-title">로그인 후 이용할 수 있어요</h2><p>마감 알림은 로그인한 회원에게 보내드려요</p><ul><li>내 자격 정보에 맞는 일정만 골라 보기</li><li>마감 7일·3일·1일 전에 이메일로 알림 받기</li><li>가입한 상품의 만기일도 캘린더에 표시</li></ul><button className="fc-button fc-button--primary" onClick={onJoin}>회원가입 후 이용하기</button><button className="fc-button fc-button--light" onClick={onLogin}>로그인하고 확인하기</button></section></div>;
 }
 
 function OngoingDrawer({ tab, onTabChange, onClose }) {
   const items = tab === "year-round" ? ONGOING_PROGRAMS : ALWAYS_PROGRAMS;
-  const tagLabel = tab === "year-round" ? "연중" : "상시";
-  return <div className="fc-drawer-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}><aside className="fc-drawer" role="dialog" aria-modal="true" aria-labelledby="fc-drawer-title"><div className="fc-drawer-header"><div><h2 id="fc-drawer-title">연중 · 상시 일정</h2><p>신청 기간이 길거나 따로 없어 캘린더에 찍지 않은 정책이에요.<br />마감일이 없어 알림은 설정하지 않아요.</p></div><button onClick={onClose} aria-label="닫기">×</button></div><div className="fc-drawer-tabs"><button className={tab === "year-round" ? "is-active" : ""} onClick={() => onTabChange("year-round")}>연중 접수 9</button><button className={tab === "always" ? "is-active" : ""} onClick={() => onTabChange("always")}>상시 신청 7</button></div><div className="fc-drawer-meta"><span>부산 기준 · 최근 공고순</span><small>캘린더 필터 그대로 적용</small></div><div className="fc-drawer-warning">ⓘ　연중 접수는 예산 소진 시 조기 마감될 수 있어요</div><div className="fc-drawer-list">{items.map((program) => <article key={program.id}><div><span className="fc-mini-tag">{tagLabel}</span><span className="fc-category-pill is-muted">금융 지원 정책</span><h3>{program.name}</h3><p>{program.institution} · {program.period}</p></div><button className="fc-button fc-button--light" onClick={() => window.open("https://www.youthcenter.go.kr", "_blank", "noopener,noreferrer")}>온통청년 보기 ↗</button></article>)}</div><p className="fc-drawer-more">아래로 내리면 5건 더 볼 수 있어요</p></aside></div>;
+  const tagLabel = tab === "year-round" ? "연중 접수" : "상시 신청";
+  return <div className="fc-drawer-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}><aside className="fc-drawer" role="dialog" aria-modal="true" aria-labelledby="fc-drawer-title"><div className="fc-drawer-header"><div><h2 id="fc-drawer-title">연중 · 상시 일정</h2><p>신청 기간이 길거나 따로 없어 캘린더에 찍지 않은 정책이에요.<br />마감일이 없어 알림은 설정하지 않아요.</p></div><button onClick={onClose} aria-label="닫기"><Icon src={closeIcon} /></button></div><div className="fc-drawer-tabs"><button className={tab === "year-round" ? "is-active" : ""} onClick={() => onTabChange("year-round")}>연중 접수 9</button><button className={tab === "always" ? "is-active" : ""} onClick={() => onTabChange("always")}>상시 신청 7</button></div><div className="fc-drawer-meta"><span>부산 기준 · 최근 공고순</span><small>캘린더 필터 그대로 적용</small></div><div className="fc-drawer-warning"><Icon src={infoIcon} />연중 접수는 예산 소진 시 조기 마감될 수 있어요</div><div className="fc-drawer-list">{items.map((program) => <article key={program.id}><div><span className="fc-mini-tag">{tagLabel}</span><span className="fc-category-pill is-muted">금융 지원 정책</span><h3>{program.name}</h3><p>{program.institution} · {program.period}</p></div><button className="fc-button fc-button--light" onClick={() => window.open("https://www.youthcenter.go.kr", "_blank", "noopener,noreferrer")}>온통청년 보기 ↗</button></article>)}</div><p className="fc-drawer-more">아래로 내리면 5건 더 볼 수 있어요</p></aside></div>;
 }
 
