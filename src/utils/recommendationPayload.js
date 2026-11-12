@@ -3,7 +3,7 @@ export const CATEGORY_ALIASES = {
   status: ["현재신분"],
   savingPeriod: ["저축기간"],
   benefits: ["혜택선택", "핵심혜택"],
-  bankRelation: ["우대거래", "은행거래"],
+  bankRelation: ["우대거래", "은행거래", "은행 우대 조건"],
 };
 
 const HIDDEN_BANK_RELATION_OPTIONS = new Set(["첫거래고객", "재예치"]);

@@ -111,6 +111,7 @@ export function AmountField({ data, setData, type }) {
   const amountDescription = isShortTerm
     ? "한 번에 예치할 수 있는 금액이에요. (단기 예치 기준)"
     : "매달 넣을 수 있는 금액이에요. (목돈 만들기 기준)";
+  const [amountInput, setAmountInput] = useState(String(amount));
 
   useEffect(() => {
     if (currentAmount !== amount) {
@@ -118,12 +119,40 @@ export function AmountField({ data, setData, type }) {
     }
   }, [amount, currentAmount, setData]);
 
+  useEffect(() => {
+    setAmountInput(String(amount));
+  }, [amount]);
+
+  const commitAmountInput = () => {
+    const parsedAmount = Number(amountInput);
+    const nextAmount = Number.isFinite(parsedAmount)
+      ? Math.min(maxAmount, Math.max(minAmount, Math.round(parsedAmount)))
+      : minAmount;
+
+    setData((previous) => ({ ...previous, monthlyAmount: nextAmount }));
+    setAmountInput(String(nextAmount));
+  };
+
   return (
     <div className="mt-10">
       <FieldHeader title={amountTitle} required requiredText={false} className="mb-[5px]" />
       <p className="mb-[20px] text-[18px] text-[#767676]">{amountDescription}</p>
       <p className="mb-[16px] text-[38px] font-semibold leading-none text-[#03BFA5]">
-        {amount}<span className="ml-2 text-[20px] text-[#454545]">만원</span>
+        <input
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          value={amountInput}
+          onChange={(event) => setAmountInput(event.target.value.replace(/\D/g, ""))}
+          onBlur={commitAmountInput}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") event.currentTarget.blur();
+          }}
+          style={{ width: `${Math.max(amountInput.length, 1)}ch` }}
+          className="max-w-full bg-transparent text-[38px] font-semibold leading-none text-[#03BFA5] outline-none"
+          aria-label={`${amountTitle} (만원)`}
+        />
+        <span className="ml-2 text-[20px] text-[#454545]">만원</span>
       </p>
       <div className="w-full max-w-[760px]">
         <input
