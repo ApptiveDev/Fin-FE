@@ -31,7 +31,11 @@ export function getProductApplicationBadge(product) {
 }
 
 export function getProductApplicationBadgeVariant(product) {
-  return product?.category?.includes("제 1금융권") ? "bank" : "government";
+  return product?.category?.includes("제 1금융권")
+    || product?.category === "단기 예·적금"
+    || product?.productType === "파킹통장"
+    ? "bank"
+    : "government";
 }
 
 export function openProductApplication(product) {

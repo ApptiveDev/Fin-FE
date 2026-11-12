@@ -349,27 +349,54 @@ function buildMaxRateLimitCaption(p) {
 
 function buildParkingProductView(p) {
   const limitCaption = buildMaxRateLimitCaption(p);
+  const baseRate = toFiniteNumber(p.baseRate) ?? 0;
+  const maxRate = toFiniteNumber(p.maxRate) ?? 0;
+  const maxDepositAmount = toFiniteNumber(p.maxDepositAmount);
+  const maxDepositCaption = maxDepositAmount === null
+    ? null
+    : formatMonthlyDeposit(maxDepositAmount);
 
   return {
     id: String(p.productId),
     productId: p.productId,
     category: "파킹통장",
     title: p.productName,
+    detailTitle: p.productName,
     institution: p.providerName,
+    metaInstitution: p.providerName ? `기관 ${p.providerName}` : "",
     subtitle: [p.providerName, p.interestPaymentMethod, p.depositProtection ? "예금자보호" : null]
       .filter(Boolean)
       .join(" · "),
-    baseRate: formatNumber(toFiniteNumber(p.baseRate) ?? 0),
-    maxRate: formatNumber(toFiniteNumber(p.maxRate) ?? 0),
-    myRate: formatNumber(toFiniteNumber(p.maxRate) ?? 0),
-    suitability: toFiniteNumber(p.maxRate) ?? 0,
+    baseRate: formatNumber(baseRate),
+    maxRate: formatNumber(maxRate),
+    myRate: formatNumber(maxRate),
+    suitability: maxRate,
     tags: [p.depositProtection ? "예금자보호" : null, p.interestPaymentMethod].filter(Boolean),
     filterTags: ["예금"],
+    productPropertyId: toFiniteNumber(p.productPropertyId),
+    productType: "파킹통장",
+    periodSummary: "수시 입출금",
+    amountSummary: maxDepositCaption ? `최대 예치 ${maxDepositCaption}` : "입출금식",
+    savingPeriod: "수시 입출금",
+    depositRange: maxDepositCaption ? `최대 ${maxDepositCaption}` : "입출금식",
+    applicationMethod: p.officialChannelName || "취급기관 앱 / 영업점",
+    target: ["가입 대상 및 조건은 취급기관에서 확인해 주세요."],
+    caution: ["최고금리 적용 한도와 이자 지급 주기를 가입 전에 확인해 주세요."],
+    rateTerm: "입출금",
+    baseRateDisplay: `${formatNumber(baseRate)}%`,
+    maxRateDisplay: `${formatNumber(maxRate)}%`,
+    rateNotice: RATE_NOTICE,
+    rateConditions: [],
+    providerName: p.providerName || null,
+    officialChannelUrl: p.officialChannelUrl || null,
+    officialChannelName: p.officialChannelName || null,
     applyUrl: p.applyUrl || null,
     // 파킹통장은 로그인 여부와 무관하게 공개되는 공시금리라 "내가 받을 금리" 대신
     // 최고금리가 실제로 적용되는 잔액 구간을 보여준다.
     ratePillLabel: "최고금리 적용한도",
     ratePillValue: limitCaption ? `${limitCaption}까지` : null,
+    maxRateApplicableMaxAmount: toFiniteNumber(p.maxRateApplicableMaxAmount),
+    maxDepositAmount,
   };
 }
 
@@ -378,6 +405,8 @@ function buildDepositSavingsProductView(p) {
   const saveTrm = toFiniteNumber(p.saveTrm);
   const principal = toFiniteNumber(p.principal);
   const principalLabel = formatContributionAmount(principal);
+  const baseRate = toFiniteNumber(p.baseRate) ?? 0;
+  const achievableRate = toFiniteNumber(p.achievableRate) ?? 0;
   const monthlyAmount = p.productType === "SAVING" && saveTrm ? Math.round(principal / saveTrm) : null;
   const principalCaption = principalLabel && saveTrm
     ? (monthlyAmount
@@ -390,15 +419,34 @@ function buildDepositSavingsProductView(p) {
     productId: p.productId,
     category: "단기 예·적금",
     title: p.productName,
+    detailTitle: p.productName,
     institution: p.providerName,
+    metaInstitution: p.providerName ? `기관 ${p.providerName}` : "",
     subtitle: [p.providerName, p.saveTrm ? `${p.saveTrm}개월` : null, typeLabel].filter(Boolean).join(" · "),
-    baseRate: formatNumber(toFiniteNumber(p.baseRate) ?? 0),
-    maxRate: formatNumber(toFiniteNumber(p.achievableRate) ?? 0),
-    myRate: formatNumber(toFiniteNumber(p.achievableRate) ?? 0),
-    suitability: toFiniteNumber(p.achievableRate) ?? 0,
+    baseRate: formatNumber(baseRate),
+    maxRate: formatNumber(achievableRate),
+    myRate: formatNumber(achievableRate),
+    suitability: achievableRate,
     tags: [typeLabel].filter(Boolean),
     filterTags: [typeLabel].filter(Boolean),
-    applyUrl: null,
+    productPropertyId: toFiniteNumber(p.productPropertyId),
+    productType: typeLabel || "예·적금",
+    periodSummary: saveTrm ? `${saveTrm}개월` : "상품별 상이",
+    amountSummary: principalCaption || "상품별 납입 조건 확인",
+    savingPeriod: saveTrm ? `${saveTrm}개월 만기` : "상품별 상이",
+    depositRange: principalCaption || "상품별 납입 조건 확인",
+    applicationMethod: p.officialChannelName || "취급기관 앱 / 영업점",
+    target: ["가입 대상 및 조건은 취급기관에서 확인해 주세요."],
+    caution: ["우대금리 적용 조건과 중도 해지 시 유의 사항을 가입 전에 확인해 주세요."],
+    rateTerm: saveTrm ? `${saveTrm}개월` : "상품별 상이",
+    baseRateDisplay: `${formatNumber(baseRate)}%`,
+    maxRateDisplay: `${formatNumber(achievableRate)}%`,
+    rateNotice: RATE_NOTICE,
+    rateConditions: [],
+    providerName: p.providerName || null,
+    officialChannelUrl: p.officialChannelUrl || null,
+    officialChannelName: p.officialChannelName || null,
+    applyUrl: p.applyUrl || null,
     // 기존 "내가 받을 금리" 바는 그대로 두고, 그 아래에 원금·납입 조건을 추가로 보여준다.
     contributionCaption: principalCaption,
   };
@@ -420,6 +468,16 @@ export function buildDepositSavingsProductListFromResult(result) {
 
 export function findProductViewById(result, productId) {
   if (!result || productId === undefined || productId === null) return null;
+
+  const parkingProduct = asArray(result.parkingProducts).find(
+    (item) => String(item.productId) === String(productId),
+  );
+  if (parkingProduct) return buildParkingProductView(parkingProduct);
+
+  const depositSavingsProduct = asArray(result.depositSavingsProducts).find(
+    (item) => String(item.productId) === String(productId),
+  );
+  if (depositSavingsProduct) return buildDepositSavingsProductView(depositSavingsProduct);
 
   const indices = buildIndices(result);
   const id = String(productId);

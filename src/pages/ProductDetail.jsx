@@ -243,6 +243,7 @@ function NoticeBox({ children }) {
 function BankRateSummary({ product, isLoggedIn }) {
   const baseRate = product.baseRateDisplay || `${product.baseRate}%`;
   const maxRate = product.maxRateDisplay || `${product.maxRate}%`;
+  const isParkingProduct = product.productType === "파킹통장";
 
   return (
     <div className="flex h-[238px] w-full max-w-[620px] flex-col items-center justify-center rounded-[10px] border border-[#D5D5D5] px-6 py-8 lg:px-[28px] lg:py-[32px]">
@@ -258,8 +259,17 @@ function BankRateSummary({ product, isLoggedIn }) {
         </div>
       </div>
       <div className="mt-[16px] flex h-[44px] w-full max-w-[461px] items-center justify-center gap-[22px] rounded-full border border-[#03BFA5] bg-[#EFFFFD] px-[26px] leading-[1.2] text-[#03BFA5]">
-        <span className="whitespace-nowrap text-center text-[16px] font-normal">내가 받을 수 있는 금리</span>
-        <span className="whitespace-nowrap text-center text-[24.37px] font-semibold">연 {isLoggedIn ? product.myRate : "???"} %</span>
+        {isParkingProduct ? (
+          <>
+            <span className="whitespace-nowrap text-center text-[16px] font-normal">최고금리 적용 한도</span>
+            <span className="whitespace-nowrap text-center text-[18px] font-semibold">{product.ratePillValue || "상품별 상이"}</span>
+          </>
+        ) : (
+          <>
+            <span className="whitespace-nowrap text-center text-[16px] font-normal">내가 받을 수 있는 금리</span>
+            <span className="whitespace-nowrap text-center text-[24.37px] font-semibold">연 {isLoggedIn ? product.myRate : "???"} %</span>
+          </>
+        )}
       </div>
     </div>
   );
