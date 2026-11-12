@@ -100,12 +100,23 @@ export function SavingPeriodField({ data, setData, cats }) {
 }
 
 export function AmountField({ data, setData, type }) {
-  const amount = data.monthlyAmount || 1;
   const isShortTerm = type === "short";
+  const minAmount = isShortTerm ? 10 : 1;
+  const maxAmount = isShortTerm ? 10_000 : 100;
+  const currentAmount = Number(data.monthlyAmount);
+  const amount = Number.isFinite(currentAmount)
+    ? Math.min(maxAmount, Math.max(minAmount, currentAmount))
+    : minAmount;
   const amountTitle = isShortTerm ? "예치 희망액" : "월 납입 희망액";
   const amountDescription = isShortTerm
     ? "한 번에 예치할 수 있는 금액이에요. (단기 예치 기준)"
     : "매달 넣을 수 있는 금액이에요. (목돈 만들기 기준)";
+
+  useEffect(() => {
+    if (currentAmount !== amount) {
+      setData((previous) => ({ ...previous, monthlyAmount: amount }));
+    }
+  }, [amount, currentAmount, setData]);
 
   return (
     <div className="mt-10">
@@ -117,17 +128,17 @@ export function AmountField({ data, setData, type }) {
       <div className="w-full max-w-[760px]">
         <input
           type="range"
-          min={1}
-          max={100}
+          min={minAmount}
+          max={maxAmount}
           value={amount}
           onChange={(event) => setData({ ...data, monthlyAmount: Number(event.target.value) })}
           className="recommend-range mb-[18px] w-full"
-          style={{ "--range-progress": getRangeProgress(amount, 1, 100) }}
+          style={{ "--range-progress": getRangeProgress(amount, minAmount, maxAmount) }}
           aria-label={amountTitle}
         />
         <div className="flex justify-between px-1 font-pretendard text-[17px] font-semibold text-[#454545]">
-          <span>1만원</span>
-          <span>100만원</span>
+          <span>{isShortTerm ? "10만원" : "1만원"}</span>
+          <span>{isShortTerm ? "1억원" : "100만원"}</span>
         </div>
       </div>
     </div>
