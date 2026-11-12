@@ -152,8 +152,25 @@ function selectedOptions(data, categoryIds) {
   });
 }
 
+function getSavingPeriodMonths(data, categories) {
+  const selectedIds = (data.savingPeriod || []).map(String);
+  const selectedPeriod = (categories?.savingPeriod || []).find((period) =>
+    selectedIds.includes(String(period.optionId)),
+  );
+  const label = selectedPeriod?.optionValue || "";
+  const monthCount = Number(label.match(/(\d+)\s*개월/)?.[1]);
+  const yearCount = Number(label.match(/(\d+)\s*년/)?.[1]);
+
+  if (Number.isFinite(monthCount)) return monthCount;
+  if (Number.isFinite(yearCount)) return yearCount * 12;
+  return null;
+}
+
 export function buildRecommendationRequest(data, categories) {
   const employmentMonths = toNumber(data.employmentMonths);
+  const savingPeriodMonths = getSavingPeriodMonths(data, categories);
+  const isShortTerm = savingPeriodMonths !== null && savingPeriodMonths <= 3;
+  const amount = toWonFromTenThousand(data.monthlyAmount);
 
   return {
     options: selectedOptions(data, categories?.categoryIds),
@@ -171,7 +188,8 @@ export function buildRecommendationRequest(data, categories) {
             ? false
             : null,
       isHouseholder: data.isTenant ? true : null,
-      monthlySavingsGoal: toWonFromTenThousand(data.monthlyAmount),
+      monthlySavingsGoal: isShortTerm ? null : amount,
+      depositAmount: isShortTerm ? amount : null,
       neverUsedBanks: toBankCodes(data.firstBanks || []),
       maturedSavingBanks: toBankCodes(data.maturedBanks || []),
       selectedInterestRateOptions: [],
