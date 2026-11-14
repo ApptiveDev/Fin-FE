@@ -130,6 +130,30 @@
   animation: step-reveal-unclip 0s 300ms forwards;
 }
 
+/* 추천 정보 입력창을 접을 때: step-reveal의 반대(높이 1fr -> 0fr, 서서히 사라짐). 끝난 뒤 상태를 유지한다. */
+@keyframes step-collapse {
+  from {
+    grid-template-rows: 1fr;
+    opacity: 1;
+  }
+  to {
+    grid-template-rows: 0fr;
+    opacity: 0;
+  }
+}
+
+.step-collapse {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  animation: step-collapse 300ms ease-in;
+}
+
+.step-collapse > * {
+  min-height: 0;
+  overflow: hidden;
+}
+
 /* 마이페이지 수정 모달 스크롤: 얇은 둥근 막대를 모달 안쪽으로 들여서(오른쪽 4px 여백, 위아래 18px 여백) 모서리에 닿지 않게 한다. */
 .modal-scroll::-webkit-scrollbar {
   width: 14px;

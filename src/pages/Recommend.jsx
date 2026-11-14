@@ -15,6 +15,9 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { readPersistedRecommendation } from "../utils/recommendationResult";
 import { useAuth } from "../context/AuthContext";
 
+// 정보 입력창이 펼쳐지고 접히는 애니메이션 시간(ms). index.css의 step-reveal/step-collapse(300ms)와 맞춘다.
+const FORM_ANIMATION_MS = 300;
+
 // 검색바가 화면 상단에서 이 정도 간격을 유지하도록 스크롤 (sticky 헤더 높이 + 여유 간격)
 const SEARCH_BAR_TOP_OFFSET = 96;
 
@@ -157,6 +160,9 @@ export default function Recommend() {
   const navigate = useNavigate();
   const location = useLocation();
   const [isOpen, setIsOpen] = useState(Boolean(location.state?.openForm));
+  // 접는 애니메이션이 끝날 때까지 폼을 화면에 남겨 두기 위한 상태(isOpen은 이미 false).
+  const [isClosing, setIsClosing] = useState(false);
+  const closingTimerRef = useRef(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisError, setAnalysisError] = useState("");
   const [analysisResult, setAnalysisResult] = useState(null);
@@ -176,14 +182,26 @@ export default function Recommend() {
 
   // 검색창을 다시 눌러 접을 때는 페이지 맨 위로 스크롤한다(열 때는 아래 effect가 검색창 위치로 맞춘다).
   const toggleOpen = () => {
-    if (isOpen) window.scrollTo({ top: 0, behavior: "smooth" });
+    clearTimeout(closingTimerRef.current);
+    if (isOpen) {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      setIsClosing(true);
+      closingTimerRef.current = setTimeout(() => setIsClosing(false), FORM_ANIMATION_MS);
+    } else {
+      setIsClosing(false);
+    }
     setIsOpen((prev) => !prev);
   };
 
+  useEffect(() => () => clearTimeout(closingTimerRef.current), []);
+
   // 검색창을 열거나(눌렀을 때) 단계가 바뀔 때마다 검색창이 항상 같은 위치로 오도록 스크롤
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) return undefined;
     scrollToSearchBar();
+    // 폼이 펼쳐지며 페이지 높이가 늘어나는 동안 스크롤이 중간에 멈출 수 있어, 애니메이션이 끝난 뒤 한 번 더 맞춘다.
+    const timer = setTimeout(scrollToSearchBar, FORM_ANIMATION_MS + 50);
+    return () => clearTimeout(timer);
   }, [isOpen, step, scrollToSearchBar]);
 
   const startAnalysis = ({ saveProfile = false } = {}) => {
@@ -310,8 +328,8 @@ export default function Recommend() {
 
         {/* 검색바 + 폼 */}
         <div className="w-full max-w-[962px]">
-          <div className={`bg-white shadow-[0_3px_32px_rgba(113,126,123,0.30)] ${
-            isOpen ? "rounded-[22px] border border-[#E2E6E5]" : "rounded-full border-2 border-[#03BFA5]"
+          <div className={`bg-white shadow-[0_3px_32px_rgba(113,126,123,0.30)] transition-[border-radius] duration-300 ${
+            isOpen ? "rounded-[22px] border border-[#E2E6E5]" : "rounded-[36px] border-2 border-[#03BFA5]"
           }`}>
 
           {/* 검색바 */}
@@ -321,8 +339,8 @@ export default function Recommend() {
             onClick={toggleOpen}
             disabled={isAnalyzing}
             aria-label={isOpen ? "정보 입력 닫기" : "정보 입력 열기"}
-            className={`w-full h-[67px] flex items-center justify-between px-[23px] hover:bg-gray-50 transition-colors focus:outline-none ${
-              isOpen ? "rounded-t-[22px] rounded-b-none" : "rounded-full"
+            className={`w-full h-[67px] flex items-center justify-between px-[23px] hover:bg-gray-50 transition-[background-color,border-radius] duration-300 focus:outline-none ${
+              isOpen ? "rounded-t-[22px] rounded-b-none" : "rounded-[36px]"
             }`}
           >
             {/* 왼쪽 돋보기 아이콘 */}
@@ -343,7 +361,9 @@ export default function Recommend() {
           </button>
 
           {/* 폼 */}
-          {isOpen && (
+          {(isOpen || isClosing) && (
+            <div className={isOpen ? "step-reveal" : "step-collapse"}>
+            <div>
             <div
               data-recommend-card
               className="px-[61px] pt-[48px] pb-[37px] border-t border-[#E2E6E5]"
@@ -364,6 +384,8 @@ export default function Recommend() {
                   {analysisError}
                 </div>
               )}
+            </div>
+            </div>
             </div>
           )}
 
