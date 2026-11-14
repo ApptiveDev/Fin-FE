@@ -12,6 +12,7 @@ import ProductDetail from './pages/ProductDetail';
 import ProductRateCalculator from './pages/ProductRateCalculator';
 import MyPage from './pages/MyPage';
 import ScrollToTop from "./components/ScrollToTop";
+import OverlayScrollbar from "./components/OverlayScrollbar";
 import { useAuth } from './context/AuthContext';
 
 function isMockMode() {
@@ -69,6 +70,7 @@ function App() {
   return (
     <BrowserRouter>
       <ScrollToTop />
+      <OverlayScrollbar />
       <Header />
       <AuthGate>
         <Routes>
