@@ -3,9 +3,11 @@ import NavButtons from "./NavButtons";
 import InfoBox from "./InfoBox";
 import Tag from "./Tag";
 import KeywordAlertModal from "./KeywordAlertModal";
-import { FormInput, FormSelect } from "./FormFields";
+import { DropdownSelect, FormInput } from "./FormFields";
+import { BirthdateFields, RegionSelect, TenureMonthsField } from "./ProfileFields";
 import { toggleField } from "../utils/toggleField";
-import { useState, useEffect } from "react";
+import { getSavingPlanType } from "../utils/recommendationPayload";
+import { useState, useEffect, useRef } from "react";
 
 function FieldHeader({
   title,
@@ -99,52 +101,144 @@ export function SavingPeriodField({ data, setData, cats }) {
   );
 }
 
-export function AmountField({ data, setData, type }) {
-  const amount = data.monthlyAmount || 1;
+// 대분류별 금액 범위(단위: 만원). 단기 예치는 10만원~1억원, 목돈 만들기는 1만원~100만원.
+const AMOUNT_CONFIG = {
+  short: {
+    min: 10,
+    max: 10000,
+    step: 10,
+    defaultValue: 10,
+    minLabel: "10만원",
+    maxLabel: "1억원",
+    hint: "10만 원 ~ 1억 원 사이로 입력할 수 있어요.",
+    errorHint: "10만 원 ~ 1억 원 사이로 입력해주세요.",
+  },
+  goal: {
+    min: 1,
+    max: 100,
+    step: 1,
+    defaultValue: 1,
+    minLabel: "1만원",
+    maxLabel: "100만원",
+    hint: "1만 원 ~ 100만 원 사이로 입력할 수 있어요.",
+    errorHint: "1만 원 ~ 100만 원 사이로 입력해주세요.",
+  },
+};
+
+// 금액 입력: 숫자 박스를 눌러 직접 입력하거나 슬라이더를 드래그해서 바꾼다.
+// 범위를 벗어난 값을 입력하면 박스/문구가 빨갛게 바뀌고, onValidityChange(true)로 부모가 다음 단계를 막을 수 있다.
+export function AmountField({ data, setData, type, onValidityChange }) {
   const isShortTerm = type === "short";
+  const config = isShortTerm ? AMOUNT_CONFIG.short : AMOUNT_CONFIG.goal;
   const amountTitle = isShortTerm ? "예치 희망액" : "월 납입 희망액";
   const amountDescription = isShortTerm
     ? "한 번에 예치할 수 있는 금액이에요. (단기 예치 기준)"
     : "매달 넣을 수 있는 금액이에요. (목돈 만들기 기준)";
 
+  const stored = Number(data.monthlyAmount);
+  const hasValidStored = Number.isFinite(stored) && stored >= config.min && stored <= config.max;
+  const amount = hasValidStored ? stored : config.defaultValue;
+
+  // 값이 아직 없거나, 대분류가 바뀌어 범위를 벗어났다면 그 대분류의 기본값으로 맞춘다.
+  useEffect(() => {
+    if (!hasValidStored) setData((prev) => ({ ...prev, monthlyAmount: config.defaultValue }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasValidStored, config.defaultValue]);
+
+  const [text, setText] = useState(String(amount));
+  const focusedRef = useRef(false);
+
+  // 슬라이더/대분류 변경 등 바깥에서 값이 바뀌면 입력창도 맞춘다(입력 중에는 건드리지 않는다).
+  useEffect(() => {
+    if (!focusedRef.current) setText(String(amount));
+  }, [amount]);
+
+  // 대분류(단기/목돈)가 바뀌면 범위가 달라지므로, 입력 중이던 값은 버리고 새 값으로 맞춘다.
+  useEffect(() => {
+    setText(String(amount));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isShortTerm]);
+
+  const typed = text === "" ? null : Number(text);
+  const isInvalid = typed === null || typed < config.min || typed > config.max;
+
+  useEffect(() => {
+    onValidityChange?.(isInvalid);
+    return () => onValidityChange?.(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isInvalid]);
+
+  const handleTyping = (event) => {
+    const next = event.target.value.replace(/\D/g, "").slice(0, 6);
+    setText(next);
+    const value = Number(next);
+    if (next !== "" && value >= config.min && value <= config.max) {
+      setData((prev) => ({ ...prev, monthlyAmount: value }));
+    }
+  };
+
+  const handleSlide = (event) => {
+    const value = Number(event.target.value);
+    setText(String(value));
+    setData((prev) => ({ ...prev, monthlyAmount: value }));
+  };
+
   return (
     <div className="mt-10">
       <FieldHeader title={amountTitle} required requiredText={false} className="mb-[5px]" />
       <p className="mb-[20px] text-[18px] text-[#767676]">{amountDescription}</p>
-      <p className="mb-[16px] text-[38px] font-semibold leading-none text-[#03BFA5]">
-        {amount}<span className="ml-2 text-[20px] text-[#454545]">만원</span>
+
+      <label
+        className={`inline-flex h-[56px] cursor-text items-center gap-2 rounded-[14px] border-2 bg-white px-5 transition-colors ${
+          isInvalid
+            ? "border-[#F0566F]"
+            : "border-[#D9D9D9] focus-within:border-[#03BFA5]"
+        }`}
+      >
+        <input
+          type="text"
+          inputMode="numeric"
+          value={text}
+          onChange={handleTyping}
+          onFocus={(event) => {
+            focusedRef.current = true;
+            event.target.select();
+          }}
+          onBlur={() => {
+            focusedRef.current = false;
+          }}
+          style={{ width: `${Math.max(text.length, 1) + 0.4}ch` }}
+          className={`bg-transparent text-right text-[34px] font-bold leading-none outline-none ${
+            isInvalid ? "text-[#F0566F]" : "text-[#03BFA5]"
+          }`}
+          aria-label={amountTitle}
+          aria-invalid={isInvalid}
+        />
+        <span className="text-[18px] font-semibold text-[#8A8F99]">만원</span>
+      </label>
+      <p className={`mb-[24px] mt-3 text-[18px] ${isInvalid ? "text-[#F0566F]" : "text-[#767676]"}`}>
+        {isInvalid ? config.errorHint : config.hint}
       </p>
+
       <div className="w-full max-w-[760px]">
         <input
           type="range"
-          min={1}
-          max={100}
+          min={config.min}
+          max={config.max}
+          step={config.step}
           value={amount}
-          onChange={(event) => setData({ ...data, monthlyAmount: Number(event.target.value) })}
+          onChange={handleSlide}
           className="recommend-range mb-[18px] w-full"
-          style={{ "--range-progress": getRangeProgress(amount, 1, 100) }}
+          style={{ "--range-progress": getRangeProgress(amount, config.min, config.max) }}
           aria-label={amountTitle}
         />
         <div className="flex justify-between px-1 font-pretendard text-[17px] font-semibold text-[#454545]">
-          <span>1만원</span>
-          <span>100만원</span>
+          <span>{config.minLabel}</span>
+          <span>{config.maxLabel}</span>
         </div>
       </div>
     </div>
   );
-}
-
-function getSavingPlanType(savingPeriod) {
-  const label = savingPeriod?.optionValue || "";
-  const months = Number(label.match(/(\d+)\s*개월/)?.[1]);
-  const years = Number(label.match(/(\d+)\s*년/)?.[1]);
-  const totalMonths = Number.isFinite(months)
-    ? months
-    : Number.isFinite(years)
-      ? years * 12
-      : null;
-
-  return totalMonths !== null && totalMonths <= 3 ? "short" : "goal";
 }
 
 function useSavingPeriodValidation(data, onNext) {
@@ -162,6 +256,7 @@ function useSavingPeriodValidation(data, onNext) {
 
 /* 1. 저축 기간에 따른 단기 예치·목돈 만들기 */
 export function StepSavingPlan({ data, setData, cats, onPrev, onNext }) {
+  const [amountInvalid, setAmountInvalid] = useState(false);
   const { handleNext, showKeywordAlert, closeAlert } = useSavingPeriodValidation(data, onNext);
   const selectedPeriod = cats.savingPeriod.find((period) =>
     (data.savingPeriod || []).includes(period.optionId),
@@ -174,13 +269,16 @@ export function StepSavingPlan({ data, setData, cats, onPrev, onNext }) {
         <div className="mt-8 pl-4">
           <SavingPeriodField data={data} setData={setData} cats={cats} />
           {selectedPeriod && (
-            <>
-              <div className="mt-7"><SavingPlanNotice type={planType} /></div>
-              <AmountField data={data} setData={setData} type={planType} />
-            </>
+            <div className="step-reveal">
+              {/* step-reveal은 자식 1개의 높이를 0fr -> 1fr로 펼치므로 내용을 한 덩어리로 감싼다 */}
+              <div>
+                <div className="mt-7"><SavingPlanNotice type={planType} /></div>
+                <AmountField data={data} setData={setData} type={planType} onValidityChange={setAmountInvalid} />
+              </div>
+            </div>
           )}
         </div>
-        <NavButtons isFirst onPrev={onPrev} onNext={handleNext} isLast={false} />
+        <NavButtons isFirst onPrev={onPrev} onNext={handleNext} isLast={false} disabled={Boolean(selectedPeriod) && amountInvalid} />
       </StepLayout>
       {showKeywordAlert && <KeywordAlertModal onClose={closeAlert} />}
     </>
@@ -247,10 +345,6 @@ export function StepBenefits({ data, setData, cats, onPrev, onNext, nextLabel, b
   );
 }
 
-const YEARS  = Array.from({ length: 50 }, (_, i) => 1975 + i);
-const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1);
-const DAYS   = Array.from({ length: 31 }, (_, i) => i + 1);
-
 /* 4. 개인 기본 정보 (Step 2-1) */
 export function StepPersonalInfo({ data, setData, onPrev, onNext, onSkip }) {
   const hasIncome = data.income !== undefined && data.income !== null && data.income !== "";
@@ -270,25 +364,10 @@ export function StepPersonalInfo({ data, setData, onPrev, onNext, onSkip }) {
               className="mb-[26px]"
             />
             
-            <div className="flex items-center gap-5 mb-2 flex-wrap">
-              {[
-                { key: "birthYear",  items: YEARS,  unit: "년" },
-                { key: "birthMonth", items: MONTHS, unit: "월" },
-                { key: "birthDay",   items: DAYS,   unit: "일" },
-              ].map(({ key, items, unit }) => (
-                <div key={key} className="flex items-center gap-2">
-                  <FormSelect 
-                    value={data[key] || ""} 
-                    onChange={(e) => setData({ ...data, [key]: e.target.value })}
-                    className="w-[118px] h-[46px] bg-white font-medium cursor-pointer"
-                  >
-                    <option value="">선택</option>
-                    {items.map((v) => <option key={v}>{v}</option>)}
-                  </FormSelect>
-                  <span className="text-[18px] font-semibold text-[#454545]">{unit}</span>
-                </div>
-              ))}
-            </div>
+            <BirthdateFields
+              values={{ year: data.birthYear, month: data.birthMonth, day: data.birthDay }}
+              onChange={(key, next) => setData({ ...data, [`birth${key[0].toUpperCase()}${key.slice(1)}`]: next })}
+            />
           </div>
 
           <div className="pl-2 mb-12">
@@ -339,16 +418,11 @@ export function StepRegion({ data, setData, cats, onNext, onPrev, onSkip }) {
             <p className="text-[26px] text-[#454545] font-semibold">거주지역</p>
           </div>
           <div className="flex w-full max-w-[610px] flex-col gap-[10px]">
-            <FormSelect
+            <RegionSelect
               value={data.region || ""}
-              onChange={(e) => setData({ ...data, region: e.target.value })}
-              className="h-[54px] w-full border-[#454545] text-[16.8px] bg-white font-pretendard cursor-pointer"
-            >
-              <option value="">선택해주세요.</option>
-              {cats.regions.map((r) => (
-                <option key={r.optionId} value={r.optionId}>{r.optionValue}</option>
-              ))}
-            </FormSelect>
+              onChange={(next) => setData({ ...data, region: next })}
+              options={cats.regions.map((r) => ({ value: r.optionId, label: r.optionValue }))}
+            />
             <InfoBox type="mint-region" className="w-full">
               지자체별 청년 금융상품 필터링에 활용됩니다.
             </InfoBox>
@@ -360,6 +434,24 @@ export function StepRegion({ data, setData, cats, onNext, onPrev, onSkip }) {
 }
 
 /* 6. 가구정보 (가구원 수, 가구 소득) (Step 2-3) */
+// 카드(폼) 맨 아래가 화면 아래로 벗어나 있으면, 벗어난 만큼만(여백 24px 포함) 부드럽게 내려서 보이게 한다.
+// 단, 방금 누른 항목이 화면 위로 사라지지 않도록(헤더 높이 96px 아래 유지) 내리는 양을 제한한다.
+function scrollCardBottomIntoView(inputElement) {
+  // 체크박스 input은 display:none이라 위치를 잴 수 없으므로, 눈에 보이는 label 기준으로 계산한다.
+  const fromElement = inputElement?.closest("label") ?? inputElement;
+  const card = fromElement?.closest("[data-recommend-card]");
+  if (!card) return;
+
+  requestAnimationFrame(() => {
+    const overflow = card.getBoundingClientRect().bottom + 24 - window.innerHeight;
+    if (overflow <= 0) return;
+
+    const maxScroll = Math.max(0, fromElement.getBoundingClientRect().top - 96);
+    const amount = Math.min(overflow, maxScroll);
+    if (amount > 0) window.scrollBy({ top: amount, behavior: "smooth" });
+  });
+}
+
 export function StepHouseholdIncome({ data, setData, cats, onPrev, onNext, onSkip }) {
   const count = data.householdCount || 1;
   // 2단계를 건너뛴 게 아니라 이 화면까지 실제로 들어왔다면, 화면에 보이는 "1인"이
@@ -403,7 +495,10 @@ export function StepHouseholdIncome({ data, setData, cats, onPrev, onNext, onSki
                     }`}
                   >
                     <input type="checkbox" className="hidden" checked={isSelected}
-                      onChange={() => setData({ ...data, incomeLevel: isSelected ? "" : item.label })} />
+                      onChange={(event) => {
+                        setData({ ...data, incomeLevel: isSelected ? "" : item.label });
+                        if (!isSelected) scrollCardBottomIntoView(event.currentTarget);
+                      }} />
                     
                     <div className={`w-5 h-5 rounded-[2px] flex items-center justify-center transition-all ${
                       isSelected ? "bg-white" : "border border-[#454545] bg-white"
@@ -532,26 +627,11 @@ export function StepEmployment({ data, setData, onPrev, onNext, onSkip }) {
               <p className="text-[23px] text-[#454545] font-medium">근속 기간</p>
             </div>
 
-            <div className="w-full max-w-[592px] mb-[34px]">
-              <input type="range" min={0} max={120} value={months}
-                onChange={(e) => setData({ ...data, employmentMonths: Number(e.target.value) })}
-                className="recommend-range w-full"
-                style={{ "--range-progress": getRangeProgress(months, 0, 120) }} />
-              <div className="flex justify-between text-[17px] text-[#454545] font-semibold font-pretendard mt-[18px] px-1">
-                <span>0개월</span>
-                <span>120개월</span>
-              </div>
-            </div>
+            <TenureMonthsField
+              months={months}
+              onChange={(next) => setData({ ...data, employmentMonths: next })}
+            />
 
-            <div className="flex items-center border border-[#D9D9D9] rounded-full w-full max-w-[488px] h-[46px] px-6 bg-white mb-3 focus-within:border-[#03BFA5]">
-              <div className="flex items-center justify-center border border-[#E0E0E0] rounded-[4px] w-[66px] h-[25px] mr-4 bg-[#FBFBFB]">
-                <FormInput type="text" value={months}
-                  onChange={(e) => setData({ ...data, employmentMonths: Math.min(120, Math.max(0, Number(e.target.value))) })}
-                  className="w-full text-center text-[#E0DFDF] text-[16px] font-pretendard bg-transparent outline-none border-none focus:ring-0" />
-              </div>
-              <span className="text-[18px] font-pretendard text-[#454545]">개월</span>
-            </div>
-            
             <label className={`h-[46px] flex items-center gap-3 px-6 rounded-full border border-[#D9D9D9] transition-all mb-3 cursor-pointer w-full max-w-[488px] ${
                 data.isFirstJob ? "bg-[#03BFA5] border-[#03BFA5] text-white shadow-md" : "bg-white text-[#454545] hover:border-[#03BFA5]"
               }`}
@@ -732,8 +812,19 @@ export function BankSelector({
 }
 
 /* 9. 거래 이력 은행 (최종 페이지 - 1, 2페이지 분할) */
-export function StepTransaction({ data, setData, cats, onPrev, onSubmit, onSkip }) {
+export function StepTransaction({ data, setData, cats, onPrev, onSubmit, onSkip, onSubStepChange }) {
   const [subStep, setSubStep] = useState(1); 
+  const isFirstRender = useRef(true);
+
+  // 첫거래 은행 <-> 만기 예적금 은행 화면이 바뀔 때도 다른 단계 이동처럼 검색바 위치로 스크롤한다.
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    onSubStepChange?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [subStep]);
 
   const firstBanks = data.firstBanks || [];
   const maturedBanks = data.maturedBanks || [];

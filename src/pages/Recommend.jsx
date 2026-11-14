@@ -241,12 +241,14 @@ export default function Recommend() {
     <StepHouseholdIncome data={formData} setData={setFormData} cats={cats} onPrev={go(3)} onNext={go(5)} onSkip={startAnalysis} />,
     <StepHousing         data={formData} setData={setFormData}             onPrev={go(4)} onNext={go(6)} onSkip={startAnalysis} />,
     <StepEmployment      data={formData} setData={setFormData}             onPrev={go(5)} onNext={go(7)} onSkip={startAnalysis} />,
-    <StepTransaction     data={formData} setData={setFormData} cats={cats} onPrev={go(6)} onSubmit={openProfileSaveConsent} onSkip={startAnalysis} />
+    <StepTransaction     data={formData} setData={setFormData} cats={cats} onPrev={go(6)} onSubmit={openProfileSaveConsent} onSkip={startAnalysis} onSubStepChange={scrollToSearchBar} />
   ];
   const stepContentScale = 0.8;
   const formVerticalPadding = 85;
+  // 1단계는 저축 기간을 고르기 전 높이(원래 값)로 두고, 기간을 고르면 안내/금액 입력이 나타나며
+  // StepLayout이 측정한 실제 높이로 카드가 부드럽게 늘어난다.
   const formBodyMinHeights = [
-    880,
+    654,
     685,
     737,
     566,
@@ -337,6 +339,7 @@ export default function Recommend() {
           {/* 폼 */}
           {isOpen && (
             <div
+              data-recommend-card
               className="px-[61px] pt-[48px] pb-[37px] border-t border-[#E2E6E5]"
               style={{
                 minHeight: `${scaledFormBodyMinHeight}px`,

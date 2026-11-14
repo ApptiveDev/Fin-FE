@@ -7,6 +7,7 @@ import {
   mapRecommendCategories,
 } from "../utils/recommendationPayload";
 import { runProductSearch } from "../utils/productSearch";
+import { goalFromFormData, loadSavingsGoals, saveSavingsGoals } from "../utils/savingsGoals";
 
 const BANK_CATEGORIES = [
   { id: '시중', title: '시중은행', banks: ['KB국민', '신한', '하나', '우리', 'SC제일', 'iM뱅크'] },
@@ -105,6 +106,13 @@ export default function useRecommendForm() {
 
     if (mockMode) {
       return { request, result: null };
+    }
+
+    // 방금 입력한 저축 기간/금액을 해당 대분류(단기 예치 또는 목돈 만들기)의 저축 목표로 남긴다.
+    // 다른 대분류의 목표는 건드리지 않는다.
+    const submitted = goalFromFormData(formData, cats);
+    if (submitted) {
+      saveSavingsGoals({ ...loadSavingsGoals(), [submitted.goalKey]: submitted.goal });
     }
 
     const recommendationPromise = runProductSearch(request, accessToken);
