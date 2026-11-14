@@ -1,14 +1,22 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import client, { withAuth } from "../api/client";
 import InfoIcon from "../components/InfoIcon";
+import { SavingGoalModal } from "../components/MyPageEditModals";
 import { TopCard, ListItem } from "../components/ProductComponents";
 import {
   buildProductListFromResult,
   buildParkingProductListFromResult,
   buildDepositSavingsProductListFromResult,
   getActiveRecommendationResult,
+  getPersistedRecommendationRequest,
+  persistRecommendation,
+  readRecommendationCache,
 } from "../utils/recommendationResult";
+import { findCategoryByGroup } from "../utils/recommendationPayload";
+import { runProductSearch } from "../utils/productSearch";
+import { goalKeyOfCategory, loadSavingsGoals, saveSavingsGoals } from "../utils/savingsGoals";
 import { MOCK_LONG_TERM_RESULT, MOCK_SHORT_TERM_RESULT } from "../data/productList";
 
 const LONG_TERM_SECTIONS = [
@@ -65,9 +73,15 @@ export default function ProductList() {
   // TODO: 세그먼트 전환 시 실제로는 반대 대분류 결과를 서버에서 새로 받아와야 한다 (PRD "세그먼트 전환 상태 관리").
   // mock 모드가 아닌 실서비스에서는 아직 이 재요청이 연결돼 있지 않아, 토글해도 같은 recommendationResult를 보여준다.
   const [activeCategory, setActiveCategory] = useState(recommendationResult?.category || "LONG_TERM");
+  // 세그먼트 토글로 반대 대분류 결과를 받아오면 그 결과를 여기에 들고 있는다(서버 호출 결과 또는 캐시).
+  const [resultOverride, setResultOverride] = useState(null);
+  const [categorySwitching, setCategorySwitching] = useState(false);
+  const [categorySwitchError, setCategorySwitchError] = useState(null);
+  const [goalModalCategory, setGoalModalCategory] = useState(null); // 목표가 없을 때 입력받을 대분류
+  const [goalCategories, setGoalCategories] = useState(null); // /api/categories (저축 기간 옵션 목록)
   const displayResult = mockMode
     ? (activeCategory === "SHORT_TERM" ? MOCK_SHORT_TERM_RESULT : MOCK_LONG_TERM_RESULT)
-    : recommendationResult;
+    : (resultOverride ?? recommendationResult);
 
   const isShortTerm = activeCategory === "SHORT_TERM";
   // 실제 백엔드 응답으로 확인: 단기예치는 탭C가 단기 예·적금(로그인 시 실수령액 정렬 가능, 잠금 사유 있음),
@@ -140,6 +154,89 @@ export default function ProductList() {
     navigate(`/products/${productId}`);
   };
 
+  const applyCategoryResult = (category, recommendation) => {
+    // 상세 페이지가 현재 보고 있는 대분류의 결과를 읽도록 저장소의 "현재 결과"도 맞춰 둔다.
+    persistRecommendation(recommendation);
+    setResultOverride(recommendation.result);
+    setActiveCategory(recommendation.result?.category ?? category);
+  };
+
+  const ensureGoalCategories = async () => {
+    if (goalCategories) return goalCategories;
+    const res = await client.get("/api/categories", withAuth(accessToken));
+    const data = Array.isArray(res.data) ? res.data : (res.data?.data ?? []);
+    setGoalCategories(data);
+    return data;
+  };
+
+  // 개인정보 탭에 저장해 둔 목표(저축 기간 + 금액)로, 직전 검색 요청의 저축 기간/금액만 바꿔 반대 대분류를 조회한다.
+  const fetchCategoryWithGoal = async (category, goal, categories) => {
+    const baseRequest = getPersistedRecommendationRequest();
+    const savingPeriodCategory = findCategoryByGroup(categories, "savingPeriod");
+    if (!baseRequest || !savingPeriodCategory) {
+      setCategorySwitchError("이전 입력 정보를 찾지 못했어요. 입력 정보를 다시 입력해 주세요.");
+      return;
+    }
+
+    const won = Number(goal.amount) * 10_000;
+    const request = {
+      options: [
+        ...(baseRequest.options || []).filter((option) => option.categoryId !== savingPeriodCategory.categoryId),
+        { categoryId: savingPeriodCategory.categoryId, optionId: goal.savingPeriodOptionId },
+      ],
+      detailedOptions: {
+        ...baseRequest.detailedOptions,
+        monthlySavingsGoal: category === "LONG_TERM" ? won : null,
+        depositAmount: category === "SHORT_TERM" ? won : null,
+      },
+    };
+
+    setCategorySwitching(true);
+    try {
+      const recommendation = await runProductSearch(request, accessToken, { preserveCache: true });
+      applyCategoryResult(category, recommendation);
+    } catch (error) {
+      setCategorySwitchError(error.message || "추천 결과를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.");
+    } finally {
+      setCategorySwitching(false);
+    }
+  };
+
+  const handleCategoryClick = async (category) => {
+    if (category === activeCategory || categorySwitching) return;
+    setCategorySwitchError(null);
+
+    if (mockMode) {
+      setActiveCategory(category);
+      return;
+    }
+
+    const cached = readRecommendationCache()[category];
+    if (cached?.result) {
+      applyCategoryResult(category, cached);
+      return;
+    }
+
+    try {
+      const categories = await ensureGoalCategories();
+      const goal = loadSavingsGoals()[goalKeyOfCategory(category)];
+      if (!goal?.savingPeriodOptionId) {
+        setGoalModalCategory(category); // 저장된 목표가 없으면 입력 모달을 띄운다.
+        return;
+      }
+      await fetchCategoryWithGoal(category, goal, categories);
+    } catch (error) {
+      setCategorySwitchError(error.message || "추천 결과를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.");
+    }
+  };
+
+  const handleSaveGoalFromModal = (goal) => {
+    const category = goalModalCategory;
+    saveSavingsGoals({ ...loadSavingsGoals(), [goalKeyOfCategory(category)]: goal });
+    setGoalModalCategory(null);
+    fetchCategoryWithGoal(category, goal, goalCategories);
+  };
+
   const scrollToSectionList = () => {
     if (!sectionListRef.current) return;
     const top = sectionListRef.current.getBoundingClientRect().top + window.scrollY;
@@ -201,8 +298,9 @@ export default function ProductList() {
               <button
                 key={category}
                 type="button"
-                onClick={() => setActiveCategory(category)}
-                className={`rounded-[22px] px-8 py-3 text-[17px] font-semibold transition-colors ${
+                onClick={() => handleCategoryClick(category)}
+                disabled={categorySwitching}
+                className={`rounded-[22px] px-8 py-3 text-[17px] font-semibold transition-colors disabled:cursor-wait ${
                   activeCategory === category
                     ? "bg-[#03BFA5] text-white"
                     : "text-[#8A8F99] hover:text-[#454545]"
@@ -212,6 +310,12 @@ export default function ProductList() {
               </button>
             ))}
           </div>
+
+          {(categorySwitching || categorySwitchError) && (
+            <p className={`-mt-4 mb-6 text-[15px] ${categorySwitchError ? "text-[#E63200]" : "text-[#03BFA5]"}`}>
+              {categorySwitchError || "저장해 둔 목표로 추천 결과를 불러오는 중이에요..."}
+            </p>
+          )}
 
           {needsAmountForCategory && (
             <div className="mb-4 flex items-center justify-between gap-3 rounded-[10px] border border-[#03BFA5] bg-[#F0FFFE] px-5 py-3">
@@ -505,6 +609,16 @@ export default function ProductList() {
           </div>
         </div>
       </div>
+
+      {goalModalCategory && goalCategories && (
+        <SavingGoalModal
+          type={goalModalCategory === "SHORT_TERM" ? "short" : "goal"}
+          goal={null}
+          categories={goalCategories}
+          onClose={() => setGoalModalCategory(null)}
+          onSave={handleSaveGoalFromModal}
+        />
+      )}
 
       {/* 모달 팝업 */}
       {blockedModalReason && (
