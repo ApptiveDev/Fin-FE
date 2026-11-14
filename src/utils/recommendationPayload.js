@@ -3,7 +3,7 @@ export const CATEGORY_ALIASES = {
   status: ["현재신분"],
   savingPeriod: ["저축기간"],
   benefits: ["혜택선택", "핵심혜택"],
-  bankRelation: ["우대거래", "은행거래"],
+  bankRelation: ["은행 우대 조건", "우대거래", "은행거래"],
 };
 
 const HIDDEN_BANK_RELATION_OPTIONS = new Set(["첫거래고객", "재예치"]);
@@ -152,8 +152,33 @@ function selectedOptions(data, categoryIds) {
   });
 }
 
+// 저축 기간 옵션("3개월", "1년" 등)으로 대분류를 가른다. 3개월 이하는 단기 예치("short"), 그 외는 목돈 만들기("goal").
+export function getSavingPlanType(savingPeriodOption) {
+  const label = savingPeriodOption?.optionValue || "";
+  const months = Number(label.match(/(\d+)\s*개월/)?.[1]);
+  const years = Number(label.match(/(\d+)\s*년/)?.[1]);
+  const totalMonths = Number.isFinite(months)
+    ? months
+    : Number.isFinite(years)
+      ? years * 12
+      : null;
+
+  return totalMonths !== null && totalMonths <= 3 ? "short" : "goal";
+}
+
+// 금액(원)은 대분류에 따라 다른 필드로 보낸다: 단기 예치 -> depositAmount(한 번에 예치), 목돈 만들기 -> monthlySavingsGoal(월 납입).
+function amountFieldsByPlanType(planType, won) {
+  return planType === "short"
+    ? { monthlySavingsGoal: null, depositAmount: won }
+    : { monthlySavingsGoal: won, depositAmount: null };
+}
+
 export function buildRecommendationRequest(data, categories) {
   const employmentMonths = toNumber(data.employmentMonths);
+  const selectedPeriod = (categories?.savingPeriod || []).find((option) =>
+    (data.savingPeriod || []).includes(option.optionId),
+  );
+  const planType = getSavingPlanType(selectedPeriod);
 
   return {
     options: selectedOptions(data, categories?.categoryIds),
@@ -171,7 +196,7 @@ export function buildRecommendationRequest(data, categories) {
             ? false
             : null,
       isHouseholder: data.isTenant ? true : null,
-      monthlySavingsGoal: toWonFromTenThousand(data.monthlyAmount),
+      ...amountFieldsByPlanType(planType, toWonFromTenThousand(data.monthlyAmount)),
       neverUsedBanks: toBankCodes(data.firstBanks || []),
       maturedSavingBanks: toBankCodes(data.maturedBanks || []),
       selectedInterestRateOptions: [],
@@ -192,6 +217,12 @@ export function buildRecommendationRequestFromProfile(profile, categories) {
     return categoryId === undefined ? [] : [{ categoryId, optionId }];
   });
 
+  // 프로필에는 금액 필드가 monthlySavingsGoal 하나뿐이라, 저장된 저축 기간으로 대분류를 가려 알맞은 필드로 보낸다.
+  const selectedPeriod = findCategoryByGroup(categories, "savingPeriod")?.options?.find((option) =>
+    (profile?.selectedOptionIds || []).includes(option.optionId),
+  );
+  const planType = getSavingPlanType(selectedPeriod);
+
   return {
     options,
     detailedOptions: {
@@ -203,7 +234,7 @@ export function buildRecommendationRequestFromProfile(profile, categories) {
       isFirstJob: profile?.isFirstJob ?? null,
       isHomeless: profile?.isHomeless ?? null,
       isHouseholder: profile?.isHouseholder ?? null,
-      monthlySavingsGoal: toWonFromTenThousand(profile?.monthlySavingsGoal),
+      ...amountFieldsByPlanType(planType, toWonFromTenThousand(profile?.monthlySavingsGoal)),
       neverUsedBanks: toBankCodes(profile?.neverUsedBanks ?? []),
       maturedSavingBanks: toBankCodes(profile?.maturedSavingBanks ?? []),
       selectedInterestRateOptions: [],
@@ -224,7 +255,8 @@ export function buildProfileUpdateFromRequest(request) {
     isFirstJob: detailed.isFirstJob ?? null,
     isHomeless: detailed.isHomeless ?? null,
     isHouseholder: detailed.isHouseholder ?? null,
-    monthlySavingsGoal: toTenThousandFromWon(detailed.monthlySavingsGoal),
+    // 프로필 API에는 depositAmount가 없어서, 단기 예치 금액도 기존처럼 monthlySavingsGoal 자리에 저장한다.
+    monthlySavingsGoal: toTenThousandFromWon(detailed.monthlySavingsGoal ?? detailed.depositAmount),
     mainBanks: detailed.mainBanks ?? [],
     neverUsedBanks: fromBankCodes(detailed.neverUsedBanks ?? []),
     maturedSavingBanks: fromBankCodes(detailed.maturedSavingBanks ?? []),
