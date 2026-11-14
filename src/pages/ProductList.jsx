@@ -14,7 +14,6 @@ import { MOCK_LONG_TERM_RESULT, MOCK_SHORT_TERM_RESULT } from "../data/productLi
 const LONG_TERM_SECTIONS = [
   { name: "정부 청년 상품" },
   { name: "시중 은행 상품 · 제 1금융권" },
-  { name: "청약 상품" },
 ];
 
 const CATEGORY_LABEL = { SHORT_TERM: "단기 예치", LONG_TERM: "목돈 만들기" };
@@ -27,7 +26,6 @@ const DEPOSIT_TAB = "단기 예적금";
 const NET_RETURN_SORT_LABEL = {
   "정부 청년 상품": "만기 기여금 총액 높은 순",
   "시중 은행 상품 · 제 1금융권": "세후 실수령액 높은 순",
-  "청약 상품": "세후 실수령액 높은 순",
 };
 
 // 단기예치 탭(파킹통장/단기 예·적금)은 섹터가 없어, 정렬 기준 라벨만 섹션 제목과 같은 스타일로 보여준다.
@@ -162,6 +160,12 @@ export default function ProductList() {
     );
   }, [activeFilter, effectiveActiveTab, recommendationProducts, searchTerm]);
 
+  // 목돈 만들기 - 적합도순의 시중은행 상품은 캡션 대신 "내가 받을 금리 연 n%" 알약을 보여준다.
+  const getContributionCaption = (product) =>
+    !isShortTerm && effectiveActiveTab === SUITABILITY_TAB && product.category === "시중 은행 상품 · 제 1금융권"
+      ? null
+      : product.contributionCaption;
+
   const topThree = processedProducts.slice(0, 3);
   const remainingProducts = processedProducts.slice(3);
 
@@ -276,7 +280,10 @@ export default function ProductList() {
                   >
                     적합도순
                     {effectiveActiveTab === SUITABILITY_TAB && (
-                      <span className="absolute inset-x-0 bottom-[-1.5px] h-[3px] bg-[#03BFA5]" />
+                      <>
+                        <InfoIcon text={"선택하신 키워드(핵심 혜택 · 저축 기간 · 현재 신분 · 은행 거래)를\n기준으로 산정한 매칭 점수예요. 높을수록 당신의 선호도를 잘 반영해요."} />
+                        <span className="absolute inset-x-0 bottom-[-1.5px] h-[3px] bg-[#03BFA5]" />
+                      </>
                     )}
                   </button>
                   <button
@@ -295,19 +302,12 @@ export default function ProductList() {
                     )}
                     실수령액순
                     {effectiveActiveTab === NET_RETURN_TAB && (
-                      <span className="absolute inset-x-0 bottom-[-1.5px] h-[3px] bg-[#03BFA5]" />
+                      <>
+                        <span className="ml-1"><InfoIcon /></span>
+                        <span className="absolute inset-x-0 bottom-[-1.5px] h-[3px] bg-[#03BFA5]" />
+                      </>
                     )}
                   </button>
-
-                  <div className="flex items-center gap-1 pb-2">
-                    <InfoIcon
-                      text={
-                        effectiveActiveTab === SUITABILITY_TAB
-                          ? "선택하신 키워드(핵심 혜택 · 저축 기간 · 현재 신분 · 은행 거래)를 기준으로 산정한 매칭 점수예요.\n정부 지원 상품과 제 1금융권 상품별로 가중치를 다르게 반영하여 산정했어요."
-                          : "입력하신 정보(소득 · 근속 · 주거래 은행 등)와 단계 1 키워드를 기반으로 실제로 받을 수 있는 우대조건만 적용한 실질 금리에요.\n정부 상품과 시중은행 상품의 계산 방식이 달라요."
-                      }
-                    />
-                  </div>
                 </>
               )}
             </div>
@@ -397,8 +397,8 @@ export default function ProductList() {
                     isLoggedIn={rateTabEnabled}
                     contributionRate={product.contributionRate}
                     maturityContribution={product.maturityContribution}
-                    contributionCaption={product.contributionCaption}
-                    showContribution={product.category === "정부 청년 상품" || product.category === "청약 상품"}
+                    contributionCaption={getContributionCaption(product)}
+                    showContribution={product.category === "정부 청년 상품"}
                     ratePillLabel={product.ratePillLabel}
                     ratePillValue={product.ratePillValue}
                     onClick={() => goToProductDetail(product.id)}
@@ -489,7 +489,7 @@ export default function ProductList() {
                             variant={sec.name === "정부 청년 상품" ? "contribution" : "rate"}
                             contributionRate={product.contributionRate}
                             maturityContribution={product.maturityContribution}
-                            contributionCaption={product.contributionCaption}
+                            contributionCaption={getContributionCaption(product)}
                             rank={isNetReturnTab ? index + 1 : undefined}
                             onClick={() => goToProductDetail(product.id)}
                           />

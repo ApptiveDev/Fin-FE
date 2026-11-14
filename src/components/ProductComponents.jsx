@@ -16,6 +16,11 @@ function getTagStyle(tag) {
   return tagStyle;
 }
 
+// TOP 카드 알약: 기본은 카드 패딩 안쪽 폭(min-w-full)이지만, 글자가 길면 패딩(52px)을 침범해
+// 카드 테두리에서 12px 안쪽까지(좌우 42px씩 = 84px) 늘어나 되도록 한 줄로 보이게 한다.
+// (카드 패딩 52px + 테두리 2px - 여백 12px = 42px)
+const TOP_PILL_WIDTH = "shrink-0 min-w-full w-max max-w-[calc(100%+84px)]";
+
 // 상단 TOP 3 카드
 export function TopCard({
   rank,
@@ -51,7 +56,7 @@ export function TopCard({
       tabIndex={isInteractive ? 0 : undefined}
       onClick={onClick}
       onKeyDown={(event) => handleCardKeyDown(event, onClick)}
-      className={`px-13 py-8 bg-white rounded-xl border-[2px] shadow-sm flex flex-col justify-between min-h-[380px] w-full transition-all ${
+      className={`px-13 py-8 bg-white rounded-xl border-[2px] shadow-sm flex flex-col justify-between min-h-[380px] w-full min-w-0 transition-all ${
         isInteractive ? "hover:shadow-md cursor-pointer" : ""
       } ${
         isBest ? "border-[#03BFA5]" : "border-[#E0DFDF] hover:border-[#03BFA5]"
@@ -81,8 +86,10 @@ export function TopCard({
               <p className="text-[32px] font-bold text-[#03BFA5] leading-none mt-[6px]">{displayedMaturityContribution}</p>
             </div>
           </div>
-          <div className="w-full rounded-full border border-[#03BFA5] bg-[#EFFFFD] py-1 px-2 text-center text-[15px] text-[#03BFA5]">
-            {contributionCaption}
+          <div className="flex justify-center">
+            <div className={`${TOP_PILL_WIDTH} rounded-full border border-[#03BFA5] bg-[#EFFFFD] py-1 px-4 text-center text-[15px] text-[#03BFA5]`}>
+              {contributionCaption}
+            </div>
           </div>
         </div>
       ) : (
@@ -98,18 +105,20 @@ export function TopCard({
               <p className="text-[32px] font-bold text-[#03BFA5] leading-none mt-[6px]">연 {maxRate}%</p>
             </div>
           </div>
-          {contributionCaption ? (
-            <div className="w-full rounded-full border border-[#03BFA5] bg-[#EFFFFD] py-1 px-2 text-center text-[15px] text-[#03BFA5]">
-              {contributionCaption}
-            </div>
-          ) : (
-            /* 💡 비로그인 시 회색 처리 오류 수정 반영 */
-            <div className={`w-full py-1 rounded-full border text-center text-[15px] ${
-              ratePillActive ? "border-[#03BFA5] text-[#03BFA5] bg-[#EFFFFD]" : "border-gray-300 text-gray-400 bg-white"
-            }`}>
-              {ratePillLabel} <span className="ml-2 font-bold whitespace-nowrap">{ratePillDisplay}</span>
-            </div>
-          )}
+          <div className="flex justify-center">
+            {contributionCaption ? (
+              <div className={`${TOP_PILL_WIDTH} rounded-full border border-[#03BFA5] bg-[#EFFFFD] py-1 px-4 text-center text-[15px] text-[#03BFA5]`}>
+                {contributionCaption}
+              </div>
+            ) : (
+              /* 💡 비로그인 시 회색 처리 오류 수정 반영 */
+              <div className={`${TOP_PILL_WIDTH} py-1 rounded-full border text-center text-[15px] ${
+                ratePillActive ? "border-[#03BFA5] text-[#03BFA5] bg-[#EFFFFD]" : "border-gray-300 text-gray-400 bg-white"
+              }`}>
+                {ratePillLabel} <span className="ml-2 font-bold whitespace-nowrap">{ratePillDisplay}</span>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -201,18 +210,21 @@ export function ListItem({
               <p className="text-[32px] font-bold text-[#03BFA5] leading-none mt-[4px] whitespace-nowrap">연 {maxRate}%</p>
             </div>
           </div>
-          {contributionCaption ? (
-            <div className="mt-4 w-full rounded-full border border-[#03BFA5] bg-[#EFFFFD] py-1 px-2 text-center text-[15px] text-[#03BFA5]">
-              {contributionCaption}
-            </div>
-          ) : (
-            <div className={`mt-4 w-full py-0.5 px-10 rounded-full border flex items-center justify-between font-medium text-[16px] ${
-              ratePillActive ? "border-[#03BFA5] text-[#03BFA5] bg-[#EFFFFD]" : "border-gray-300 text-gray-400 bg-white"
-            }`}>
-              <span>{ratePillLabel}</span>
-              <span className="w-[64px] text-[17px] text-right font-semibold whitespace-nowrap">{ratePillDisplay}</span>
-            </div>
-          )}
+          {/* 금리 영역(115*2 + 1 + 28*2 = 287px)과 같은 폭의 박스 안에서 알약만 가운데 정렬 */}
+          <div className="mt-4 flex w-[287px] justify-center">
+            {contributionCaption ? (
+              <div className="shrink-0 min-w-[350px] rounded-full border border-[#03BFA5] bg-[#EFFFFD] py-1 px-4 text-center text-[15px] text-[#03BFA5]">
+                {contributionCaption}
+              </div>
+            ) : (
+              <div className={`shrink-0 min-w-[64px] py-0.5 px-10 rounded-full border flex items-center justify-between gap-4 font-normal text-[15px] ${
+                ratePillActive ? "border-[#03BFA5] text-[#03BFA5] bg-[#EFFFFD]" : "border-gray-300 text-gray-400 bg-white"
+              }`}>
+                <span>{ratePillLabel}</span>
+                <span className="min-w-[64px] text-[17px] text-right font-semibold whitespace-nowrap">{ratePillDisplay}</span>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

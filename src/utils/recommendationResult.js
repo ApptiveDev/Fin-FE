@@ -27,6 +27,14 @@ function formatNumber(value, maximumFractionDigits = 2) {
   }).format(value);
 }
 
+// 금리 표시용: 소수점 최소 1자리(2 -> 2.0), 최대 2자리(2.35 -> 2.35)
+function formatRateValue(value) {
+  return new Intl.NumberFormat("ko-KR", {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 2,
+  }).format(value);
+}
+
 function formatRate(value) {
   const rate = toFiniteNumber(value);
   return rate === null ? null : formatNumber(rate);
@@ -42,10 +50,10 @@ function formatContributionAmount(value) {
   if (won === null) return null;
 
   if (won % 10_000 === 0) {
-    return `${formatNumber(won / 10_000, 1)} 만원`;
+    return `${formatNumber(won / 10_000, 1)} 만`;
   }
 
-  return `${formatNumber(won, 0)} 원`;
+  return `${formatNumber(won, 0)} `;
 }
 
 function formatMonthlyDeposit(value) {
@@ -250,9 +258,20 @@ function buildProductView(id, indices, monthlySavingsGoal) {
   const contributionPeriodLabel = contributionMonths
     ? (contributionMonths % 12 === 0 ? `${contributionMonths / 12}년` : `${contributionMonths}개월`)
     : null;
+  // 시중은행 상품: 원금 · 본인 월 납입액, 납입기간 기준 (정부 상품과 같은 형식).
+  // 백엔드 응답에 principal/saveTrm이 있으면 그걸 쓰고, 월 납입액은 원금 ÷ 개월수로 구한다.
+  const bankPrincipal = toFiniteNumber(rate?.principal);
+  const bankSaveTrm = toFiniteNumber(rate?.saveTrm);
+  const bankMonthly = bankPrincipal && bankSaveTrm ? Math.round(bankPrincipal / bankSaveTrm) : null;
+  const bankPeriodLabel = bankSaveTrm
+    ? (bankSaveTrm % 12 === 0 ? `${bankSaveTrm / 12}년` : `${bankSaveTrm}개월`)
+    : null;
+  const bankCaption = !isGovernment && !isSubscription && bankMonthly
+    ? `원금 ${formatContributionAmount(bankPrincipal).replace(" ", "")} · 본인 월 ${formatMonthlyDeposit(bankMonthly)}, ${bankPeriodLabel} 납입 기준`
+    : null;
   const contributionCaption = monthlyDeposit && contributionPeriodLabel
     ? `${reserveTypeShortLabel(detail?.reserveType)} 매칭 · 본인 월 ${monthlyDeposit}, ${contributionPeriodLabel} 납입 기준`
-    : rate?.subscriptionNote || null;
+    : bankCaption || rate?.subscriptionNote || null;
 
   const tags = [
     ...(score !== null ? [`적합도 ${Math.round(score)}%`] : []),
@@ -283,9 +302,9 @@ function buildProductView(id, indices, monthlySavingsGoal) {
     subtitle: buildSubtitle(providerName, detail),
     periodSummary: maxTerm ? `${maxTerm}개월` : "상시",
     amountSummary: minLimit && maxLimit ? `월 납입 ${minLimit}~${maxLimit}` : "가입 조건 확인 필요",
-    baseRate: baseRateNum !== null ? formatNumber(baseRateNum) : "0",
-    maxRate: maxRateNum !== null ? formatNumber(maxRateNum) : "0",
-    myRate: achievableRateNum !== null ? formatNumber(achievableRateNum) : "0",
+    baseRate: baseRateNum !== null ? formatRateValue(baseRateNum) : "0",
+    maxRate: maxRateNum !== null ? formatRateValue(maxRateNum) : "0",
+    myRate: achievableRateNum !== null ? formatRateValue(achievableRateNum) : "0",
     suitability: score ?? 0,
     tags: tags.length > 0 ? tags : ["추천 상품"],
     filterTags,
@@ -359,9 +378,9 @@ function buildParkingProductView(p) {
     subtitle: [p.providerName, p.interestPaymentMethod, p.depositProtection ? "예금자보호" : null]
       .filter(Boolean)
       .join(" · "),
-    baseRate: formatNumber(toFiniteNumber(p.baseRate) ?? 0),
-    maxRate: formatNumber(toFiniteNumber(p.maxRate) ?? 0),
-    myRate: formatNumber(toFiniteNumber(p.maxRate) ?? 0),
+    baseRate: formatRateValue(toFiniteNumber(p.baseRate) ?? 0),
+    maxRate: formatRateValue(toFiniteNumber(p.maxRate) ?? 0),
+    myRate: formatRateValue(toFiniteNumber(p.maxRate) ?? 0),
     suitability: toFiniteNumber(p.maxRate) ?? 0,
     tags: [p.depositProtection ? "예금자보호" : null, p.interestPaymentMethod].filter(Boolean),
     filterTags: ["예금"],
@@ -369,7 +388,7 @@ function buildParkingProductView(p) {
     // 파킹통장은 로그인 여부와 무관하게 공개되는 공시금리라 "내가 받을 금리" 대신
     // 최고금리가 실제로 적용되는 잔액 구간을 보여준다.
     ratePillLabel: "최고금리 적용한도",
-    ratePillValue: limitCaption ? `${limitCaption}까지` : null,
+    ratePillValue: limitCaption ? `${limitCaption}` : null,
   };
 }
 
@@ -392,9 +411,9 @@ function buildDepositSavingsProductView(p) {
     title: p.productName,
     institution: p.providerName,
     subtitle: [p.providerName, p.saveTrm ? `${p.saveTrm}개월` : null, typeLabel].filter(Boolean).join(" · "),
-    baseRate: formatNumber(toFiniteNumber(p.baseRate) ?? 0),
-    maxRate: formatNumber(toFiniteNumber(p.achievableRate) ?? 0),
-    myRate: formatNumber(toFiniteNumber(p.achievableRate) ?? 0),
+    baseRate: formatRateValue(toFiniteNumber(p.baseRate) ?? 0),
+    maxRate: formatRateValue(toFiniteNumber(p.achievableRate) ?? 0),
+    myRate: formatRateValue(toFiniteNumber(p.achievableRate) ?? 0),
     suitability: toFiniteNumber(p.achievableRate) ?? 0,
     tags: [typeLabel].filter(Boolean),
     filterTags: [typeLabel].filter(Boolean),
