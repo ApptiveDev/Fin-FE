@@ -174,6 +174,12 @@ export default function Recommend() {
     window.scrollTo({ top: Math.max(0, targetTop), behavior: "smooth" });
   }, []);
 
+  // 검색창을 다시 눌러 접을 때는 페이지 맨 위로 스크롤한다(열 때는 아래 effect가 검색창 위치로 맞춘다).
+  const toggleOpen = () => {
+    if (isOpen) window.scrollTo({ top: 0, behavior: "smooth" });
+    setIsOpen((prev) => !prev);
+  };
+
   // 검색창을 열거나(눌렀을 때) 단계가 바뀔 때마다 검색창이 항상 같은 위치로 오도록 스크롤
   useEffect(() => {
     if (!isOpen) return;
@@ -312,7 +318,7 @@ export default function Recommend() {
           <button
             type="button"
             ref={searchBarRef}
-            onClick={() => setIsOpen((prev) => !prev)}
+            onClick={toggleOpen}
             disabled={isAnalyzing}
             aria-label={isOpen ? "정보 입력 닫기" : "정보 입력 열기"}
             className={`w-full h-[67px] flex items-center justify-between px-[23px] hover:bg-gray-50 transition-colors focus:outline-none ${
