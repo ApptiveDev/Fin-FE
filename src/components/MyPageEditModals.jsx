@@ -1,9 +1,11 @@
 import { useState } from "react";
 import Tag from "./Tag";
-import { FormInput, FormSelect } from "./FormFields";
+import { FormInput } from "./FormFields";
+import { BirthdateFields, RegionSelect, TenureMonthsField } from "./ProfileFields";
 import InfoBox from "./InfoBox";
 import { AmountField, BankSelector, SavingPeriodField } from "./RecommendSteps";
 import { findCategoryOptions, findSelectedOptionIds, replaceCategorySelection } from "../hooks/UseMyPage";
+import { getSavingPlanType } from "../utils/recommendationPayload";
 
 const BANK_CATEGORIES = [
   { id: "시중", title: "시중은행", banks: ["KB국민", "신한", "하나", "우리", "SC제일", "iM뱅크"] },
@@ -21,9 +23,6 @@ const INCOME_LEVELS = [
   { percent: 180, guide: "" },
 ];
 
-const YEARS = Array.from({ length: 50 }, (_, i) => 1975 + i);
-const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1);
-const DAYS = Array.from({ length: 31 }, (_, i) => i + 1);
 
 function CloseIcon({ className = "" }) {
   return (
@@ -78,12 +77,15 @@ function ModalShell({
       role="presentation"
       onMouseDown={onClose}
     >
+      {/* 바깥 박스가 둥근 모서리로 잘라 주고, 스크롤은 그 안쪽(modal-scroll)에서만 생긴다.
+          스크롤바가 모서리 밖/가장자리에 붙지 않고 둥근 안쪽에 들어오도록 modal-scroll(index.css)에서 다듬는다. */}
       <div
         role="dialog"
         aria-modal="true"
-        className={`max-h-[calc(100vh-48px)] w-full overflow-y-auto rounded-[20px] bg-white ${padding} ${wide ? "max-w-[640px]" : "max-w-[460px]"}`}
+        className={`w-full overflow-hidden rounded-[20px] bg-white ${wide ? "max-w-[640px]" : "max-w-[460px]"}`}
         onMouseDown={(event) => event.stopPropagation()}
       >
+      <div className={`modal-scroll max-h-[calc(100vh-48px)] overflow-y-auto ${padding}`}>
         <div className="mb-1 flex items-start justify-between gap-4">
           <div className="flex flex-wrap items-baseline gap-1.5">
             <h3 className="font-bold text-[#181818]" style={{ fontSize: titleSize }}>{title}</h3>
@@ -116,6 +118,7 @@ function ModalShell({
           </button>
         </div>
       </div>
+      </div>
     </div>
   );
 }
@@ -136,25 +139,11 @@ function BirthdateModal({ profile, onClose, onSave }) {
 
   return (
     <ModalShell title="생년월일" required onClose={onClose} onSave={handleSave} saveDisabled={!isComplete}>
-      <div className="flex flex-wrap items-center gap-3">
-        {[
-          { items: YEARS, value: year, setValue: setYear, unit: "년" },
-          { items: MONTHS, value: month, setValue: setMonth, unit: "월" },
-          { items: DAYS, value: day, setValue: setDay, unit: "일" },
-        ].map(({ items, value, setValue, unit }) => (
-          <div key={unit} className="flex items-center gap-1.5">
-            <FormSelect value={value} onChange={(e) => setValue(e.target.value)} className="h-11 w-[92px] bg-white text-[15px]">
-              <option value="">선택</option>
-              {items.map((v) => (
-                <option key={v} value={v}>
-                  {v}
-                </option>
-              ))}
-            </FormSelect>
-            <span className="text-[14px] font-medium text-[#454545]">{unit}</span>
-          </div>
-        ))}
-      </div>
+      <BirthdateFields
+        compact
+        values={{ year, month, day }}
+        onChange={(key, next) => ({ year: setYear, month: setMonth, day: setDay })[key](next)}
+      />
     </ModalShell>
   );
 }
@@ -185,9 +174,11 @@ function IncomeModal({ profile, onClose, onSave }) {
         />
         <div className="flex items-center border-l border-[#D9D9D9] bg-[#FAFAFA] px-4 text-[14px] text-[#454545]">만원</div>
       </div>
-      <InfoBox type="mint-rect" className="mt-3 h-auto py-2.5">
-        0원~1억원 내에서 입력 가능합니다.
-      </InfoBox>
+      <div className="recommend-scale mt-3">
+        <InfoBox type="mint-outline" className="w-full">
+          0원~1억원 내에서 입력 가능합니다.
+        </InfoBox>
+      </div>
     </ModalShell>
   );
 }
@@ -290,9 +281,11 @@ function HouseholdModal({ profile, onClose, onSave }) {
           );
         })}
       </div>
-      <InfoBox type="mint-pill" className="h-auto w-full py-2.5">
-        가구원 수에 따른 중위소득 기준으로 선택해 주세요.
-      </InfoBox>
+      <div className="recommend-scale">
+        <InfoBox type="mint-outline" className="w-full">
+          가구원 수에 따른 중위소득 기준으로 선택해 주세요.
+        </InfoBox>
+      </div>
     </ModalShell>
   );
 }
@@ -309,39 +302,24 @@ function RegionModal({ profile, categories, onClose, onSave }) {
 
   return (
     <ModalShell title="거주 지역" onClose={onClose} onSave={handleSave}>
-      <FormSelect value={selectedId} onChange={(e) => setSelectedId(e.target.value)} className="h-12 w-full bg-white text-[15px]">
-        <option value="">선택해주세요.</option>
-        {options.map((option) => (
-          <option key={option.optionId} value={option.optionId}>
-            {option.optionValue}
-          </option>
-        ))}
-      </FormSelect>
-      <InfoBox type="mint-region" className="mt-3 h-auto w-full py-2.5">
-        지자체별 청년 금융상품 필터링에 활용됩니다.
-      </InfoBox>
+      <RegionSelect
+        compact
+        value={selectedId}
+        onChange={setSelectedId}
+        options={options.map((option) => ({ value: option.optionId, label: option.optionValue }))}
+      />
+      <div className="recommend-scale mt-3">
+        <InfoBox type="mint-outline" className="w-full">
+          지자체별 청년 금융상품 필터링에 활용됩니다.
+        </InfoBox>
+      </div>
     </ModalShell>
   );
 }
 
-// RecommendSteps.jsx의 getSavingPlanType과 동일한 분류 규칙(모듈 간 non-component export를
-// 피하기 위해 복제 — getRangeProgress와 같은 방식).
-function getSavingPlanType(savingPeriod) {
-  const label = savingPeriod?.optionValue || "";
-  const months = Number(label.match(/(\d+)\s*개월/)?.[1]);
-  const years = Number(label.match(/(\d+)\s*년/)?.[1]);
-  const totalMonths = Number.isFinite(months)
-    ? months
-    : Number.isFinite(years)
-      ? years * 12
-      : null;
-
-  return totalMonths !== null && totalMonths <= 3 ? "short" : "goal";
-}
-
 const SAVING_GOAL_LABEL = { short: "단기 예치", goal: "목돈 만들기" };
 
-function SavingGoalModal({ type, goal, categories, onClose, onSave }) {
+export function SavingGoalModal({ type, goal, categories, onClose, onSave }) {
   const label = SAVING_GOAL_LABEL[type];
   const periodOptions = findCategoryOptions(categories, "savingPeriod").filter(
     (option) => getSavingPlanType(option) === type,
@@ -350,8 +328,9 @@ function SavingGoalModal({ type, goal, categories, onClose, onSave }) {
 
   const [data, setData] = useState({
     savingPeriod: goal?.savingPeriodOptionId ? [goal.savingPeriodOptionId] : [],
-    monthlyAmount: goal?.amount || 1,
+    monthlyAmount: goal?.amount, // 비어 있으면 AmountField가 대분류별 기본값(단기 10만원/목돈 1만원)으로 채운다
   });
+  const [amountInvalid, setAmountInvalid] = useState(false);
 
   const selectedPeriodId = data.savingPeriod[0] ?? null;
   const isEdit = Boolean(goal);
@@ -369,7 +348,7 @@ function SavingGoalModal({ type, goal, categories, onClose, onSave }) {
       contentTopGap="mt-1"
       onClose={onClose}
       onSave={handleSave}
-      saveDisabled={!selectedPeriodId}
+      saveDisabled={!selectedPeriodId || amountInvalid}
       saveLabel={isEdit ? "저장" : "추가"}
       wide
     >
@@ -378,8 +357,11 @@ function SavingGoalModal({ type, goal, categories, onClose, onSave }) {
         <br />
         <span className="font-semibold text-[#03BFA5]">{label}</span>는 {periodLabels} 중 선택 가능해요.
       </p>
-      <SavingPeriodField data={data} setData={setData} cats={{ savingPeriod: periodOptions }} />
-      <AmountField data={data} setData={setData} type={type} />
+      {/* 추천 입력 화면의 컴포넌트는 StepLayout 안에서 0.8배로 그려지므로, 모달에서도 같은 배율로 맞춘다. */}
+      <div className="recommend-scale">
+        <SavingPeriodField data={data} setData={setData} cats={{ savingPeriod: periodOptions }} />
+        <AmountField data={data} setData={setData} type={type} onValidityChange={setAmountInvalid} />
+      </div>
     </ModalShell>
   );
 }
@@ -403,7 +385,7 @@ function SingleChoiceOptionModal({ title, categoryName, profile, categories, onC
       onSave={handleSave}
       saveDisabled={required && !selectedId}
     >
-      <div className="flex flex-wrap gap-2.5">
+      <div className="recommend-scale flex flex-wrap gap-2.5">
         {options.map((option) => (
           <Tag
             key={option.optionId}
@@ -439,7 +421,7 @@ function MultiChoiceOptionModal({ title, categoryName, profile, categories, onCl
       onSave={handleSave}
       saveDisabled={required && selectedIds.length === 0}
     >
-      <div className="flex flex-wrap gap-2.5">
+      <div className="recommend-scale flex flex-wrap gap-2.5">
         {options.map((option) => (
           <Tag
             key={option.optionId}
@@ -461,34 +443,7 @@ function TenureModal({ profile, onClose, onSave }) {
 
   return (
     <ModalShell title="근속 기간" onClose={onClose} onSave={handleSave}>
-      <input
-        type="range"
-        min={0}
-        max={120}
-        value={months}
-        onChange={(e) => setMonths(Number(e.target.value))}
-        className="recommend-range mb-2 w-full"
-        style={{ "--range-progress": getRangeProgress(months, 0, 120) }}
-      />
-      <div className="mb-5 flex justify-between text-[13px] font-medium text-[#454545]">
-        <span>0개월</span>
-        <span>120개월</span>
-      </div>
-
-      <div className="mb-3 flex h-11 w-[130px] items-center gap-2 rounded-full border border-[#D9D9D9] bg-white px-4">
-        <FormInput
-          type="text"
-          inputMode="numeric"
-          value={months}
-          onChange={(e) => {
-            const digits = e.target.value.replace(/[^0-9]/g, "");
-            if (digits === "") return setMonths("");
-            setMonths(Math.min(120, Math.max(0, Number(digits))));
-          }}
-          className="w-12 border-none bg-transparent p-0 text-center text-[14px] focus:ring-0"
-        />
-        <span className="text-[14px] text-[#454545]">개월</span>
-      </div>
+      <TenureMonthsField compact months={months} onChange={setMonths} />
 
       <label
         className={`mb-3 flex h-11 cursor-pointer items-center gap-2.5 rounded-full border px-5 transition-all ${
@@ -502,9 +457,11 @@ function TenureModal({ profile, onClose, onSave }) {
         <span className="text-[14px]">첫 직장입니다.</span>
       </label>
 
-      <InfoBox type="mint-pill" className="h-auto w-full py-2.5">
-        일부 정부 상품은 근속 요건이 존재합니다.
-      </InfoBox>
+      <div className="recommend-scale">
+        <InfoBox type="mint-outline" className="w-full">
+          일부 정부 상품은 근속 요건이 존재합니다.
+        </InfoBox>
+      </div>
     </ModalShell>
   );
 }
@@ -552,9 +509,11 @@ function HousingModal({ profile, onClose, onSave }) {
         />
         <CheckableRow checked={isHouseholder} onChange={(e) => setIsHouseholder(e.target.checked)} label="세대주입니다." />
       </div>
-      <InfoBox type="mint-pill" className="mt-3 h-auto w-full py-2.5">
-        청약/주거 지원 상품의 자격 요건입니다.
-      </InfoBox>
+      <div className="recommend-scale mt-3">
+        <InfoBox type="mint-outline" className="w-full">
+          청약/주거 지원 상품의 자격 요건입니다.
+        </InfoBox>
+      </div>
     </ModalShell>
   );
 }
@@ -577,9 +536,10 @@ function TransactionModal({ profile, onClose, onSave }) {
       <div
         role="dialog"
         aria-modal="true"
-        className="max-h-[calc(100vh-48px)] w-full max-w-[720px] overflow-y-auto rounded-[20px] bg-white p-8"
+        className="w-full max-w-[720px] overflow-hidden rounded-[20px] bg-white"
         onMouseDown={(event) => event.stopPropagation()}
       >
+      <div className="modal-scroll max-h-[calc(100vh-48px)] overflow-y-auto p-8">
         <div className="mb-4 flex items-start justify-between gap-4">
           <h3 className="text-[19px] font-bold text-[#181818]">거래 이력</h3>
           <button type="button" onClick={onClose} aria-label="닫기" className="shrink-0 text-[#A5A5A5] hover:text-[#606060]">
@@ -587,6 +547,7 @@ function TransactionModal({ profile, onClose, onSave }) {
           </button>
         </div>
 
+        <div className="recommend-scale">
         {subStep === 1 ? (
           <BankSelector
             theme="mint"
@@ -607,6 +568,7 @@ function TransactionModal({ profile, onClose, onSave }) {
             disabledBanks={neverUsedBanks}
           />
         )}
+        </div>
 
         <div className="mt-4 flex items-center justify-end gap-2">
           {subStep === 2 && (
@@ -633,6 +595,7 @@ function TransactionModal({ profile, onClose, onSave }) {
             저장
           </button>
         </div>
+      </div>
       </div>
     </div>
   );
