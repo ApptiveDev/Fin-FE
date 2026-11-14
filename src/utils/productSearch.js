@@ -1,5 +1,5 @@
 import client, { withAuth } from "../api/client";
-import { persistRecommendation } from "./recommendationResult";
+import { clearRecommendationCache, persistRecommendation } from "./recommendationResult";
 
 function collectDetailTargets(result) {
   const candidates = [
@@ -36,7 +36,9 @@ async function fetchProductDetails(result, request, accessToken) {
   );
 }
 
-export async function runProductSearch(request, accessToken) {
+// preserveCache: 대분류 토글로 반대 대분류만 추가 조회할 때 true. 입력값이 바뀌는 일반 검색은
+// 기존 대분류별 캐시가 낡은 값이 되므로 먼저 비운다.
+export async function runProductSearch(request, accessToken, { preserveCache = false } = {}) {
   let result;
   try {
     const res = await client.post("/search/products", request, withAuth(accessToken));
@@ -56,6 +58,7 @@ export async function runProductSearch(request, accessToken) {
     },
   };
 
-  persistRecommendation({ result: recommendation.result });
+  if (!preserveCache) clearRecommendationCache();
+  persistRecommendation({ request: recommendation.request, result: recommendation.result });
   return recommendation;
 }

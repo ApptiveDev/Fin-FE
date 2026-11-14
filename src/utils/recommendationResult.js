@@ -70,11 +70,56 @@ function splitLines(text) {
     .filter(Boolean);
 }
 
+// 대분류(SHORT_TERM/LONG_TERM)별로 한 번 받은 추천 결과를 들고 있는 캐시. 토글 시 재호출을 피한다.
+// 입력값이 바뀌어 새로 검색하면(runProductSearch) 비워진다.
+const RECOMMENDATION_CACHE_KEY = `${RECOMMENDATION_SESSION_KEY}:byCategory`;
+
+export function readRecommendationCache() {
+  if (typeof window === "undefined") return {};
+
+  try {
+    return JSON.parse(window.sessionStorage.getItem(RECOMMENDATION_CACHE_KEY) || "{}") || {};
+  } catch {
+    return {};
+  }
+}
+
+// 한 대분류의 캐시만 버린다(마이페이지에서 그 대분류의 목표를 바꿨을 때, 낡은 결과가 남지 않도록).
+export function dropCachedRecommendation(category) {
+  if (typeof window === "undefined") return;
+
+  try {
+    const next = { ...readRecommendationCache() };
+    delete next[category];
+    window.sessionStorage.setItem(RECOMMENDATION_CACHE_KEY, JSON.stringify(next));
+  } catch {
+    // 캐시를 못 비워도 다음 토글에서 서버 응답으로 덮어쓴다.
+  }
+}
+
+export function clearRecommendationCache() {
+  if (typeof window === "undefined") return;
+
+  try {
+    window.sessionStorage.removeItem(RECOMMENDATION_CACHE_KEY);
+  } catch {
+    // 캐시를 못 비워도 다음 검색에서 덮어쓴다.
+  }
+}
+
 export function persistRecommendation(recommendation) {
   if (typeof window === "undefined") return;
 
   try {
     window.sessionStorage.setItem(RECOMMENDATION_SESSION_KEY, JSON.stringify(recommendation));
+
+    const category = recommendation?.result?.category;
+    if (category) {
+      window.sessionStorage.setItem(
+        RECOMMENDATION_CACHE_KEY,
+        JSON.stringify({ ...readRecommendationCache(), [category]: recommendation }),
+      );
+    }
   } catch {
     // 브라우저 저장소를 사용할 수 없어도 현재 화면 이동은 계속 진행한다.
   }
@@ -96,13 +141,20 @@ export function clearPersistedRecommendation() {
 
   try {
     window.sessionStorage.removeItem(RECOMMENDATION_SESSION_KEY);
+    window.sessionStorage.removeItem(RECOMMENDATION_CACHE_KEY);
   } catch {
     // 로그아웃 자체는 브라우저 저장소 상태와 무관하게 완료되어야 한다.
   }
 }
 
+// 세그먼트 토글로 결과가 바뀌면 저장된 값이 가장 최신이므로 저장소를 우선한다.
+// (검색/재검색은 항상 persistRecommendation을 거치므로 location.state와 같은 값이다.)
 export function getActiveRecommendationResult(location) {
-  return location?.state?.recommendationResult ?? readPersistedRecommendation()?.result ?? null;
+  return readPersistedRecommendation()?.result ?? location?.state?.recommendationResult ?? null;
+}
+
+export function getPersistedRecommendationRequest() {
+  return readPersistedRecommendation()?.request ?? null;
 }
 
 export function contributionDisplayValue(value, isLoggedIn) {
