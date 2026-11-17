@@ -137,7 +137,7 @@ export default function ProductList() {
   };
 
   const goToProductDetail = (productId) => {
-    navigate(`/products/${productId}`);
+    navigate(`/products/${productId}`, { state: { recommendationResult: displayResult } });
   };
 
   const scrollToSectionList = () => {

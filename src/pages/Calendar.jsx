@@ -17,7 +17,6 @@ import prevIcon from "../assets/calendar/6b3dc.svg";
 import nextIcon from "../assets/calendar/4be05.svg";
 import lockIcon from "../assets/calendar/80622.svg";
 import activeConditionIcon from "../assets/calendar/afb6a.svg";
-import activeBellIcon from "../assets/calendar/46502.svg";
 import caretIcon from "../assets/calendar/1b1fd.svg";
 import editIcon from "../assets/calendar/48452.svg";
 import chevronIcon from "../assets/calendar/5e9c5.svg";
@@ -25,6 +24,17 @@ import favoriteIcon from "../assets/calendar/a1aea.svg";
 import activeFavoriteIcon from "../assets/calendar/1f548.svg";
 import closeIcon from "../assets/calendar/b8e4b.svg";
 import infoIcon from "../assets/calendar/61b3e.svg";
+import CalendarAlertButton from "../components/CalendarAlertButton";
+import AlertSetupModal from "../components/AlertSetupModal";
+import {
+  formatNotificationDate,
+  getNotificationDates,
+  getUpcomingNotifications,
+  loadCalendarNotifications,
+  makeCalendarSubscription,
+  saveCalendarNotifications,
+} from "../utils/calendarNotifications";
+import "../components/CalendarAlertButton.css";
 import "./Calendar.css";
 
 const STATUS_FILTERS = [
@@ -171,9 +181,14 @@ export default function Calendar() {
   const [showOngoingDrawer, setShowOngoingDrawer] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [pendingAction, setPendingAction] = useState(null);
-  const [notifiedIds, setNotifiedIds] = useState(() => new Set());
+  const [notificationState, setNotificationState] = useState(loadCalendarNotifications);
+  const [alertSetup, setAlertSetup] = useState(null);
+  const [alertEmail, setAlertEmail] = useState("");
+  const [alertEmailError, setAlertEmailError] = useState("");
+  const [alertToast, setAlertToast] = useState(null);
   const [favoriteIds, setFavoriteIds] = useState(() => new Set());
   const [showPast, setShowPast] = useState(false);
+  const [bannerDismissed, setBannerDismissed] = useState(() => localStorage.getItem("fin-b2-banner-dismissed") === toDateKey(CALENDAR_REFERENCE_DATE));
 
   const allOccurrences = useMemo(() => getOccurrences(CALENDAR_PROGRAMS, isLoggedIn), [isLoggedIn]);
   const minMonth = addMonths(CALENDAR_REFERENCE_DATE, -3);
@@ -198,6 +213,10 @@ export default function Calendar() {
   }, [accessToken]);
 
   useEffect(() => {
+    saveCalendarNotifications(notificationState);
+  }, [notificationState]);
+
+  useEffect(() => {
     const next = new URLSearchParams(searchParams);
     const values = {
       month: monthKey(displayMonth),
@@ -217,14 +236,22 @@ export default function Calendar() {
         const action = JSON.parse(stored);
         sessionStorage.removeItem("fin-calendar-pending-action");
         if (action.type === "notify" && action.programId) {
-          setNotifiedIds((previous) => new Set(previous).add(action.programId));
+          const program = [...CALENDAR_PROGRAMS, ...PLANNED_PROGRAMS].find((item) => item.id === action.programId)
+            || (action.programId === MATURITY_EVENT.id ? MATURITY_EVENT : null);
+          if (program) {
+            const requestedType = action.alertType === "planned" ? "start" : action.alertType;
+            setAlertSetup({ program, type: requestedType || (program.category === "maturity" ? "maturity" : "deadline") });
+            setAlertEmail(notificationState.email);
+          }
           setSelectedProgramId(action.programId);
-          const program = CALENDAR_PROGRAMS.find((item) => item.id === action.programId);
           const date = parseDateKey(program?.endDate || program?.plannedDate || program?.startDate);
           if (date) {
             setDisplayMonth(new Date(date.getFullYear(), date.getMonth(), 1));
             setSelectedDate(date);
           }
+        } else if (action.type === "notify-next") {
+          const nextProgram = [...PLANNED_PROGRAMS].sort((left, right) => left.plannedDate.localeCompare(right.plannedDate))[0];
+          if (nextProgram) setAlertSetup({ program: nextProgram, type: "start" });
         } else if (action.type === "favorite" && action.programId) {
           setFavoriteIds((previous) => new Set(previous).add(action.programId));
           setSelectedProgramId(action.programId);
@@ -246,7 +273,7 @@ export default function Calendar() {
         sessionStorage.removeItem("fin-calendar-pending-action");
       }
     }
-  }, [isLoggedIn, navigate]);
+  }, [isLoggedIn, navigate, notificationState.email]);
 
   useEffect(() => {
     if (!showLoginModal && !showOngoingDrawer) return undefined;
@@ -313,6 +340,8 @@ export default function Calendar() {
       return date >= toDateKey(CALENDAR_REFERENCE_DATE) && (!conditionsActive || matchesProfile(program, profile));
     })
     .sort((left, right) => (left.endDate || left.plannedDate).localeCompare(right.endDate || right.plannedDate));
+  const configuredAlertCount = notificationState.subscriptions.filter((item) => item.status === "active").length;
+  const reminderAlerts = getUpcomingNotifications(notificationState, 7);
 
   const updateMonth = useCallback((offset) => {
     const nextMonth = addMonths(displayMonth, offset);
@@ -346,17 +375,72 @@ export default function Calendar() {
     setShowLoginModal(true);
   };
 
-  const handleNotify = (program) => {
+  const notificationId = (program, type) => `${program.id}:${type}`;
+  const findNotification = (program, type) => notificationState.subscriptions.find((item) => item.id === notificationId(program, type) && item.status !== "off");
+
+  const handleNotify = (program, type = "deadline") => {
     if (!isLoggedIn) {
-      beginLoginAction({ type: "notify", programId: program.id });
+      beginLoginAction({ type: "notify", programId: program.id, alertType: type });
       return;
     }
-    setNotifiedIds((previous) => {
-      const next = new Set(previous);
-      if (next.has(program.id)) next.delete(program.id);
-      else next.add(program.id);
-      return next;
-    });
+    if (findNotification(program, type)) return;
+    const sendDates = getNotificationDates(program, type);
+    if (!sendDates.length) {
+      setAlertToast({ title: "설정할 수 있는 알림이 없어요", message: "남은 발송 시점이 있는지 일정을 확인해 주세요." });
+      return;
+    }
+    const activeCount = notificationState.subscriptions.filter((item) => item.status === "active").length;
+    if (activeCount >= 30) {
+      setAlertToast({ title: "알림 설정 한도에 도달했어요", message: "받는 중인 알림은 최대 30건까지 설정할 수 있어요." });
+      return;
+    }
+    if (notificationState.emailVerified) {
+      const subscription = makeCalendarSubscription(program, type, true);
+      setNotificationState((previous) => ({ ...previous, subscriptions: [...previous.subscriptions.filter((item) => item.id !== subscription.id), subscription] }));
+      setAlertToast({ title: "알림을 켰어요", message: `${sendDates.map((item) => formatNotificationDate(item.date, true)).join(" · ")}에 ${notificationState.email}로 알려드릴게요.`, subscriptionId: subscription.id });
+      return;
+    }
+    setAlertSetup({ program, type });
+    setAlertEmail(notificationState.email);
+    setAlertEmailError("");
+  };
+
+  const handleAlertSetupSubmit = (event) => {
+    event.preventDefault();
+    const email = alertEmail.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setAlertEmailError("이메일 주소를 확인해 주세요.");
+      return;
+    }
+    const isMockMode = import.meta.env.DEV && new URLSearchParams(window.location.search).get("mock") === "true";
+    const emailVerified = notificationState.emailVerified || isMockMode;
+    const subscription = makeCalendarSubscription(alertSetup.program, alertSetup.type, emailVerified);
+    setNotificationState((previous) => ({
+      ...previous,
+      email,
+      emailVerified,
+      subscriptions: [...previous.subscriptions.filter((item) => item.id !== subscription.id), subscription],
+    }));
+    setAlertSetup(null);
+    setAlertToast(emailVerified
+      ? { title: "알림을 켰어요", message: `${subscription.sendDates.map((item) => formatNotificationDate(item.date, true)).join(" · ")}에 ${email}로 알려드릴게요.`, subscriptionId: subscription.id }
+      : { title: "인증 대기로 설정했어요", message: "인증 메일 발송은 알림 서버 API 연결 후 동작합니다." });
+  };
+
+  const handleNotificationOff = (subscriptionId) => {
+    setNotificationState((previous) => ({
+      ...previous,
+      subscriptions: previous.subscriptions.map((item) => item.id === subscriptionId ? { ...item, status: "off" } : item),
+    }));
+  };
+
+  const handleNotificationResend = () => {
+    setAlertToast({ title: "인증 메일 재발송", message: "인증 메일 발송은 알림 서버 API 연결 후 동작합니다." });
+  };
+
+  const handleAlertToastUndo = () => {
+    if (alertToast?.subscriptionId) handleNotificationOff(alertToast.subscriptionId);
+    setAlertToast(null);
   };
 
   const handleFavorite = (program) => {
@@ -417,11 +501,60 @@ export default function Calendar() {
     };
   };
 
+  const openReminder = (item) => {
+    const program = [...CALENDAR_PROGRAMS, ...PLANNED_PROGRAMS].find((candidate) => candidate.id === item.subscription.programId);
+    if (!program) return;
+    const date = parseDateKey(item.subscription.eventDate);
+    if (program.tier === 2) {
+      openDetails(program);
+      return;
+    }
+    setView("month");
+    if (date) {
+      setDisplayMonth(new Date(date.getFullYear(), date.getMonth(), 1));
+      setSelectedDate(date);
+    }
+    setSelectedProgramId(program.id);
+  };
+
+  const getAlertButtonProps = (program, type) => {
+    let targetType = type === "planned" ? "start" : type;
+    let dates = getNotificationDates(program, targetType);
+    const fallbackToDeadline = type === "start" && dates.length === 0 && getNotificationDates(program, "deadline").length > 0;
+    if (fallbackToDeadline) {
+      targetType = "deadline";
+      dates = getNotificationDates(program, targetType);
+    }
+    const subscription = findNotification(program, targetType);
+    const limitReached = !subscription && configuredAlertCount >= 30;
+    return {
+      notification: subscription,
+      notificationState,
+      dates,
+      disabled: limitReached || dates.length === 0,
+      disabledReason: limitReached ? "받는 중인 알림은 최대 30건까지 설정할 수 있어요." : "남은 발송 시점이 없어요.",
+      onSetup: () => handleNotify(program, targetType),
+      onTurnOff: () => subscription && handleNotificationOff(subscription.id),
+      onResend: handleNotificationResend,
+    };
+  };
+
   const toggleView = (nextView) => setView(nextView);
 
   return (
     <main className="fin-calendar">
       <div className="fc-wrap">
+        {isLoggedIn && !bannerDismissed && reminderAlerts.length > 0 && (
+          <ReminderBanner
+            reminder={reminderAlerts[0]}
+            count={reminderAlerts.length}
+            onOpen={() => openReminder(reminderAlerts[0])}
+            onDismiss={() => {
+              localStorage.setItem("fin-b2-banner-dismissed", toDateKey(CALENDAR_REFERENCE_DATE));
+              setBannerDismissed(true);
+            }}
+          />
+        )}
         <header className="fc-page-heading">
           <div>
             <h1>Fin. 캘린더</h1>
@@ -442,7 +575,7 @@ export default function Calendar() {
           </div>
         </header>
 
-        {isLoggedIn && <SummaryBar activeCount={activePrograms.length} expiringCount={expiringSoonCount} startCount={startsThisMonth} alertCount={notifiedIds.size} onClick={(kind) => kind === "alerts" ? navigate("/mypage", { state: { activeTab: "alerts" } }) : selectStatus(kind === "active" ? "all" : kind)} />}
+        {isLoggedIn && <SummaryBar activeCount={activePrograms.length} expiringCount={expiringSoonCount} startCount={startsThisMonth} alertCount={configuredAlertCount} onClick={(kind) => kind === "alerts" ? navigate("/mypage", { state: { activeTab: "alerts" } }) : selectStatus(kind === "active" ? "all" : kind)} />}
 
         {view === "month" && !hasMonthEvents && (
           <div className="fc-planned-banner"><strong>12월 모집 예정</strong><span>청년미래적금 2차 모집이 12월 중 열릴 예정이에요 (일자 미확정 · 금융위원회 발표 기준)</span></div>
@@ -502,7 +635,11 @@ export default function Calendar() {
                   <p>{conditionsActive && profile?.display?.region ? `${profile.display.region} 기준` : "전국 기준"} · 오늘 마감 <strong className="fc-red">{activePrograms.filter((program) => program.endDate === toDateKey(CALENDAR_REFERENCE_DATE)).length}건</strong> · 이번 주 시작 <strong className="fc-green">{activePrograms.filter((program) => program.startDate >= toDateKey(CALENDAR_REFERENCE_DATE) && daysBetween(CALENDAR_REFERENCE_DATE, parseDateKey(program.startDate)) < 7).length}건</strong></p>
                   <StatusLegend />
                 </div>
-                {!hasMonthEvents && <EmptyState onShowAll={() => { setSelectedStatuses(["all"]); setCategory("all"); setDisplayMonth(new Date(2026, 9, 1)); }} onNotify={() => beginLoginAction({ type: "notify-next" })} />}
+                {!hasMonthEvents && <EmptyState onShowAll={() => { setSelectedStatuses(["all"]); setCategory("all"); setDisplayMonth(new Date(2026, 9, 1)); }} onNotify={() => {
+                  const nextProgram = [...PLANNED_PROGRAMS].sort((left, right) => left.plannedDate.localeCompare(right.plannedDate))[0];
+                  if (nextProgram) handleNotify(nextProgram, "start");
+                  else beginLoginAction({ type: "notify-next" });
+                }} />}
                 <div className={`fc-calendar-grid${!hasMonthEvents ? " is-empty" : ""}`}>
                   <div className="fc-weekdays">{WEEKDAYS.map((weekday, index) => <div key={weekday} className={index === 0 ? "is-sunday" : ""}>{weekday}</div>)}</div>
                   <div className="fc-day-grid" style={{ "--fc-rows": cellCount / 7 }}>
@@ -526,11 +663,11 @@ export default function Calendar() {
                 showPast={showPast}
                 onTogglePast={() => setShowPast((previous) => !previous)}
                 isLoggedIn={isLoggedIn}
-                notifiedIds={notifiedIds}
-                onNotify={handleNotify}
+                notificationState={notificationState}
+                getAlertButtonProps={getAlertButtonProps}
                 onDetails={openDetails}
                 onSelect={selectOccurrence}
-                onLogin={(program) => beginLoginAction({ type: "notify", programId: program?.id })}
+                onLogin={(occurrence) => beginLoginAction({ type: "notify", programId: occurrence?.program?.id, alertType: occurrence?.type })}
               />
             )}
           </div>
@@ -545,16 +682,15 @@ export default function Calendar() {
                   selectedDate={selectedDate}
                   occurrence={getSelectedProgramOccurrence(selectedProgram)}
                   isLoggedIn={isLoggedIn}
-                  isNotified={notifiedIds.has(selectedProgram.id)}
+                  alertButtonProps={getAlertButtonProps(selectedProgram, getSelectedProgramOccurrence(selectedProgram).type)}
                   isFavorite={favoriteIds.has(selectedProgram.id)}
                   conditionsActive={conditionsActive}
-                  onNotify={() => handleNotify(selectedProgram)}
                   onFavorite={() => handleFavorite(selectedProgram)}
                   onDetails={() => openDetails(selectedProgram)}
-                  onLogin={() => beginLoginAction({ type: "notify", programId: selectedProgram.id })}
+                  onLogin={() => beginLoginAction({ type: "notify", programId: selectedProgram.id, alertType: getSelectedProgramOccurrence(selectedProgram).type })}
                 />
               )}
-              {isLoggedIn && <MaturityCard onDetails={() => openDetails(MATURITY_EVENT)} isNotified={notifiedIds.has(MATURITY_EVENT.id)} onNotify={() => handleNotify(MATURITY_EVENT)} />}
+              {isLoggedIn && <MaturityCard onDetails={() => openDetails(MATURITY_EVENT)} alertButtonProps={getAlertButtonProps(MATURITY_EVENT, "maturity")} />}
               <OngoingCard onOpen={(tab) => { setDrawerTab(tab); setShowOngoingDrawer(true); }} />
             </aside>
           )}
@@ -567,6 +703,8 @@ export default function Calendar() {
       </div>
 
       {showLoginModal && <LoginPrompt onClose={() => setShowLoginModal(false)} onJoin={() => { setShowLoginModal(false); navigate("/terms", { state: { returnTo: `${location.pathname}${location.search}`, calendarAction: pendingAction } }); }} onLogin={() => { setShowLoginModal(false); navigate("/login", { state: { returnTo: `${location.pathname}${location.search}`, calendarAction: pendingAction } }); }} />}
+      {alertSetup && <AlertSetupModal program={alertSetup.program} type={alertSetup.type} email={alertEmail} emailError={alertEmailError} onEmailChange={(value) => { setAlertEmail(value); setAlertEmailError(""); }} onSubmit={handleAlertSetupSubmit} onClose={() => setAlertSetup(null)} />}
+      {alertToast && <div className="b2-alert-toast" role="status"><div><strong>{alertToast.title}</strong><span>{alertToast.message}</span></div>{alertToast.subscriptionId && <button type="button" onClick={handleAlertToastUndo}>실행 취소</button>}<button type="button" aria-label="닫기" onClick={() => setAlertToast(null)}>×</button></div>}
       {showOngoingDrawer && <OngoingDrawer tab={drawerTab} onTabChange={setDrawerTab} onClose={() => setShowOngoingDrawer(false)} />}
       {view === "month" && <div className="fc-mobile-sheet">{selectedDayOccurrences.length > 0 && <strong>{formatSelectedDay(selectedDate)} · {selectedDayOccurrences.length}건</strong>}{selectedDayOccurrences.slice(0, 2).map((occurrence) => <button key={occurrence.id} onClick={() => selectOccurrence(occurrence)}><EventLabel occurrence={occurrence} /></button>)}</div>}
     </main>
@@ -599,7 +737,7 @@ function AvailableCard({ programs, onSelect }) {
   return <section className="fc-panel fc-available"><div className="fc-panel-heading"><h3>지금 신청 가능</h3><span>전체 {programs.length}건 <Icon src={chevronIcon} /></span></div><div className="fc-available-list">{programs.slice(0, 3).map((program) => <button key={program.id} className="fc-available-row" onClick={() => onSelect(program)}><span className="fc-status-badge">진행 중</span><span className="fc-available-copy"><strong>{program.name}</strong><small>~{program.endDate.slice(5).replace("-", ".")} 마감 · {program.institution}</small></span><b className={daysBetween(CALENDAR_REFERENCE_DATE, parseDateKey(program.endDate)) <= 7 ? "fc-red" : ""}>{ddayLabel(program.endDate)}</b><span className="fc-row-arrow"><Icon src={chevronIcon} /></span></button>)}</div></section>;
 }
 
-function SelectedProgramCard({ program, selectedDate, occurrence, isLoggedIn, isNotified, isFavorite, conditionsActive, onNotify, onFavorite, onDetails, onLogin }) {
+function SelectedProgramCard({ program, selectedDate, occurrence, isLoggedIn, alertButtonProps, isFavorite, conditionsActive, onFavorite, onDetails, onLogin }) {
   const label = occurrence.type === "deadline" ? `마감 ${ddayLabel(occurrence.date)}` : occurrence.type === "maturity" ? `만기 ${ddayLabel(occurrence.date)}` : `시작 ${ddayLabel(occurrence.date)}`;
   const startDate = program.startDate ? parseDateKey(program.startDate) : parseDateKey(occurrence.date);
   const endDate = program.endDate ? parseDateKey(program.endDate) : parseDateKey(occurrence.date);
@@ -611,14 +749,31 @@ function SelectedProgramCard({ program, selectedDate, occurrence, isLoggedIn, is
       <h4>{program.name}</h4>
       <p className="fc-program-summary">{program.region || program.institution}{program.summary ? ` · ${program.summary}` : ""}</p>
       <dl className="fc-detail-rows"><div><dt>신청 기간</dt><dd>{dateRange}</dd></div><div><dt>대상</dt><dd>{program.age}{program.region && program.region !== "전국" ? ` · ${program.region}` : ""}</dd></div>{isLoggedIn && conditionsActive && <div><dt>내 조건 맞춤</dt><dd className="fc-green">충족</dd></div>}</dl>
-      <div className="fc-card-actions"><button className="fc-button fc-button--light" onClick={onDetails}>{program.tier === 2 ? "온통청년 보기 ↗" : "상세 보기"}</button><button className={`fc-button fc-button--outline${isNotified ? " is-on" : ""}`} onClick={isLoggedIn ? onNotify : onLogin}><Icon src={isLoggedIn ? (isNotified ? activeBellIcon : bellIcon) : lockIcon} />{isLoggedIn ? (isNotified ? "알림 받는 중" : "알림 받기") : "로그인하고 알림 받기"}</button></div>
+      <div className="fc-card-actions"><button className="fc-button fc-button--light" onClick={onDetails}>{program.tier === 2 ? "온통청년 보기 ↗" : "상세 보기"}</button><CalendarAlertButton {...alertButtonProps} onSetup={isLoggedIn ? alertButtonProps.onSetup : onLogin} /></div>
       <small className="fc-data-source">온통청년 10.05 기준</small>
     </section>
   );
 }
 
-function MaturityCard({ onDetails, isNotified, onNotify }) {
-  return <section className="fc-panel fc-maturity-card"><h3>내 만기</h3><div className="fc-maturity-inner"><div className="fc-program-badges"><span className="fc-status-pill fc-status-pill--maturity">만기</span><span className="fc-maturity-dday">{ddayLabel(MATURITY_EVENT.endDate)}</span></div><h4>{MATURITY_EVENT.name}</h4><p>10.22 (목) 만기 · 12개월 · 내가 등록한 가입 상품</p><div className="fc-card-actions"><button className="fc-button fc-button--light" onClick={onDetails}>상세 보기</button><button className={`fc-button fc-button--outline${isNotified ? " is-on" : ""}`} onClick={onNotify}><Icon src={isNotified ? activeBellIcon : bellIcon} />{isNotified ? "알림 받는 중" : "알림 받기"}</button></div></div></section>;
+function ReminderBanner({ reminder, count, onOpen, onDismiss }) {
+  const { subscription, label } = reminder;
+  return (
+    <section className="b2-reminder-banner" aria-label="7일 이내 알림 예정">
+      <div className="b2-reminder-title"><Icon src={bellIcon} />7일 이내 내 일정</div>
+      <div className="b2-reminder-main">
+        <span className={`b2-reminder-pill${subscription.type === "start" ? " is-start" : subscription.type === "maturity" ? " is-maturity" : ""}`}>{label.replace("마감 ", "마감 ").replace("D-0", "당일")}</span>
+        <span>{subscription.name}</span>
+        {count > 1 && <small>외 {count - 1}건</small>}
+      </div>
+      {subscription.tier === 2 && <button className="b2-reminder-action" onClick={onOpen}>온통청년 보기 ↗</button>}
+      <button className="b2-reminder-action" onClick={onOpen}>내 일정 보기 ›</button>
+      <button className="b2-reminder-dismiss" onClick={onDismiss} aria-label="오늘 배너 닫기">×</button>
+    </section>
+  );
+}
+
+function MaturityCard({ onDetails, alertButtonProps }) {
+  return <section className="fc-panel fc-maturity-card"><h3>내 만기</h3><div className="fc-maturity-inner"><div className="fc-program-badges"><span className="fc-status-pill fc-status-pill--maturity">만기</span><span className="fc-maturity-dday">{ddayLabel(MATURITY_EVENT.endDate)}</span></div><h4>{MATURITY_EVENT.name}</h4><p>10.22 (목) 만기 · 12개월 · 내가 등록한 가입 상품</p><div className="fc-card-actions"><button className="fc-button fc-button--light" onClick={onDetails}>상세 보기</button><CalendarAlertButton {...alertButtonProps} /></div></div></section>;
 }
 
 function OngoingCard({ onOpen }) {
@@ -629,7 +784,7 @@ function NextScheduleCard({ programs, onGoToMonth }) {
   return <section className="fc-panel fc-next-schedule"><h3>가장 가까운 다음 일정</h3>{programs.map((program) => <div className="fc-next-row" key={program.id}><span className={`fc-status-pill fc-status-pill--${program.plannedDate ? "planned" : "deadline"}`}>{program.plannedDate ? "예정" : "마감"}</span><strong>{program.name}</strong><span>{program.period || program.endDate?.slice(5).replace("-", ".")}</span></div>)}<button className="fc-button fc-button--outline" onClick={() => onGoToMonth(programs[0]?.plannedDate || programs[0]?.endDate)}>12월로 이동 <Icon src={chevronIcon} /></button></section>;
 }
 
-function CalendarList({ occurrences, showPast, onTogglePast, isLoggedIn, notifiedIds, onNotify, onDetails, onSelect, onLogin }) {
+function CalendarList({ occurrences, showPast, onTogglePast, isLoggedIn, getAlertButtonProps, onDetails, onSelect, onLogin }) {
   const groups = occurrences.reduce((result, occurrence) => {
     result[occurrence.date] ||= [];
     result[occurrence.date].push(occurrence);
@@ -638,7 +793,7 @@ function CalendarList({ occurrences, showPast, onTogglePast, isLoggedIn, notifie
   const keys = Object.keys(groups).sort();
   return <div className="fc-list-view"><div className="fc-list-toolbar"><span>오늘 이후 일정 <strong>{keys.length}건</strong>을 날짜순으로 보여드려요</span><button onClick={onTogglePast}>{showPast ? "지난 일정 접기" : "지난 일정 2건 보기"}<Icon src={caretIcon} /></button></div>{keys.length === 0 ? <EmptyState onShowAll={() => {}} onNotify={() => onLogin()} /> : keys.map((date) => {
     const parsed = parseDateKey(date);
-    return <div className="fc-list-date-group" key={date}><div className="fc-list-date"><strong>{date.slice(5).replace("-", ".")}</strong><span>{WEEKDAYS[parsed.getDay()]}요일</span></div><div className="fc-list-cards">{groups[date].map((occurrence) => { const isNotified = isLoggedIn && notifiedIds.has(occurrence.program.id); return <article className="fc-list-card" key={occurrence.id} onClick={() => onSelect(occurrence)}><EventLabel occurrence={occurrence} /><div className="fc-list-info"><strong>{occurrence.program.name}</strong><span className={`fc-category-pill${occurrence.program.category === "support" ? " is-muted" : ""}`}>{occurrence.program.category === "support" ? "금융 지원 정책" : "Y-Fin 정책상품"}</span><small>{occurrence.program.institution} · {occurrence.program.period || "전국"}</small></div><b className="fc-list-dday">{occurrence.type === "deadline" ? ddayLabel(occurrence.date) : ""}</b><button className="fc-button fc-button--light" onClick={(event) => { event.stopPropagation(); onDetails(occurrence.program); }}>{occurrence.program.tier === 2 ? "온통청년 ↗" : "상세 보기"}</button><button className={`fc-button fc-button--outline${isNotified ? " is-on" : ""}`} onClick={(event) => { event.stopPropagation(); isLoggedIn ? onNotify(occurrence.program) : onLogin(occurrence.program); }}><Icon src={isNotified ? activeBellIcon : bellIcon} />{isNotified ? "알림 받는 중" : "알림 받기"}</button></article>; })}</div></div>;
+    return <div className="fc-list-date-group" key={date}><div className="fc-list-date"><strong>{date.slice(5).replace("-", ".")}</strong><span>{WEEKDAYS[parsed.getDay()]}요일</span></div><div className="fc-list-cards">{groups[date].map((occurrence) => <article className="fc-list-card" key={occurrence.id} onClick={() => onSelect(occurrence)}><EventLabel occurrence={occurrence} /><div className="fc-list-info"><strong>{occurrence.program.name}</strong><span className={`fc-category-pill${occurrence.program.category === "support" ? " is-muted" : ""}`}>{occurrence.program.category === "support" ? "금융 지원 정책" : "Y-Fin 정책상품"}</span><small>{occurrence.program.institution} · {occurrence.program.period || "전국"}</small></div><b className="fc-list-dday">{occurrence.type === "deadline" ? ddayLabel(occurrence.date) : ""}</b><button className="fc-button fc-button--light" onClick={(event) => { event.stopPropagation(); onDetails(occurrence.program); }}>{occurrence.program.tier === 2 ? "온통청년 ↗" : "상세 보기"}</button><span onClick={(event) => event.stopPropagation()}><CalendarAlertButton compact {...getAlertButtonProps(occurrence.program, occurrence.type)} onSetup={isLoggedIn ? getAlertButtonProps(occurrence.program, occurrence.type).onSetup : () => onLogin(occurrence)} /></span></article>)}</div></div>;
   })}</div>;
 }
 
