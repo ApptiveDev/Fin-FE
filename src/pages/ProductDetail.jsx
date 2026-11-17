@@ -216,14 +216,14 @@ function RateInfoCard({ product }) {
     <div className="rounded-[10px] border border-[#D5D5D5] px-6 py-8 lg:min-h-[530px] lg:px-[34px] lg:py-[30px]">
       <div className="flex w-full max-w-[736px] flex-col gap-[24px]">
         <RateTable product={product} />
-        <div className="flex w-full max-w-[710px] flex-col gap-[16px]">
+        {product.rateConditions.length > 0 && <div className="flex w-full max-w-[710px] flex-col gap-[16px]">
           <SectionTitle icon={<StarIcon className="size-[23px] text-[#03BFA5]" />}>우대금리 조건</SectionTitle>
           <div className="flex w-full max-w-[736px] flex-col gap-[7px]">
             {product.rateConditions.map((item) => (
               <RateConditionRow key={`${item.label}-${item.value}`} item={item} />
             ))}
           </div>
-        </div>
+        </div>}
       </div>
     </div>
   );
@@ -243,6 +243,7 @@ function NoticeBox({ children }) {
 function BankRateSummary({ product, isLoggedIn }) {
   const baseRate = product.baseRateDisplay || `${product.baseRate}%`;
   const maxRate = product.maxRateDisplay || `${product.maxRate}%`;
+  const isParkingAccount = product.category === "파킹통장";
 
   return (
     <div className="flex h-[238px] w-full max-w-[620px] flex-col items-center justify-center rounded-[10px] border border-[#D5D5D5] px-6 py-8 lg:px-[28px] lg:py-[32px]">
@@ -258,8 +259,12 @@ function BankRateSummary({ product, isLoggedIn }) {
         </div>
       </div>
       <div className="mt-[16px] flex h-[44px] w-full max-w-[461px] items-center justify-center gap-[22px] rounded-full border border-[#03BFA5] bg-[#EFFFFD] px-[26px] leading-[1.2] text-[#03BFA5]">
-        <span className="whitespace-nowrap text-center text-[16px] font-normal">내가 받을 수 있는 금리</span>
-        <span className="whitespace-nowrap text-center text-[24.37px] font-semibold">연 {isLoggedIn ? product.myRate : "???"} %</span>
+        <span className="whitespace-nowrap text-center text-[16px] font-normal">
+          {isParkingAccount ? product.ratePillLabel : "내가 받을 수 있는 금리"}
+        </span>
+        <span className="whitespace-nowrap text-center text-[24.37px] font-semibold">
+          {isParkingAccount ? product.ratePillValue || "한도 정보 확인 필요" : `연 ${isLoggedIn ? product.myRate : "???"} %`}
+        </span>
       </div>
     </div>
   );

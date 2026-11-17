@@ -100,34 +100,74 @@ export function SavingPeriodField({ data, setData, cats }) {
 }
 
 export function AmountField({ data, setData, type }) {
-  const amount = data.monthlyAmount || 1;
   const isShortTerm = type === "short";
+  const minAmount = isShortTerm ? 10 : 1;
+  const maxAmount = isShortTerm ? 10_000 : 100;
+  const currentAmount = Number(data.monthlyAmount);
+  const amount = Number.isFinite(currentAmount)
+    ? Math.min(maxAmount, Math.max(minAmount, currentAmount))
+    : minAmount;
   const amountTitle = isShortTerm ? "예치 희망액" : "월 납입 희망액";
   const amountDescription = isShortTerm
     ? "한 번에 예치할 수 있는 금액이에요. (단기 예치 기준)"
     : "매달 넣을 수 있는 금액이에요. (목돈 만들기 기준)";
+  const [amountInput, setAmountInput] = useState(String(amount));
+
+  useEffect(() => {
+    if (currentAmount !== amount) {
+      setData((previous) => ({ ...previous, monthlyAmount: amount }));
+    }
+  }, [amount, currentAmount, setData]);
+
+  useEffect(() => {
+    setAmountInput(String(amount));
+  }, [amount]);
+
+  const commitAmountInput = () => {
+    const parsedAmount = Number(amountInput);
+    const nextAmount = Number.isFinite(parsedAmount)
+      ? Math.min(maxAmount, Math.max(minAmount, Math.round(parsedAmount)))
+      : minAmount;
+
+    setData((previous) => ({ ...previous, monthlyAmount: nextAmount }));
+    setAmountInput(String(nextAmount));
+  };
 
   return (
     <div className="mt-10">
       <FieldHeader title={amountTitle} required requiredText={false} className="mb-[5px]" />
       <p className="mb-[20px] text-[18px] text-[#767676]">{amountDescription}</p>
       <p className="mb-[16px] text-[38px] font-semibold leading-none text-[#03BFA5]">
-        {amount}<span className="ml-2 text-[20px] text-[#454545]">만원</span>
+        <input
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          value={amountInput}
+          onChange={(event) => setAmountInput(event.target.value.replace(/\D/g, ""))}
+          onBlur={commitAmountInput}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") event.currentTarget.blur();
+          }}
+          style={{ width: `${Math.max(amountInput.length, 1)}ch` }}
+          className="max-w-full bg-transparent text-[38px] font-semibold leading-none text-[#03BFA5] outline-none"
+          aria-label={`${amountTitle} (만원)`}
+        />
+        <span className="ml-2 text-[20px] text-[#454545]">만원</span>
       </p>
       <div className="w-full max-w-[760px]">
         <input
           type="range"
-          min={1}
-          max={100}
+          min={minAmount}
+          max={maxAmount}
           value={amount}
           onChange={(event) => setData({ ...data, monthlyAmount: Number(event.target.value) })}
           className="recommend-range mb-[18px] w-full"
-          style={{ "--range-progress": getRangeProgress(amount, 1, 100) }}
+          style={{ "--range-progress": getRangeProgress(amount, minAmount, maxAmount) }}
           aria-label={amountTitle}
         />
         <div className="flex justify-between px-1 font-pretendard text-[17px] font-semibold text-[#454545]">
-          <span>1만원</span>
-          <span>100만원</span>
+          <span>{isShortTerm ? "10만원" : "1만원"}</span>
+          <span>{isShortTerm ? "1억원" : "100만원"}</span>
         </div>
       </div>
     </div>
