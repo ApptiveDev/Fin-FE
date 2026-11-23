@@ -4,10 +4,12 @@ import client, { withAuth } from "../api/client";
 import {
   buildProfileUpdateFromRequest,
   buildRecommendationRequest,
+  buildSelectedKeywordsFromForm,
   mapRecommendCategories,
 } from "../utils/recommendationPayload";
 import { runProductSearch } from "../utils/productSearch";
 import { goalFromFormData, loadSavingsGoals, saveSavingsGoals } from "../utils/savingsGoals";
+import { loadFormDraft, saveFormDraft } from "../utils/recommendFormDraft";
 
 const BANK_CATEGORIES = [
   { id: '시중', title: '시중은행', banks: ['KB국민', '신한', '하나', '우리', 'SC제일', 'iM뱅크'] },
@@ -71,8 +73,9 @@ function isMockRecommendMode() {
 
 export default function useRecommendForm() {
   const { accessToken } = useAuth();
-  const [step, setStep] = useState(0);
-  const [formData, setFormData] = useState({});
+  // 입력 중 다른 화면에 갔다 와도 이어서 입력할 수 있도록, 마지막 입력값/단계를 sessionStorage에서 복원한다.
+  const [step, setStep] = useState(() => loadFormDraft()?.step ?? 0);
+  const [formData, setFormData] = useState(() => loadFormDraft()?.formData ?? {});
   const [cats, setCats] = useState(null);
   const [loading, setLoading] = useState(true);
   const mockMode = isMockRecommendMode();
@@ -101,6 +104,10 @@ export default function useRecommendForm() {
     fetchCategories();
   }, [accessToken, mockMode]);
 
+  useEffect(() => {
+    saveFormDraft({ step, formData });
+  }, [step, formData]);
+
   const handleSubmit = async ({ saveProfile = false } = {}) => {
     const request = buildRecommendationRequest(formData, cats);
 
@@ -115,12 +122,22 @@ export default function useRecommendForm() {
       saveSavingsGoals({ ...loadSavingsGoals(), [submitted.goalKey]: submitted.goal });
     }
 
-    const recommendationPromise = runProductSearch(request, accessToken);
+    const recommendationPromise = runProductSearch(request, accessToken, {
+      selectedKeywords: buildSelectedKeywordsFromForm(formData, cats),
+    });
+    // 프로필 저장은 추천과 별개 기능이라, 서버가 거절(예: 403)해도 분석 결과까지 막지 않고 콘솔에만 남긴다.
     const profileSavePromise = saveProfile && accessToken
-      ? client.put("/user/me/profile", buildProfileUpdateFromRequest(request), withAuth(accessToken))
+      ? client
+        .put("/user/me/profile", buildProfileUpdateFromRequest(request), withAuth(accessToken))
+        .catch((error) => {
+          console.error("입력 정보 저장에 실패했어요(분석은 계속 진행해요):", error?.response?.status, error?.response?.data ?? error);
+        })
       : Promise.resolve();
 
     const [recommendation] = await Promise.all([recommendationPromise, profileSavePromise]);
+
+    // 분석이 끝나면 다음에 열 때 처음 단계부터 보이도록 단계만 되돌린다(입력값은 유지).
+    setStep(0);
 
     return recommendation;
   };
