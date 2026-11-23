@@ -385,3 +385,14 @@
   .fc-empty-state > p { font-size: 12px; }
   .fc-empty-state .fc-button { font-size: 11px; }
 }
+
+/* 오른쪽 일정·만기 카드의 Figma 공통 버튼 배치 */
+.fc-card-actions { align-items: stretch; gap: 11px; }
+.fc-card-actions > .fc-button { flex: 0 0 auto; min-height: 61px; padding: 0 25px; border-radius: 12px; font-size: 19px; font-weight: 600; }
+.fc-card-actions > .b2-alert-button-wrap { display: flex; flex: 1 1 0; min-width: 0; }
+.fc-card-actions .b2-alert-button { min-height: 61px; padding: 0 25px; border-radius: 12px; font-size: 19px; font-weight: 600; }
+.fc-card-actions .b2-alert-button img { width: 19px; height: 19px; }
+@media (max-width: 760px) {
+  .fc-card-actions > .fc-button, .fc-card-actions .b2-alert-button { min-height: 46px; padding: 0 12px; font-size: 15px; }
+  .fc-card-actions .b2-alert-button img { width: 18px; height: 18px; }
+}

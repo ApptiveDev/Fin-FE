@@ -7,10 +7,11 @@ import { clearPersistedRecommendation, readPersistedRecommendation } from '../ut
 export default function Header() {
   const location = useLocation()
   const isCalendarHeader = location.pathname === '/calendar'
+  const isMyPageHeader = location.pathname === '/mypage'
 
   return (
     <header className="sticky top-0 z-50 w-full bg-white">
-      <div className={`mx-auto flex h-14 max-w-480 items-center justify-between px-4 sm:h-16 sm:px-6 lg:px-[3.5%] ${isCalendarHeader ? 'lg:h-[100px]' : 'lg:h-18'}`}>
+      <div className={`mx-auto flex h-14 max-w-480 items-center justify-between px-4 sm:h-16 sm:px-6 lg:px-[3.5%] ${isCalendarHeader || isMyPageHeader ? 'lg:h-[100px]' : 'lg:h-18'}`}>
         <Logo />
         <NavMenu />
         <UserButtons isCalendarHeader={isCalendarHeader} />
