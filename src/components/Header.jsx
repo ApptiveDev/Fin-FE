@@ -26,7 +26,7 @@ function Logo() {
 const navItems = [
   { label: '서비스 소개', path: '/introduce' },
   { label: '금융상품 추천', path: '/recommend', activePaths: ['/recommend', '/products'] },
-  { label: '정보 커뮤니티', path: '/community' },
+  { label: 'Fin 캘린더', path: '/community' },
   { label: '마이페이지', path: '/mypage' },
 ]
 
