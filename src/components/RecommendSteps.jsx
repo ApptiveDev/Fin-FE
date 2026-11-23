@@ -214,10 +214,18 @@ export function AmountField({ data, setData, type, onValidityChange }) {
           }`}
           aria-label={amountTitle}
           aria-invalid={isInvalid}
+          aria-describedby={`amount-range-${type}`}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") event.currentTarget.blur();
+          }}
         />
         <span className="text-[18px] font-semibold text-[#8A8F99]">만원</span>
       </label>
-      <p className={`mb-[24px] mt-3 text-[18px] ${isInvalid ? "text-[#F0566F]" : "text-[#767676]"}`}>
+      <p
+        id={`amount-range-${type}`}
+        role={isInvalid ? "alert" : undefined}
+        className={`mb-[24px] mt-3 text-[18px] ${isInvalid ? "text-[#F0566F]" : "text-[#767676]"}`}
+      >
         {isInvalid ? config.errorHint : config.hint}
       </p>
 
