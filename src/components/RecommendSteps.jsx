@@ -111,48 +111,39 @@ export function AmountField({ data, setData, type }) {
   const amountDescription = isShortTerm
     ? "한 번에 예치할 수 있는 금액이에요. (단기 예치 기준)"
     : "매달 넣을 수 있는 금액이에요. (목돈 만들기 기준)";
-  const [amountInput, setAmountInput] = useState(String(amount));
+  const amountInput = String(data.monthlyAmount ?? minAmount);
 
-  useEffect(() => {
-    if (currentAmount !== amount) {
-      setData((previous) => ({ ...previous, monthlyAmount: amount }));
-    }
-  }, [amount, currentAmount, setData]);
+  const invalid = amountInput === "" || Number(amountInput) < minAmount || Number(amountInput) > maxAmount;
+  const rangeLabel = isShortTerm ? "10만 원 ~ 1억 원" : "1만 원 ~ 100만 원";
 
-  useEffect(() => {
-    setAmountInput(String(amount));
-  }, [amount]);
-
-  const commitAmountInput = () => {
-    const parsedAmount = Number(amountInput);
-    const nextAmount = Number.isFinite(parsedAmount)
-      ? Math.min(maxAmount, Math.max(minAmount, Math.round(parsedAmount)))
-      : minAmount;
-
-    setData((previous) => ({ ...previous, monthlyAmount: nextAmount }));
-    setAmountInput(String(nextAmount));
+  const updateAmount = (value) => {
+    setData((previous) => ({ ...previous, monthlyAmount: value === "" ? "" : Number(value) }));
   };
 
   return (
     <div className="mt-10">
       <FieldHeader title={amountTitle} required requiredText={false} className="mb-[5px]" />
       <p className="mb-[20px] text-[18px] text-[#767676]">{amountDescription}</p>
-      <p className="mb-[16px] text-[38px] font-semibold leading-none text-[#03BFA5]">
+      <div className={`inline-flex min-h-[64px] max-w-full items-center rounded-[12px] border-2 px-4 ${invalid ? "border-[#FF5571] text-[#F65470]" : "border-[#E0DFDF] text-[#03BFA5]"}`}>
         <input
           type="text"
           inputMode="numeric"
           pattern="[0-9]*"
           value={amountInput}
-          onChange={(event) => setAmountInput(event.target.value.replace(/\D/g, ""))}
-          onBlur={commitAmountInput}
+          onChange={(event) => updateAmount(event.target.value.replace(/\D/g, ""))}
+          aria-invalid={invalid}
+          aria-describedby={`amount-range-${type}`}
           onKeyDown={(event) => {
             if (event.key === "Enter") event.currentTarget.blur();
           }}
           style={{ width: `${Math.max(amountInput.length, 1)}ch` }}
-          className="max-w-full bg-transparent text-[38px] font-semibold leading-none text-[#03BFA5] outline-none"
+          className="max-w-full bg-transparent text-[38px] font-semibold leading-none outline-none"
           aria-label={`${amountTitle} (만원)`}
         />
-        <span className="ml-2 text-[20px] text-[#454545]">만원</span>
+        <span className="ml-2 text-[20px] font-semibold text-[#8A8F99]">만원</span>
+      </div>
+      <p id={`amount-range-${type}`} role={invalid ? "alert" : undefined} className={`mb-8 mt-3 text-[18px] font-medium ${invalid ? "text-[#FF5571]" : "text-[#767676]"}`}>
+        {rangeLabel} 사이로 {invalid ? "입력해주세요." : "입력할 수 있어요."}
       </p>
       <div className="w-full max-w-[760px]">
         <input
@@ -220,7 +211,7 @@ export function StepSavingPlan({ data, setData, cats, onPrev, onNext }) {
             </>
           )}
         </div>
-        <NavButtons isFirst onPrev={onPrev} onNext={handleNext} isLast={false} />
+        <NavButtons isFirst onPrev={onPrev} onNext={() => { const value = Number(data.monthlyAmount); if (selectedPeriod && (!Number.isFinite(value) || value < (planType === "short" ? 10 : 1) || value > (planType === "short" ? 10000 : 100))) return; handleNext(); }} isLast={false} />
       </StepLayout>
       {showKeywordAlert && <KeywordAlertModal onClose={closeAlert} />}
     </>
