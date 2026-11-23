@@ -59,7 +59,7 @@ export function replaceCategorySelection(selectedOptionIds, categories, groupKey
   return [...kept, ...newIds];
 }
 
-function buildProfileRequestBody(profile, patch) {
+export function buildProfileRequestBody(profile, patch) {
   return {
     birthdate: profile.birthdate,
     annualIncome: profile.annualIncome,
@@ -70,6 +70,7 @@ function buildProfileRequestBody(profile, patch) {
     isHomeless: profile.isHomeless,
     isHouseholder: profile.isHouseholder,
     monthlySavingsGoal: profile.monthlySavingsGoal,
+    depositAmount: profile.depositAmount,
     mainBanks: profile.mainBanks,
     neverUsedBanks: profile.neverUsedBanks,
     maturedSavingBanks: profile.maturedSavingBanks,

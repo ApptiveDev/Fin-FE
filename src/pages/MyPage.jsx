@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import useMyPage, { findCategoryOptions } from "../hooks/UseMyPage";
 import EditFieldModal from "../components/MyPageEditModals";
@@ -9,10 +9,8 @@ import { buildRecommendationRequestFromProfile, buildSelectedKeywordsFromProfile
 import { runProductSearch } from "../utils/productSearch";
 import {
   categoryOfGoalKey,
-  fillGoalIfEmpty,
-  goalFromProfile,
-  loadSavingsGoals,
-  saveSavingsGoals,
+  goalsFromProfile,
+  profilePatchFromGoal,
 } from "../utils/savingsGoals";
 import { dropCachedRecommendation } from "../utils/recommendationResult";
 import { keywordLabel } from "../utils/productLabels";
@@ -730,10 +728,8 @@ export default function MyPage() {
   const [editingField, setEditingField] = useState(null);
   const [resubmitting, setResubmitting] = useState(false);
   const [resubmitError, setResubmitError] = useState(null);
-  // 대분류별 저축 목표는 아직 백엔드가 저장하지 못해 임시로 localStorage에 둔다(utils/savingsGoals.js).
-  const [savingsGoals, setSavingsGoals] = useState(
-    () => (isMockMode() ? MOCK_SAVINGS_GOALS : loadSavingsGoals()),
-  );
+  // mock 모드(백엔드 없음)에서만 화면 상태로 목표를 들고, 실제 모드는 서버 프로필 값만 쓴다.
+  const [mockSavingsGoals, setMockSavingsGoals] = useState(MOCK_SAVINGS_GOALS);
   const { profile, categories, optionTagsByCategory, favorites, showComparisonNotice, loading, updateProfile, removeFavorite } =
     useMyPage();
 
@@ -742,31 +738,23 @@ export default function MyPage() {
     if (result.ok) setEditingField(null);
   };
 
-  // 서버에 저장된 프로필(저축 기간 + 금액)로 해당 대분류 칸이 비어 있으면 채운다.
-  // 추천 화면에서 "저장하고 결과 보기"를 한 단기 예치/목돈 만들기가 여기에 그대로 보이게 한다.
-  // (렌더 중에 계산해서 보여주고, localStorage 저장만 effect로 한다.)
-  const profileGoal = useMemo(
-    () => (isMockMode() || !profile || !categories ? null : goalFromProfile(profile, categories)),
-    [profile, categories],
+  // 대분류별 저축 목표는 서버 프로필(저축 기간 + depositAmount/monthlySavingsGoal)에서 만든다.
+  const savingsGoals = useMemo(
+    () => (isMockMode() ? mockSavingsGoals : goalsFromProfile(profile, categories)),
+    [mockSavingsGoals, profile, categories],
   );
-  const effectiveSavingsGoals = useMemo(
-    () => (profileGoal && !savingsGoals[profileGoal.goalKey]
-      ? { ...savingsGoals, [profileGoal.goalKey]: profileGoal.goal }
-      : savingsGoals),
-    [profileGoal, savingsGoals],
-  );
-  useEffect(() => {
-    if (profileGoal) fillGoalIfEmpty(profileGoal.goalKey, profileGoal.goal);
-  }, [profileGoal]);
 
-  const handleSaveSavingsGoal = (key, goal) => {
-    const next = { ...effectiveSavingsGoals, [key]: goal };
-    setSavingsGoals(next);
-    if (!isMockMode()) {
-      saveSavingsGoals(next);
-      // 목표가 바뀌었으니 이 대분류로 받아 둔 추천 결과(캐시)는 낡은 값이다. 다음에 볼 때 새 목표로 다시 조회한다.
-      dropCachedRecommendation(categoryOfGoalKey(key));
+  const handleSaveSavingsGoal = async (key, goal) => {
+    if (isMockMode()) {
+      setMockSavingsGoals((prev) => ({ ...prev, [key]: goal }));
+      setEditingField(null);
+      return;
     }
+
+    const result = await updateProfile(profilePatchFromGoal(key, goal, profile, categories));
+    if (!result.ok) return; // 저장에 실패하면 모달을 열어 둔다.
+    // 목표가 바뀌었으니 이 대분류로 받아 둔 추천 결과(캐시)는 낡은 값이다. 다음에 볼 때 새 목표로 다시 조회한다.
+    dropCachedRecommendation(categoryOfGoalKey(key));
     setEditingField(null);
   };
 
@@ -815,7 +803,7 @@ export default function MyPage() {
               profile={profile}
               categories={categories}
               optionTags={optionTagsByCategory}
-              savingsGoals={effectiveSavingsGoals}
+              savingsGoals={savingsGoals}
               onEditField={setEditingField}
               onResubmit={handleResubmit}
               resubmitting={resubmitting}
@@ -830,7 +818,7 @@ export default function MyPage() {
           fieldKey={editingField}
           profile={profile}
           categories={categories}
-          savingsGoals={effectiveSavingsGoals}
+          savingsGoals={savingsGoals}
           onClose={() => setEditingField(null)}
           onSave={handleSaveField}
           onSaveGoal={handleSaveSavingsGoal}

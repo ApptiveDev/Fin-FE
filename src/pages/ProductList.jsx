@@ -16,7 +16,8 @@ import {
 } from "../utils/recommendationResult";
 import { amountFieldsByPlanType, findCategoryByGroup, savingPeriodMonths } from "../utils/recommendationPayload";
 import { runProductSearch } from "../utils/productSearch";
-import { goalKeyOfCategory, loadSavingsGoals, saveSavingsGoals } from "../utils/savingsGoals";
+import { goalKeyOfCategory, goalsFromProfile, profilePatchFromGoal } from "../utils/savingsGoals";
+import { buildProfileRequestBody } from "../hooks/UseMyPage";
 import { loadProductListView, saveProductListView } from "../utils/productListView";
 import { MOCK_LONG_TERM_RESULT, MOCK_SHORT_TERM_RESULT } from "../data/productList";
 
@@ -238,7 +239,11 @@ export default function ProductList() {
 
     try {
       const categories = await ensureGoalCategories();
-      const goal = loadSavingsGoals()[goalKeyOfCategory(category)];
+      // 서버 프로필에 저장된 목표를 읽는다. (비로그인은 저장된 목표가 없으므로 입력 모달로 넘어간다.)
+      const profile = accessToken
+        ? (await client.get("/user/me/profile", withAuth(accessToken))).data
+        : null;
+      const goal = goalsFromProfile(profile, categories)[goalKeyOfCategory(category)];
       if (!goal?.savingPeriodOptionId) {
         setGoalModalCategory(category); // 저장된 목표가 없으면 입력 모달을 띄운다.
         return;
@@ -249,10 +254,22 @@ export default function ProductList() {
     }
   };
 
+  // 입력한 목표를 서버 프로필에 저장한다. 로그인하지 않았거나 저장에 실패해도 이번 조회는 그대로 진행한다.
+  const saveGoalToProfile = async (category, goal) => {
+    if (!accessToken) return;
+    try {
+      const { data: profile } = await client.get("/user/me/profile", withAuth(accessToken));
+      const patch = profilePatchFromGoal(goalKeyOfCategory(category), goal, profile, goalCategories);
+      await client.put("/user/me/profile", buildProfileRequestBody(profile, patch), withAuth(accessToken));
+    } catch (error) {
+      console.error("저축 목표 저장에 실패했어요(조회는 계속 진행해요):", error?.response?.status, error?.response?.data ?? error);
+    }
+  };
+
   const handleSaveGoalFromModal = (goal) => {
     const category = goalModalCategory;
-    saveSavingsGoals({ ...loadSavingsGoals(), [goalKeyOfCategory(category)]: goal });
     setGoalModalCategory(null);
+    saveGoalToProfile(category, goal);
     fetchCategoryWithGoal(category, goal, goalCategories);
   };
 

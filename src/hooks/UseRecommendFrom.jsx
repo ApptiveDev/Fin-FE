@@ -8,7 +8,7 @@ import {
   mapRecommendCategories,
 } from "../utils/recommendationPayload";
 import { runProductSearch } from "../utils/productSearch";
-import { goalFromFormData, loadSavingsGoals, saveSavingsGoals } from "../utils/savingsGoals";
+import { goalFromFormData, keepOtherGoalInProfileBody } from "../utils/savingsGoals";
 import { loadFormDraft, saveFormDraft } from "../utils/recommendFormDraft";
 
 const BANK_CATEGORIES = [
@@ -115,23 +115,24 @@ export default function useRecommendForm() {
       return { request, result: null };
     }
 
-    // 방금 입력한 저축 기간/금액을 해당 대분류(단기 예치 또는 목돈 만들기)의 저축 목표로 남긴다.
-    // 다른 대분류의 목표는 건드리지 않는다.
-    const submitted = goalFromFormData(formData, cats);
-    if (submitted) {
-      saveSavingsGoals({ ...loadSavingsGoals(), [submitted.goalKey]: submitted.goal });
-    }
-
     const recommendationPromise = runProductSearch(request, accessToken, {
       selectedKeywords: buildSelectedKeywordsFromForm(formData, cats),
     });
     // 프로필 저장은 추천과 별개 기능이라, 서버가 거절(예: 403)해도 분석 결과까지 막지 않고 콘솔에만 남긴다.
+    const saveProfileToServer = async () => {
+      let body = buildProfileUpdateFromRequest(request);
+      // PUT은 프로필을 통째로 덮어쓰므로, 방금 입력하지 않은 대분류의 저장된 목표가 지워지지 않게 함께 보낸다.
+      const submitted = goalFromFormData(formData, cats);
+      if (submitted) {
+        const saved = await client.get("/user/me/profile", withAuth(accessToken)).catch(() => null);
+        if (saved?.data) body = keepOtherGoalInProfileBody(body, submitted.goalKey, saved.data, cats?.savingPeriod);
+      }
+      await client.put("/user/me/profile", body, withAuth(accessToken));
+    };
     const profileSavePromise = saveProfile && accessToken
-      ? client
-        .put("/user/me/profile", buildProfileUpdateFromRequest(request), withAuth(accessToken))
-        .catch((error) => {
-          console.error("입력 정보 저장에 실패했어요(분석은 계속 진행해요):", error?.response?.status, error?.response?.data ?? error);
-        })
+      ? saveProfileToServer().catch((error) => {
+        console.error("입력 정보 저장에 실패했어요(분석은 계속 진행해요):", error?.response?.status, error?.response?.data ?? error);
+      })
       : Promise.resolve();
 
     const [recommendation] = await Promise.all([recommendationPromise, profileSavePromise]);
