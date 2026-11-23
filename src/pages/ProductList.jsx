@@ -362,7 +362,14 @@ export default function ProductList() {
               </span>
               <button
                 type="button"
-                onClick={() => navigate("/recommend", { state: { openForm: true } })}
+                onClick={() => {
+                  // 로그인한 사용자는 저장된 입력 정보를 마이페이지에서 고치게 하고, 비로그인만 추천 입력창을 연다.
+                  if (isLoggedIn) {
+                    navigate("/mypage", { state: { activeTab: "info" } });
+                  } else {
+                    navigate("/recommend", { state: { openForm: true } });
+                  }
+                }}
                 className="shrink-0 rounded-full bg-[#03BFA5] px-4 py-1.5 text-[14px] font-medium text-white hover:bg-[#02A892]"
               >
                 입력하러 가기
