@@ -340,7 +340,7 @@ export default function Calendar() {
       return date >= toDateKey(CALENDAR_REFERENCE_DATE) && (!conditionsActive || matchesProfile(program, profile));
     })
     .sort((left, right) => (left.endDate || left.plannedDate).localeCompare(right.endDate || right.plannedDate));
-  const configuredAlertCount = notificationState.subscriptions.filter((item) => item.status === "active").length;
+  const configuredAlertCount = notificationState.subscriptions.filter((item) => item.status !== "off").length;
   const reminderAlerts = getUpcomingNotifications(notificationState, 7);
 
   const updateMonth = useCallback((offset) => {
@@ -685,6 +685,7 @@ export default function Calendar() {
                   alertButtonProps={getAlertButtonProps(selectedProgram, getSelectedProgramOccurrence(selectedProgram).type)}
                   isFavorite={favoriteIds.has(selectedProgram.id)}
                   conditionsActive={conditionsActive}
+                  profile={profile}
                   onFavorite={() => handleFavorite(selectedProgram)}
                   onDetails={() => openDetails(selectedProgram)}
                   onLogin={() => beginLoginAction({ type: "notify", programId: selectedProgram.id, alertType: getSelectedProgramOccurrence(selectedProgram).type })}
@@ -737,7 +738,7 @@ function AvailableCard({ programs, onSelect }) {
   return <section className="fc-panel fc-available"><div className="fc-panel-heading"><h3>지금 신청 가능</h3><span>전체 {programs.length}건 <Icon src={chevronIcon} /></span></div><div className="fc-available-list">{programs.slice(0, 3).map((program) => <button key={program.id} className="fc-available-row" onClick={() => onSelect(program)}><span className="fc-status-badge">진행 중</span><span className="fc-available-copy"><strong>{program.name}</strong><small>~{program.endDate.slice(5).replace("-", ".")} 마감 · {program.institution}</small></span><b className={daysBetween(CALENDAR_REFERENCE_DATE, parseDateKey(program.endDate)) <= 7 ? "fc-red" : ""}>{ddayLabel(program.endDate)}</b><span className="fc-row-arrow"><Icon src={chevronIcon} /></span></button>)}</div></section>;
 }
 
-function SelectedProgramCard({ program, selectedDate, occurrence, isLoggedIn, alertButtonProps, isFavorite, conditionsActive, onFavorite, onDetails, onLogin }) {
+function SelectedProgramCard({ program, selectedDate, occurrence, isLoggedIn, alertButtonProps, isFavorite, conditionsActive, profile, onFavorite, onDetails, onLogin }) {
   const label = occurrence.type === "deadline" ? `마감 ${ddayLabel(occurrence.date)}` : occurrence.type === "maturity" ? `만기 ${ddayLabel(occurrence.date)}` : `시작 ${ddayLabel(occurrence.date)}`;
   const startDate = program.startDate ? parseDateKey(program.startDate) : parseDateKey(occurrence.date);
   const endDate = program.endDate ? parseDateKey(program.endDate) : parseDateKey(occurrence.date);
@@ -745,10 +746,10 @@ function SelectedProgramCard({ program, selectedDate, occurrence, isLoggedIn, al
   return (
     <section className="fc-panel fc-selected-program">
       <div className="fc-panel-heading"><h3>{formatSelectedDay(selectedDate)}</h3><span>1건</span></div>
-      <div className="fc-program-badges"><span className={`fc-status-pill fc-status-pill--${eventTone(occurrence.type)}`}>{label}</span><span className={`fc-category-pill${program.category === "support" ? " is-muted" : ""}`}>{program.category === "support" ? "금융 지원 정책" : "Y-Fin 정책상품"}</span><button className={`fc-favorite${isFavorite ? " is-active" : ""}`} aria-label="관심 상품" onClick={isLoggedIn ? onFavorite : onLogin}><Icon src={isFavorite ? activeFavoriteIcon : favoriteIcon} /></button></div>
+      <div className="fc-program-badges"><span className={`fc-status-pill fc-status-pill--${eventTone(occurrence.type)}`}>{label}</span><span className={`fc-category-pill${program.category === "support" ? " is-muted" : ""}`}>{program.category === "support" ? "금융 지원 정책" : "Y-Fin 정책상품"}</span>{program.tier !== 2 && <button className={`fc-favorite${isFavorite ? " is-active" : ""}`} aria-label="관심 상품" onClick={isLoggedIn ? onFavorite : onLogin}><Icon src={isFavorite ? activeFavoriteIcon : favoriteIcon} /></button>}</div>
       <h4>{program.name}</h4>
       <p className="fc-program-summary">{program.region || program.institution}{program.summary ? ` · ${program.summary}` : ""}</p>
-      <dl className="fc-detail-rows"><div><dt>신청 기간</dt><dd>{dateRange}</dd></div><div><dt>대상</dt><dd>{program.age}{program.region && program.region !== "전국" ? ` · ${program.region}` : ""}</dd></div>{isLoggedIn && conditionsActive && <div><dt>내 조건 맞춤</dt><dd className="fc-green">충족</dd></div>}</dl>
+      <dl className="fc-detail-rows"><div><dt>신청 기간</dt><dd>{dateRange}</dd></div><div><dt>대상</dt><dd>{program.age}{program.region && program.region !== "전국" ? ` · ${program.region}` : ""}</dd></div>{isLoggedIn && <div><dt>내 조건 맞춤</dt><dd className={matchesProfile(program, profile) ? "fc-green" : "fc-red"}>{matchesProfile(program, profile) ? "충족" : "미충족"}</dd></div>}</dl>
       <div className="fc-card-actions"><button className="fc-button fc-button--light" onClick={onDetails}>{program.tier === 2 ? "온통청년 보기 ↗" : "상세 보기"}</button><CalendarAlertButton {...alertButtonProps} onSetup={isLoggedIn ? alertButtonProps.onSetup : onLogin} /></div>
       <small className="fc-data-source">온통청년 10.05 기준</small>
     </section>
@@ -793,7 +794,7 @@ function CalendarList({ occurrences, showPast, onTogglePast, isLoggedIn, getAler
   const keys = Object.keys(groups).sort();
   return <div className="fc-list-view"><div className="fc-list-toolbar"><span>오늘 이후 일정 <strong>{keys.length}건</strong>을 날짜순으로 보여드려요</span><button onClick={onTogglePast}>{showPast ? "지난 일정 접기" : "지난 일정 2건 보기"}<Icon src={caretIcon} /></button></div>{keys.length === 0 ? <EmptyState onShowAll={() => {}} onNotify={() => onLogin()} /> : keys.map((date) => {
     const parsed = parseDateKey(date);
-    return <div className="fc-list-date-group" key={date}><div className="fc-list-date"><strong>{date.slice(5).replace("-", ".")}</strong><span>{WEEKDAYS[parsed.getDay()]}요일</span></div><div className="fc-list-cards">{groups[date].map((occurrence) => <article className="fc-list-card" key={occurrence.id} onClick={() => onSelect(occurrence)}><EventLabel occurrence={occurrence} /><div className="fc-list-info"><strong>{occurrence.program.name}</strong><span className={`fc-category-pill${occurrence.program.category === "support" ? " is-muted" : ""}`}>{occurrence.program.category === "support" ? "금융 지원 정책" : "Y-Fin 정책상품"}</span><small>{occurrence.program.institution} · {occurrence.program.period || "전국"}</small></div><b className="fc-list-dday">{occurrence.type === "deadline" ? ddayLabel(occurrence.date) : ""}</b><button className="fc-button fc-button--light" onClick={(event) => { event.stopPropagation(); onDetails(occurrence.program); }}>{occurrence.program.tier === 2 ? "온통청년 ↗" : "상세 보기"}</button><span onClick={(event) => event.stopPropagation()}><CalendarAlertButton compact {...getAlertButtonProps(occurrence.program, occurrence.type)} onSetup={isLoggedIn ? getAlertButtonProps(occurrence.program, occurrence.type).onSetup : () => onLogin(occurrence)} /></span></article>)}</div></div>;
+    return <div className="fc-list-date-group" key={date}><div className="fc-list-date"><strong>{date.slice(5).replace("-", ".")}</strong><span>{WEEKDAYS[parsed.getDay()]}요일</span></div><div className="fc-list-cards">{groups[date].map((occurrence) => <article className="fc-list-card" key={occurrence.id} onClick={() => onSelect(occurrence)}><EventLabel occurrence={occurrence} /><div className="fc-list-info"><strong>{occurrence.program.name}</strong><span className={`fc-category-pill${occurrence.program.category === "support" ? " is-muted" : ""}`}>{occurrence.program.category === "support" ? "금융 지원 정책" : "Y-Fin 정책상품"}</span><small>{occurrence.program.institution} · {occurrence.program.period || "전국"}</small></div><b className="fc-list-dday">{ddayLabel(occurrence.date)}</b><button className="fc-button fc-button--light" onClick={(event) => { event.stopPropagation(); onDetails(occurrence.program); }}>{occurrence.program.tier === 2 ? "온통청년 ↗" : "상세 보기"}</button><span onClick={(event) => event.stopPropagation()}><CalendarAlertButton compact {...getAlertButtonProps(occurrence.program, occurrence.type)} onSetup={isLoggedIn ? getAlertButtonProps(occurrence.program, occurrence.type).onSetup : () => onLogin(occurrence)} /></span></article>)}</div></div>;
   })}</div>;
 }
 
