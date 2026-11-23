@@ -1,0 +1,160 @@
+.b2-alert-button-wrap { position: relative; min-width: 0; }
+.b2-alert-button { display: inline-flex; min-height: 46px; width: 100%; align-items: center; justify-content: center; gap: 8px; padding: 0 14px; border: 1px solid #03bfa5; border-radius: 10px; color: #02a38d; background: #fff; font: inherit; font-size: 14px; font-weight: 600; white-space: nowrap; cursor: pointer; }
+.b2-alert-button:hover:not(:disabled) { background: #effffd; }
+.b2-alert-button:disabled { border-color: #e5e7e9; color: #a0a5ab; background: #f6f7f8; cursor: not-allowed; }
+.b2-alert-button img { width: 17px; height: 17px; object-fit: contain; }
+.b2-alert-button.is-active { color: #03bfa5; }
+.b2-alert-button.is-pending { border-color: #f2a45c; color: #d87b27; }
+.b2-alert-button-wrap.is-compact .b2-alert-button { min-height: 46px; padding: 0 12px; font-size: 15px; }
+.b2-alert-button-wrap.is-compact .b2-alert-button img { width: 18px; height: 18px; }
+.b2-alert-menu { position: absolute; top: calc(100% + 9px); right: 0; z-index: 50; width: min(320px, calc(100vw - 40px)); padding: 16px; border: 1px solid #e6e8eb; border-radius: 13px; background: #fff; box-shadow: 0 8px 25px #0002; color: #3d3d3d; text-align: left; }
+.b2-alert-menu > strong { display: block; margin-bottom: 11px; font-size: 14px; }
+.b2-alert-menu ul { display: flex; flex-direction: column; gap: 9px; margin: 0; padding: 0; list-style: none; }
+.b2-alert-menu li { display: flex; justify-content: space-between; gap: 9px; color: #02a38d; font-size: 13px; }
+.b2-alert-menu li span { color: #555a61; }
+.b2-alert-menu p { margin: 10px 0; color: #8a8f99; font-size: 12px; line-height: 1.45; }
+.b2-alert-menu-email { padding-top: 9px; border-top: 1px solid #eef0f2; }
+.b2-alert-menu-actions { display: flex; gap: 8px; }
+.b2-alert-menu-actions button, .b2-alert-menu-off { padding: 7px 0; border: 0; color: #e55368; background: transparent; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+.b2-alert-modal-backdrop { position: fixed; inset: 0; z-index: 120; display: flex; align-items: center; justify-content: center; padding: 18px; background: #0005; }
+.b2-alert-modal { width: min(632px, 100%); max-height: min(92vh, 800px); overflow: auto; padding: 28px 30px 26px; border-radius: 20px; background: #fff; box-shadow: 0 14px 36px #0002; }
+.b2-alert-modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+.b2-alert-modal-head h2 { margin: 0; font-size: 27px; }
+.b2-alert-modal-head button { display: inline-flex; width: 34px; height: 34px; align-items: center; justify-content: center; border: 0; background: transparent; color: #8b9098; font-size: 23px; cursor: pointer; }
+.b2-alert-target { margin-bottom: 14px; padding: 15px 16px; border: 1px solid #f0f1f3; border-radius: 13px; background: #fafafb; }
+.b2-alert-target-tags { display: flex; gap: 7px; margin-bottom: 8px; }
+.b2-alert-target-tags span { padding: 4px 9px; border-radius: 15px; color: #e55368; background: #fcf4f5; font-size: 12px; font-weight: 600; }
+.b2-alert-target-tags span + span { color: #4e5359; background: #f1f2f4; }
+.b2-alert-target strong { display: block; font-size: 21px; }
+.b2-alert-target small { display: block; margin-top: 4px; color: #8a8f99; font-size: 12px; }
+.b2-alert-dates { margin-bottom: 17px; padding: 15px 17px; border-radius: 13px; background: #effffd; }
+.b2-alert-dates > strong { display: block; margin-bottom: 9px; font-size: 14px; }
+.b2-alert-dates ul { display: flex; flex-direction: column; gap: 7px; margin: 0; padding: 0; list-style: none; }
+.b2-alert-dates li { display: flex; align-items: center; gap: 9px; font-size: 13px; }
+.b2-alert-dates li::before { width: 6px; height: 6px; border-radius: 50%; background: #03bfa5; content: ""; }
+.b2-alert-dates li b { width: 35px; color: #02a38d; }
+.b2-alert-dates > p { margin: 9px 0 0; color: #8a8f99; font-size: 11px; }
+.b2-alert-modal label { display: block; margin: 0 0 8px; font-size: 13px; font-weight: 700; }
+.b2-alert-email-input { display: flex; min-height: 48px; align-items: center; gap: 9px; padding: 0 13px; border: 1px solid #e2e5e9; border-radius: 10px; }
+.b2-alert-email-input span { color: #90969f; }
+.b2-alert-email-input input { width: 100%; border: 0; outline: none; color: #3d3d3d; font: inherit; font-size: 14px; }
+.b2-alert-email-error { margin: 6px 0 0; color: #e55368; font-size: 12px; }
+.b2-alert-email-note { margin: 7px 0 15px; color: #f08a42; font-size: 12px; }
+.b2-alert-privacy-note { margin: 0 0 17px; padding: 11px 13px; border-radius: 9px; color: #8a8f99; background: #f3f4f5; font-size: 11px; line-height: 1.5; }
+.b2-alert-modal-actions { display: flex; gap: 10px; }
+.b2-alert-modal-actions button { min-height: 46px; border-radius: 9px; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+.b2-alert-modal-cancel { width: 120px; border: 1px solid #e2e5e9; color: #4d5157; background: #fff; }
+.b2-alert-modal-submit { flex: 1; border: 1px solid #03bfa5; color: #fff; background: #03bfa5; }
+.b2-alert-modal-submit:disabled { opacity: .45; cursor: not-allowed; }
+.b2-alert-toast { position: fixed; z-index: 110; right: 24px; bottom: 26px; display: flex; align-items: center; gap: 18px; max-width: min(540px, calc(100vw - 32px)); padding: 15px 18px; border-radius: 12px; color: #fff; background: #222; box-shadow: 0 8px 22px #0003; font-size: 13px; }
+.b2-alert-toast strong { display: block; margin-bottom: 3px; }
+.b2-alert-toast button { border: 0; color: #03bfa5; background: transparent; font: inherit; font-weight: 700; cursor: pointer; }
+.b2-reminder-banner { display: flex; min-height: 60px; align-items: center; gap: 22px; margin: -32px 0 24px; padding: 8px 22px; border: 1px solid #d8f7f1; background: #effffd; }
+.b2-reminder-title { display: flex; flex: none; align-items: center; gap: 9px; color: #696b6f; font-size: 15px; font-weight: 700; }
+.b2-reminder-title img { width: 20px; height: 20px; }
+.b2-reminder-main { display: flex; min-width: 0; flex: 1; align-items: center; gap: 10px; }
+.b2-reminder-main > span { overflow: hidden; color: #222; font-size: 14px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.b2-reminder-main small { flex: none; color: #8a8f99; }
+.b2-reminder-pill { flex: none; padding: 5px 10px; border-radius: 18px; color: #fff; background: #ef5b6e; font-size: 12px; font-weight: 700; }
+.b2-reminder-pill.is-start { background: #02a38d; }
+.b2-reminder-pill.is-maturity { background: #7a20a2; }
+.b2-reminder-action { flex: none; padding: 8px 11px; border: 1px solid #e6e8eb; border-radius: 8px; color: #3d3d3d; background: #fff; font: inherit; font-size: 12px; }
+.b2-reminder-dismiss { border: 0; color: #9298a3; background: transparent; font-size: 19px; cursor: pointer; }
+.b2-my-alerts { display: flex; flex-direction: column; gap: 22px; color: #26313a; }
+.b2-my-alerts-notice { padding: 18px 22px; border: 1px solid #d8f7f1; border-radius: 12px; color: #454545; background: #effffd; font-size: 17px; line-height: 1.5; }
+.b2-my-alerts-section { padding: 30px 32px; border: 1px solid #e6e9e8; border-radius: 18px; background: #fff; }
+.b2-my-alerts-section h2 { margin: 0 0 20px; font-size: 22px; font-weight: 700; }
+.b2-alert-recipient { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; color: #26313a; font-size: 18px; font-weight: 600; }
+.b2-alert-recipient > span { color: #02a38d; }
+.b2-alert-recipient button { border: 0; color: #02a38d; background: transparent; font: inherit; font-size: 16px; font-weight: 600; cursor: pointer; }
+.b2-email-status { padding: 6px 12px; border-radius: 16px; color: #8a8f99; background: #f1f2f4; font-size: 14px; }
+.b2-email-status.is-verified { color: #02a38d; background: #effffd; }
+.b2-email-pending { margin: 10px 0 0; color: #d87b27; font-size: 14px; }
+.b2-alert-channel-note { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+.b2-alert-channel-note span { padding: 6px 11px; border-radius: 16px; color: #9399a3; background: #f1f2f4; font-size: 14px; }
+.b2-alert-toggle-row { display: flex; align-items: center; justify-content: space-between; }
+.b2-alert-toggle-row > label { display: flex; align-items: center; gap: 12px; margin: 0; font-size: 18px; font-weight: 600; white-space: nowrap; }
+.b2-alert-toggle { position: relative; width: 54px; height: 32px; border: 0; border-radius: 17px; background: #c5c9ce; cursor: pointer; }
+.b2-alert-toggle::after { position: absolute; top: 4px; left: 4px; width: 24px; height: 24px; border-radius: 50%; background: #fff; transition: transform .15s; content: ""; }
+.b2-alert-toggle.is-on { background: #03bfa5; }
+.b2-alert-toggle.is-on::after { transform: translateX(22px); }
+.b2-upcoming-list { display: flex; flex-direction: column; }
+.b2-upcoming-row { display: grid; grid-template-columns: 210px 105px 1fr 150px; align-items: center; gap: 16px; min-height: 66px; border-top: 1px solid #eff0f2; font-size: 16px; }
+.b2-upcoming-row:first-child { border-top: 0; }
+.b2-upcoming-label { font-weight: 600; }
+.b2-upcoming-tag { justify-self: start; padding: 6px 11px; border-radius: 16px; color: #e55368; background: #fcf4f5; font-size: 14px; font-weight: 700; white-space: nowrap; }
+.b2-upcoming-tag.is-start { color: #02a38d; background: #effffd; }
+.b2-upcoming-tag.is-maturity { color: #7a20a2; background: #f3ebfa; }
+.b2-upcoming-time { color: #8a8f99; text-align: right; }
+.b2-alerts-section-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.b2-alerts-section-heading h2 { display: flex; align-items: baseline; gap: 10px; margin-bottom: 0; }
+.b2-alerts-section-heading h2 small, .b2-alerts-limit { color: #9399a3; font-size: 15px; font-weight: 400; }
+.b2-alerts-section-heading h2 b { color: #03bfa5; }
+.b2-alerts-filters { display: flex; gap: 6px; }
+.b2-alerts-filters button { padding: 8px 14px; border: 1px solid #e6e9e8; border-radius: 18px; color: #7c828a; background: #fff; font: inherit; font-size: 14px; cursor: pointer; }
+.b2-alerts-filters button.is-active { border-color: #03bfa5; color: #03bfa5; background: #effffd; }
+.b2-my-alerts-subscriptions { padding: 0; border: 0; background: transparent; }
+.b2-subscription-grid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 16px; margin-top: 17px; }
+.b2-subscription-card { display: flex; min-width: 0; min-height: 300px; flex-direction: column; align-items: flex-start; padding: 24px; border: 1px solid #e6e9e8; border-radius: 16px; background: #fff; }
+.b2-subscription-card > strong { margin: 12px 0 8px; font-size: 19px; font-weight: 700; line-height: 1.4; }
+.b2-subscription-card > small { color: #8a8f99; font-size: 14px; line-height: 1.4; }
+.b2-subscription-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; margin-top: 10px; color: #8a8f99; font-size: 14px; }
+.b2-subscription-card .b2-alert-button-wrap { flex: 1 1 0; width: auto; min-width: 0; }
+.b2-subscription-tags { display: flex; gap: 6px; }
+.b2-subscription-tags span { padding: 5px 10px; border-radius: 16px; color: #df566b; background: #fcf4f5; font-size: 13px; font-weight: 700; }
+.b2-subscription-tags span.is-start { color: #02a38d; background: #effffd; }
+.b2-subscription-tags span.is-planned { border: 1px dashed #a2a5aa; color: #8d9096; background: #fff; }
+.b2-subscription-tags span.is-maturity { color: #7a20a2; background: #f3ebfa; }
+.b2-subscription-tags span.is-policy { color: #737980; background: #f1f2f4; }
+.b2-subscription-pending { margin: 10px 0; color: #d87b27; font-size: 13px; }
+.b2-subscription-actions { display: flex; width: 100%; align-items: center; gap: 8px; margin-top: auto; }
+.b2-subscription-details { min-height: 46px; flex: 1 1 0; min-width: 0; border: 1px solid #e6e8eb; border-radius: 10px; color: #3d3d3d; background: #fff; font: inherit; font-size: 15px; font-weight: 600; white-space: nowrap; cursor: pointer; }
+.b2-subscription-empty { margin: 0; padding: 25px 8px 5px; color: #8a8f99; font-size: 13px; text-align: center; }
+.b2-subscription-empty { padding: 24px; color: #8a8f99; font-size: 16px; text-align: center; }
+@media (max-width: 1200px) and (min-width: 761px) {
+  .b2-subscription-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 760px) {
+  .b2-alert-modal { padding: 22px 18px 18px; }
+  .b2-alert-modal-actions { flex-direction: column-reverse; }
+  .b2-alert-modal-cancel { width: 100%; }
+  .b2-reminder-banner { position: relative; align-items: flex-start; flex-direction: column; gap: 8px; margin: -28px 0 16px; padding: 13px 42px 13px 14px; }
+  .b2-reminder-main { flex-wrap: wrap; }
+  .b2-reminder-dismiss { position: absolute; top: 8px; right: 12px; }
+  .b2-upcoming-row { grid-template-columns: 1fr auto; gap: 7px; padding: 10px 0; }
+  .b2-upcoming-row > *:nth-child(3) { grid-column: 1; }
+  .b2-upcoming-time { grid-column: 2; grid-row: 2; }
+  .b2-subscription-grid { grid-template-columns: 1fr; }
+  .b2-my-alerts-section { padding: 18px 16px; }
+  .b2-my-alerts-subscriptions { padding: 0; }
+}
+
+/* 가입 등록은 Figma의 672px 모달을 기준으로 독립적으로 배치한다. */
+.joined-product-modal { width: min(672px, 100%); max-height: 92vh; padding: 36px 34px 34px; border-radius: 28px; font-size: 17px; line-height: 1.4; }
+.joined-product-modal .b2-alert-modal-head { margin-bottom: 24px; }
+.joined-product-modal .b2-alert-modal-head h2 { font-size: 28px; font-weight: 700; line-height: 1.32; }
+.joined-product-modal label { margin-bottom: 12px; font-size: 17px; font-weight: 600; }
+.joined-product-modal select, .joined-product-modal input { min-height: 60px; font-size: 18px; border-radius: 15px; }
+.joined-product-modal button[type="submit"], .joined-product-modal > button:last-child { min-height: 72px; font-size: 22px; border-radius: 14px; }
+@media (max-width: 760px) {
+  .joined-product-modal { padding: 26px 22px; border-radius: 20px; font-size: 16px; }
+  .joined-product-modal .b2-alert-modal-head h2 { font-size: 25px; }
+  .joined-product-modal label { font-size: 16px; }
+  .joined-product-modal select, .joined-product-modal input { min-height: 54px; font-size: 17px; }
+  .joined-product-modal > button:last-child { min-height: 58px; font-size: 19px; }
+}
+
+/* 캘린더 상세 카드와 동일한 본문·조작 크기 */
+.joined-product-modal { width: min(810px, 100%); padding: 50px 48px 48px; border-radius: 28px; font-size: 19px; }
+.joined-product-modal .b2-alert-modal-head h2 { font-size: 33px; }
+.joined-product-modal label { font-size: 19px; margin-bottom: 12px; }
+.joined-product-modal select, .joined-product-modal input { min-height: 72px; font-size: 21px; border-radius: 15px; }
+.joined-product-modal > button:last-child { min-height: 90px; font-size: 26px; border-radius: 14px; }
+
+@media (max-width: 760px) {
+  .joined-product-modal { width: 100%; padding: 26px 22px; font-size: 16px; }
+  .joined-product-modal .b2-alert-modal-head h2 { font-size: 25px; }
+  .joined-product-modal label { font-size: 16px; }
+  .joined-product-modal select, .joined-product-modal input { min-height: 54px; font-size: 17px; }
+  .joined-product-modal > button:last-child { min-height: 58px; font-size: 19px; }
+}

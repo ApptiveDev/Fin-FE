@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import JoinedProducts from "../components/JoinedProducts";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import useMyPage, { findCategoryOptions } from "../hooks/UseMyPage";
 import EditFieldModal from "../components/MyPageEditModals";
@@ -8,6 +9,17 @@ import { useAuth } from "../context/AuthContext";
 import { buildRecommendationRequestFromProfile } from "../utils/recommendationPayload";
 import { runProductSearch } from "../utils/productSearch";
 import { keywordLabel } from "../utils/productLabels";
+import CalendarAlertButton from "../components/CalendarAlertButton";
+import AlertSetupModal from "../components/AlertSetupModal";
+import {
+  formatNotificationDate,
+  getNotificationDday,
+  getUpcomingNotifications,
+  loadCalendarNotifications,
+  makeCalendarSubscription,
+  saveCalendarNotifications,
+} from "../utils/calendarNotifications";
+import "../components/CalendarAlertButton.css";
 
 function isMockMode() {
   return import.meta.env.DEV && new URLSearchParams(window.location.search).get("mock") === "true";
@@ -23,9 +35,9 @@ function ChevronDownIcon({ className = "" }) {
 
 // ProductComponents.jsx의 getTagStyle과 동일한 색상 규칙(팀원 담당 파일은 직접 import하지 않고 복제).
 function getTagStyle(tag) {
-  let tagStyle = "bg-[#F5F5F5] text-[#7A7A7A]";
-  if (tag.includes("적합도")) tagStyle = "bg-[#FFF4E6] text-[#FF8A00]";
-  if (tag.includes("정부기여금") || tag.includes("비과세") || tag.includes("우대")) tagStyle = "bg-[#F2FBF9] text-[#03BFA5]";
+  let tagStyle = "bg-[#F2F3F5] text-[#333333]";
+  if (tag.includes("적합도")) tagStyle = "bg-[#FFF4E0] text-[#E65200]";
+  if (tag.includes("정부기여금") || tag.includes("정부 지원")) tagStyle = "bg-[#E0FDF9] text-[#333333]";
   if (tag.includes("내집마련")) tagStyle = "bg-[#F0F2FF] text-[#6B4EFF]";
   return tagStyle;
 }
@@ -53,6 +65,7 @@ function TargetIcon({ className = "" }) {
 function Tabs({ active, onChange, likedCount }) {
   const tabs = [
     { key: "liked", label: "찜해둔 Fin.", badge: likedCount },
+    { key: "alerts", label: "내 알림" },
     { key: "info", label: "개인정보" },
   ];
 
@@ -80,6 +93,71 @@ function Tabs({ active, onChange, likedCount }) {
   );
 }
 
+function AlertsTab({ alertState, onAlertStateChange, onSetup, onOff, onEmailEdit, onDetails }) {
+  const [upcomingFilter, setUpcomingFilter] = useState("all");
+  const subscriptions = alertState.subscriptions.filter((item) => item.status !== "off");
+  const upcoming = getUpcomingNotifications(alertState).slice(0, 10);
+  const filteredSubscriptions = subscriptions.filter((item) => upcomingFilter === "all" || item.type === "deadline");
+
+  const subscriptionProgram = (item) => ({
+    ...item,
+    id: item.programId,
+    startDate: item.type === "start" ? item.eventDate : undefined,
+    endDate: item.type === "start" ? undefined : item.eventDate,
+    plannedDate: item.type === "start" ? item.eventDate : undefined,
+  });
+
+  return (
+    <section className="b2-my-alerts">
+      <div className="b2-my-alerts-notice">마감 일정은 7일 · 3일 · 1일 전, 시작 일정은 전날과 당일, 만기는 30일 · 7일 전에 오전 9시에 이메일로 알려드려요.</div>
+
+      <section className="b2-my-alerts-section">
+        <div className="b2-alert-toggle-row">
+          <div>
+            <h2>알림 받는 곳</h2>
+            <div className="b2-alert-recipient"><span>✉</span>{alertState.email || "등록된 이메일이 없어요"}<span className={`b2-email-status${alertState.emailVerified ? " is-verified" : ""}`}>{alertState.email ? (alertState.emailVerified ? "인증 완료" : "인증 대기") : ""}</span><button type="button" onClick={onEmailEdit}>{alertState.email ? "변경" : "등록"}</button></div>
+            {alertState.pendingEmail && <p className="b2-email-pending">변경할 이메일 인증 대기 · {alertState.pendingEmail}</p>}
+            <div className="b2-alert-channel-note"><span>웹 푸시 · 준비 중</span><span>카카오 알림톡 · 준비 중</span></div>
+          </div>
+          <label>전체 알림 <button type="button" aria-label="전체 알림 일시정지" className={`b2-alert-toggle${!alertState.paused ? " is-on" : ""}`} onClick={() => {
+            const nextPaused = !alertState.paused;
+            if (nextPaused && !window.confirm("모든 알림을 일시정지할까요? 일시정지 중 지난 일정 알림은 나중에 다시 보내지 않아요.")) return;
+            onAlertStateChange((previous) => ({ ...previous, paused: nextPaused }));
+          }} /></label>
+        </div>
+      </section>
+
+      <section className="b2-my-alerts-section">
+        <div className="b2-alerts-section-heading">
+          <h2>다가오는 알림 <small>{upcoming.length}건 · 날짜순</small></h2>
+
+        </div>
+        {upcoming.length ? <div className="b2-upcoming-list">{upcoming.map((item, index) => <div className="b2-upcoming-row" key={`${item.subscription.id}-${item.date}-${index}`}><span className="b2-upcoming-label">{formatNotificationDate(item.date)} 발송 예정</span><span className={`b2-upcoming-tag is-${item.subscription.type}`}>{item.label}</span><strong>{item.subscription.name}</strong><span className="b2-upcoming-time">09:00 발송 예정</span></div>)}</div> : <p className="b2-subscription-empty">다가오는 알림이 없어요.</p>}
+      </section>
+
+      <section className="b2-my-alerts-section b2-my-alerts-subscriptions">
+        <div className="b2-alerts-section-heading">
+          <h2>설정해둔 알림 <b>{subscriptions.length}</b></h2>
+          <div className="b2-alerts-filters"><button type="button" className={upcomingFilter === "all" ? "is-active" : ""} onClick={() => setUpcomingFilter("all")}>전체 {subscriptions.length}</button><button type="button" className={upcomingFilter === "deadline" ? "is-active" : ""} onClick={() => setUpcomingFilter("deadline")}>마감 임박 {subscriptions.filter((item) => item.type === "deadline").length}</button></div>
+          <span className="b2-alerts-limit">최대 30개</span>
+        </div>
+        {filteredSubscriptions.length ? <div className="b2-subscription-grid">{filteredSubscriptions.map((item) => {
+          const program = subscriptionProgram(item);
+          const notificationState = alertState;
+          return <article className="b2-subscription-card" key={item.id}>
+            <div className="b2-subscription-tags"><span className={item.type === "start" ? "is-start" : item.type === "maturity" ? "is-maturity" : ""}>{item.type === "start" ? `시작 ${getNotificationDday(item.eventDate, item.type === "maturity" ? new Date() : undefined)}` : item.type === "maturity" ? `만기 ${getNotificationDday(item.eventDate, item.type === "maturity" ? new Date() : undefined)}` : `마감 ${getNotificationDday(item.eventDate, item.type === "maturity" ? new Date() : undefined)}`}</span><span className={item.tier === 2 ? "is-policy" : "is-product"}>{item.tier === 2 ? "금융 지원 정책" : "Y-Fin"}</span></div>
+            <strong>{item.name}</strong>
+            <small>{item.period || item.institution}</small>
+            <div className="b2-subscription-meta"><span>자동 알림</span>{(item.sendDates || []).map((date) => <span key={`${item.id}-${date.date}`}>{date.offset === 0 ? "당일" : `D-${date.offset}`}</span>)}</div>
+            {item.status === "pending" && <p className="b2-subscription-pending">인증이 완료되면 알림을 보내드려요.</p>}
+            <div className="b2-subscription-actions"><button type="button" className="b2-subscription-details" onClick={() => onDetails(program)}>{item.tier === 2 ? "온통청년 보기 ↗" : "상세 보기"}</button><CalendarAlertButton compact notification={item} notificationState={notificationState} dates={item.sendDates || []} onSetup={() => onSetup(program)} onTurnOff={() => onOff(item.id)} onResend={() => {}} /></div>
+          </article>;
+        })}</div> : <p className="b2-subscription-empty">설정해둔 알림이 없어요. 캘린더에서 관심 있는 일정의 알림을 켜보세요.</p>}
+      </section>
+    </section>
+  );
+}
+
 /* ---------- 찜해둔 Fin. 탭 ---------- */
 
 // sourceCode는 "GOV" 외에도 "ONTONG" 등 다양한 값으로 내려오고 excludeFromRateComparison도
@@ -100,6 +178,7 @@ function mapFavoriteItem(item) {
 
   return {
     id: item.productPropertyId,
+    productId: item.productId,
     title: item.productName,
     subtitle: item.summaryLine,
     tags: [
@@ -118,59 +197,20 @@ function mapFavoriteItem(item) {
     maxRate: !isContribution && metrics.maxRate != null ? metrics.maxRate.toFixed(1) : null,
     myRate: !isContribution && metrics.achievableRate != null ? metrics.achievableRate.toFixed(1) : null,
     applyUrl: item.applyUrl,
+    endDate: item.endDate || item.applicationEndDate,
+    tier: 1,
   };
 }
 
-function FilterChip({ label, active, onClick }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`flex items-center justify-center rounded-lg border-2 py-1 px-3.5 pt-1.5 text-[16px] font-medium transition-colors ${
-        active ? "border-[#03BFA5] bg-[#EFFFFD] text-[#03BFA5]" : "border-[#E0DFDF] text-[#606060] hover:border-[#03BFA5] hover:bg-[#EFFFFD] hover:text-[#03BFA5]"
-      }`}
-    >
-      {label}
-    </button>
-  );
-}
-
-function SortDropdown() {
-  const [open, setOpen] = useState(false);
-
-  return (
-    <div className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen((prev) => !prev)}
-        className="flex items-center gap-1.5 rounded-lg border-2 border-[#E0DFDF] py-1 px-3.5 pt-1.5 text-[16px] font-medium text-[#606060] transition-colors hover:border-[#03BFA5] hover:text-[#03BFA5]"
-      >
-        찜 최신순
-        <ChevronDownIcon className="size-5" />
-      </button>
-      {open && (
-        <div className="absolute right-0 top-[calc(100%+6px)] z-10 w-32 overflow-hidden rounded-lg border border-[#EBEBEB] bg-white py-1 shadow-md">
-          <button
-            type="button"
-            onClick={() => setOpen(false)}
-            className="block w-full px-4 py-2 text-left text-[14px] font-medium text-[#03BFA5]"
-          >
-            찜 최신순
-          </button>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function LikedCard({ product, onRemove }) {
+function LikedCard({ product, onRemove, onViewDetails, onNotify }) {
+  const joined = !product.isContribution && JSON.parse(localStorage.getItem("fin-joined-products") || "[]").find((item) => String(item.id) === `joined-${product.id}`);
   const visibleTags = product.tags.slice(0, 3);
 
   return (
-    <div className="relative flex w-full flex-col gap-4 rounded-[10px] border border-[#E0DFDF] bg-white px-7 py-6">
+    <article className="relative flex min-h-[380px] w-full flex-col gap-4 rounded-[20px] border border-[#E0DFDF] bg-white p-[28px]">
       <div className="flex flex-wrap items-center gap-2 pr-8">
         {visibleTags.map((tag) => (
-          <span key={tag} className={`rounded-md px-2 py-1 text-[13px] font-medium ${getTagStyle(tag)}`}>
+          <span key={tag} className={`rounded-md px-3 py-1.5 text-[18px] font-medium ${getTagStyle(tag)}`}>
             {tag}
           </span>
         ))}
@@ -180,69 +220,67 @@ function LikedCard({ product, onRemove }) {
         type="button"
         onClick={() => onRemove(product.id)}
         aria-label="찜 해제"
-        className="absolute right-6 top-6 flex size-9 items-center justify-center rounded-full bg-[#EFFFFD] text-[#03BFA5]"
+        className="absolute right-7 top-6 flex size-10 items-center justify-center rounded-full text-[24px] leading-none text-[#EF5B6E] hover:bg-[#FCF4F5]"
       >
-        <img src={heartIcon} alt="찜 해제" className="size-5 object-contain" />
+        <span aria-hidden="true">♥</span>
       </button>
 
       <div>
-        <h3 className="text-[24px] font-bold leading-[1.2] text-[#181818]">{product.title}</h3>
-        <p className="mt-1 text-[14px] font-medium text-[#606060]">{product.subtitle}</p>
+        <h3 className="text-[22px] font-semibold leading-[1.2] text-[#181818]">{product.title}</h3>
+        <p className="mt-2 text-[18px] font-medium leading-snug text-[#726E6E]">{product.subtitle}</p>
       </div>
 
       {product.isContribution ? (
         <div className="flex flex-col items-center gap-2">
-          <div className="flex items-center w-full justify-start rounded-lg border border-[#EDF1EF]">
-            <div className="flex flex-1 flex-col items-start my-4 pl-3.5">
-              <span className="text-[14px] text-[#8A928F] leading-4.5">기여금 환산<br />수익률</span>
-              <span className="text-[22px] font-extrabold text-[#03BFA5]">{product.contributionRate}</span>
+          <div className="flex min-h-[100px] w-full items-stretch rounded-xl border border-[#EDF1EF]">
+            <div className="flex min-w-0 flex-1 flex-col justify-center gap-2 px-5 py-3">
+              <span className="text-[14px] text-[#8A928F]">기여금 환산 수익률</span>
+              <span className="text-[24px] font-bold text-[#26313A]">{product.contributionRate}</span>
             </div>
-            <div className="h-full w-1px bg-[#EDF1EF]" />
-            <div className="flex flex-1 flex-col items-start pl-3.5">
-              <span className="text-[14px] text-[#8A928F] leading-4.5">예상 만기<br />기여금 총액</span>
-              <span className="text-[22px] font-extrabold text-[#26313A]">{product.maturityContribution}</span>
+            <div className="w-px bg-[#EDF1EF]" />
+            <div className="flex min-w-0 flex-1 flex-col justify-center gap-2 px-5 py-3">
+              <span className="text-[14px] text-[#8A928F]">예상 만기 기여금 총액</span>
+              <span className="text-[24px] font-bold text-[#03BFA5]">{product.maturityContribution}</span>
             </div>
           </div>
           {product.contributionCaption && (
-            <p className="text-center text-[13px] text-[#A0A7A3] mt-3">{product.contributionCaption}</p>
+            <p className="mt-2 text-center text-[14px] text-[#A0A7A3]">{product.contributionCaption}</p>
           )}
         </div>
       ) : (
         <div className="flex flex-col items-center gap-2">
-          <div className="flex items-center w-full justify-start rounded-lg border border-[#EDF1EF]">
-            <div className="flex flex-1 flex-col items-start my-4 pl-3.5">
-              <span className="text-[14px] text-[#8A8A8A]">기본 금리</span>
-              <span className="text-[22px] font-extrabold text-[#03BFA5]">{product.baseRate != null ? `연 ${product.baseRate}%` : "정보 없음"}</span>
+          <div className="flex min-h-[100px] w-full items-stretch rounded-xl border border-[#EDF1EF]">
+            <div className="flex min-w-0 flex-1 flex-col justify-center gap-2 px-5 py-3">
+              <span className="text-[14px] text-[#8A928F]">기본 금리</span>
+              <span className="text-[24px] font-bold text-[#26313A]">{product.baseRate != null ? `연 ${product.baseRate}%` : "정보 없음"}</span>
             </div>
-            <div className="h-full w-px bg-[#EDF1EF]" />
-            <div className="flex flex-1 flex-col items-start pl-3.5">
-              <span className="text-[13px] text-[#8A8A8A]">최고 금리</span>
-              <span className="text-[22px] font-extrabold text-[#26313A]">{product.maxRate != null ? `연 ${product.maxRate}%` : "정보 없음"}</span>
+            <div className="w-px bg-[#EDF1EF]" />
+            <div className="flex min-w-0 flex-1 flex-col justify-center gap-2 px-5 py-3">
+              <span className="text-[14px] text-[#8A928F]">최고 금리</span>
+              <span className="text-[24px] font-bold text-[#03BFA5]">{product.maxRate != null ? `연 ${product.maxRate}%` : "정보 없음"}</span>
             </div>
           </div>
-          <div className="flex items-center justify-center gap-2 w-full rounded-lg bg-[#EFFFFD] py-1.5 mt-3 text-[14px] text-[#03BFA5]">
-            <span>내가 받을 수 있는 금리</span>
-            <span className="font-semibold">{product.myRate != null ? `연 ${product.myRate}%` : "정보 없음"}</span>
-          </div>
+          <p className="mt-2 text-center text-[14px] text-[#A0A7A3]">상품별 금리 적용 조건은 상세 보기에서 확인해 주세요</p>
         </div>
       )}
 
-      <button
-        type="button"
-        onClick={() => {
-          if (product.applyUrl) window.open(product.applyUrl, "_blank", "noopener,noreferrer");
-        }}
-        className="mt-auto flex h-[40px] items-center justify-center gap-2 rounded-lg bg-[#03BFA5] text-medium text-[16px] text-white transition-colors hover:bg-[#02A892]"
-      >
-        신청하러 가기
-      </button>
-    </div>
+      <div className="mt-auto flex gap-3 pt-2">
+        <button
+          type="button"
+          onClick={() => onViewDetails(product)}
+          className="flex h-[50px] min-w-0 flex-1 items-center justify-center rounded-xl border border-[#E6E8EB] bg-white text-[16px] font-semibold text-[#3D3D3D] hover:border-[#03BFA5]"
+        >
+          상세 보기
+        </button>
+        <button type="button" onClick={() => onNotify(product)} className="flex h-[50px] min-w-0 flex-1 items-center justify-center rounded-xl bg-[#03BFA5] text-[16px] font-semibold text-white hover:bg-[#02A892]">알림 보기</button>
+      </div>
+    </article>
   );
 }
 
 const LIKED_PAGE_SIZE = 3;
 
-function LikedProductsCarousel({ products, onRemove }) {
+function LikedProductsCarousel({ products, onRemove, onViewDetails, onNotify }) {
   const [page, setPage] = useState(0);
 
   const totalPages = Math.max(1, Math.ceil(products.length / LIKED_PAGE_SIZE));
@@ -269,7 +307,7 @@ function LikedProductsCarousel({ products, onRemove }) {
 
         <div className="grid grid-cols-1 gap-5 py-2 sm:grid-cols-2 lg:grid-cols-3">
           {visibleProducts.map((product) => (
-            <LikedCard key={product.id} product={product} onRemove={onRemove} />
+            <LikedCard key={product.id} product={product} onRemove={onRemove} onViewDetails={onViewDetails} onNotify={onNotify} />
           ))}
         </div>
 
@@ -329,35 +367,16 @@ function EmptyLikedState({ onGoRecommend }) {
   );
 }
 
-function LikedTab({ favorites, showComparisonNotice, onRemove, onGoRecommend }) {
-  const [filter, setFilter] = useState("all");
-
-  const govCount = favorites.filter(isGovernmentItem).length;
-  const bankCount = favorites.length - govCount;
-
-  const filtered = favorites.filter((item) => {
-    if (filter === "gov") return isGovernmentItem(item);
-    if (filter === "bank") return !isGovernmentItem(item);
-    return true;
-  });
-
-  const mappedProducts = useMemo(() => filtered.map(mapFavoriteItem), [filtered]);
+function LikedTab({ favorites, showComparisonNotice, onRemove, onGoRecommend, onViewDetails, onRegister, onNotify }) {
+  const mappedProducts = useMemo(() => favorites.map(mapFavoriteItem), [favorites]);
 
   if (favorites.length === 0) {
-    return <EmptyLikedState onGoRecommend={onGoRecommend} />;
+    return <><EmptyLikedState onGoRecommend={onGoRecommend} /><JoinedProducts favorites={favorites} onRegister={onRegister} onRecommend={onGoRecommend} /></>;
   }
 
   return (
     <section>
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap gap-2">
-          <FilterChip label="전체" active={filter === "all"} onClick={() => setFilter("all")} />
-          <FilterChip label={`정부 지원 ${govCount}`} active={filter === "gov"} onClick={() => setFilter("gov")} />
-          <FilterChip label={`은행 예·적금 ${bankCount}`} active={filter === "bank"} onClick={() => setFilter("bank")} />
-        </div>
-        <SortDropdown />
-      </div>
-
+      <h1 className="mb-5 text-[28px] font-bold text-[#222222]">찜해둔 Fin. <span className="text-[#03BFA5]">{favorites.length}</span></h1>
       {showComparisonNotice && (
         <div className="mb-3 rounded-lg border border-[#03BFA5] bg-[#EFFFFD] px-6 py-3 text-center text-[17px] text-[#0C7C6E]">
           정부 상품의 기여금 환산 수익률과 은행 상품의 달성 가능 금리는 산정 기준이 달라 수치를 직접 비교할 수 없어요.
@@ -365,7 +384,7 @@ function LikedTab({ favorites, showComparisonNotice, onRemove, onGoRecommend }) 
       )}
 
       {mappedProducts.length > 0 ? (
-        <LikedProductsCarousel products={mappedProducts} onRemove={onRemove} />
+        <LikedProductsCarousel products={mappedProducts} onRemove={onRemove} onViewDetails={onViewDetails} onNotify={onNotify} />
       ) : (
         <p className="rounded-[10px] border border-dashed border-[#D5D5D5] py-16 text-center text-[#8A8A8A]">
           해당 조건의 찜한 상품이 없어요.
@@ -375,6 +394,7 @@ function LikedTab({ favorites, showComparisonNotice, onRemove, onGoRecommend }) 
       <p className="mt-7 text-center text-[14px] text-[#626866]">
         Y-Fin은 해당 상품의 판매·중개 주체가 아니며, 신청은 기관 공식 페이지에서 진행됩니다.
       </p>
+      <JoinedProducts favorites={favorites} onRegister={onRegister} onRecommend={onGoRecommend} />
     </section>
   );
 }
@@ -718,16 +738,22 @@ export default function MyPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { accessToken } = useAuth();
-  const [activeTab, setActiveTab] = useState(location.state?.activeTab === "info" ? "info" : "liked");
+  const [activeTab, setActiveTab] = useState(["liked", "info", "alerts"].includes(location.state?.activeTab) ? location.state.activeTab : "liked");
   const [editingField, setEditingField] = useState(null);
   const [resubmitting, setResubmitting] = useState(false);
   const [resubmitError, setResubmitError] = useState(null);
+  const [alertState, setAlertState] = useState(loadCalendarNotifications);
+  const [alertSetup, setAlertSetup] = useState(null);
+  const [alertEmail, setAlertEmail] = useState("");
+  const [alertEmailError, setAlertEmailError] = useState("");
   // 대분류별 저축 목표는 아직 백엔드가 저장하지 못해 화면에서만 들고 있는 상태다.
   const [savingsGoals, setSavingsGoals] = useState(
     isMockMode() ? MOCK_SAVINGS_GOALS : { shortTerm: null, longTerm: null },
   );
   const { profile, categories, optionTagsByCategory, favorites, showComparisonNotice, loading, updateProfile, removeFavorite } =
     useMyPage();
+
+  useEffect(() => saveCalendarNotifications(alertState), [alertState]);
 
   const handleSaveField = async (patch) => {
     const result = await updateProfile(patch);
@@ -758,16 +784,59 @@ export default function MyPage() {
     }
   };
 
+  const handleAlertSetup = (subscription) => {
+    if (alertState.emailVerified) {
+      setAlertState((previous) => ({ ...previous, subscriptions: previous.subscriptions.map((item) => item.id === subscription.id ? { ...item, status: "active" } : item) }));
+      return;
+    }
+    setAlertSetup(subscription);
+    setAlertEmail(alertState.email);
+    setAlertEmailError("");
+  };
+
+  const handleAlertSetupSubmit = (event) => {
+    event.preventDefault();
+    const email = alertEmail.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setAlertEmailError("이메일 주소를 확인해 주세요.");
+      return;
+    }
+    if (alertSetup.type === "email") {
+      setAlertState((previous) => previous.emailVerified
+        ? { ...previous, pendingEmail: email }
+        : { ...previous, email, emailVerified: false });
+      setAlertSetup(null);
+      return;
+    }
+    const isMockMode = import.meta.env.DEV && new URLSearchParams(window.location.search).get("mock") === "true";
+    const emailVerified = alertState.emailVerified || isMockMode;
+    const subscription = makeCalendarSubscription(alertSetup, alertSetup.type, emailVerified);
+    setAlertState((previous) => ({
+      ...previous,
+      email,
+      emailVerified,
+      subscriptions: [...previous.subscriptions.filter((item) => item.id !== subscription.id), subscription],
+    }));
+    setAlertSetup(null);
+  };
+
+  const handleAlertOff = (subscriptionId) => {
+    setAlertState((previous) => ({
+      ...previous,
+      subscriptions: previous.subscriptions.map((item) => item.id === subscriptionId ? { ...item, status: "off" } : item),
+    }));
+  };
+
   return (
     <div className="flex min-h-screen flex-col bg-white font-pretendard">
       <div className="border border-[#EBEBEB]">
-        <div className="mx-auto max-w-400 px-12 py-0.5">
+        <div className="mx-auto w-full max-w-[1920px] px-[clamp(24px,5.625vw,108px)] py-0.5">
           <Tabs active={activeTab} onChange={setActiveTab} likedCount={favorites.length} />
         </div>
       </div>
 
       <div className="flex-1 bg-[#F8FAF9]">
-        <main className="mx-auto max-w-400 px-12 py-8">
+        <main className="mx-auto w-full max-w-[1920px] px-[clamp(24px,5.625vw,108px)] py-8">
           {loading ? (
             <p className="py-24 text-center text-[#8A8A8A]">불러오는 중이에요...</p>
           ) : activeTab === "liked" ? (
@@ -776,6 +845,42 @@ export default function MyPage() {
               showComparisonNotice={showComparisonNotice}
               onRemove={removeFavorite}
               onGoRecommend={() => navigate("/recommend")}
+              onNotify={(product) => {
+                if (!product.endDate) {
+                  window.alert("이 상품의 모집 일정이 아직 연결되지 않았어요. 캘린더에서 일정을 확인해 주세요.");
+                  return;
+                }
+                setAlertSetup({ ...product, id: product.productId ?? product.id, name: product.title, type: "deadline" });
+                setAlertEmail(alertState.email);
+              }}
+              onRegister={(program) => {
+                const subscription = makeCalendarSubscription(program, "maturity", alertState.emailVerified);
+                setAlertState((previous) => ({ ...previous, subscriptions: [...previous.subscriptions.filter((item) => item.id !== subscription.id), subscription] }));
+                if (!alertState.emailVerified) {
+                  setAlertSetup({ ...program, type: "maturity" });
+                  setAlertEmail(alertState.email);
+                }
+              }}
+              onViewDetails={(product) => {
+                if (product.productId != null) {
+                  navigate(`/products/${product.productId}`);
+                } else if (product.applyUrl) {
+                  window.open(product.applyUrl, "_blank", "noopener,noreferrer");
+                }
+              }}
+            />
+          ) : activeTab === "alerts" ? (
+            <AlertsTab
+              alertState={alertState}
+              onAlertStateChange={setAlertState}
+              onSetup={handleAlertSetup}
+              onOff={handleAlertOff}
+              onEmailEdit={() => {
+                setAlertSetup({ type: "email", name: "알림 받을 이메일" });
+                setAlertEmail(alertState.pendingEmail || alertState.email);
+                setAlertEmailError("");
+              }}
+              onDetails={(program) => program.tier === 2 ? window.open("https://www.youthcenter.go.kr", "_blank", "noopener,noreferrer") : navigate("/recommend", { state: { calendarProgram: program } })}
             />
           ) : (
             <InfoTab
@@ -803,6 +908,7 @@ export default function MyPage() {
           onSaveGoal={handleSaveSavingsGoal}
         />
       )}
+      {alertSetup && <AlertSetupModal program={alertSetup} type={alertSetup.type} email={alertEmail} emailError={alertEmailError} onEmailChange={(value) => { setAlertEmail(value); setAlertEmailError(""); }} onSubmit={handleAlertSetupSubmit} onClose={() => setAlertSetup(null)} />}
     </div>
   );
 }

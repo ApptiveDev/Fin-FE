@@ -10,6 +10,7 @@ import Recommend from './pages/Recommend';
 import ProductList from './pages/ProductList';
 import ProductDetail from './pages/ProductDetail';
 import ProductRateCalculator from './pages/ProductRateCalculator';
+import Calendar from './pages/Calendar';
 import MyPage from './pages/MyPage';
 import ScrollToTop from "./components/ScrollToTop";
 import { useAuth } from './context/AuthContext';
@@ -78,6 +79,7 @@ function App() {
           <Route path="/products" element={<ProductList/>}/>
           <Route path="/products/:productId" element={<ProductDetail />} />
           <Route path="/products/:productId/calculator" element={<ProductRateCalculator />} />
+          <Route path="/calendar" element={<Calendar />} />
           <Route path="/mypage" element={<MyPageRoute />} />
 
           <Route path="/" element={<Introduce />} />
