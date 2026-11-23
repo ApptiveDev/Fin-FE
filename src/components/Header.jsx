@@ -1,8 +1,10 @@
+import { useRef } from 'react'
 import client from '../api/client'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import logo from '../assets/logo.png'
 import { clearPersistedRecommendation, readPersistedRecommendation } from '../utils/recommendationResult'
+import { searchWithSavedProfile } from '../utils/profileRecommendation'
 
 export default function Header() {
   return (
@@ -24,7 +26,7 @@ function Logo() {
 }
 
 const navItems = [
-  { label: '서비스 소개', path: '/introduce' },
+  { label: '서비스 소개', path: '/introduce', activePaths: ['/', '/introduce'] },
   { label: '금융상품 추천', path: '/recommend', activePaths: ['/recommend', '/products'] },
   { label: 'Fin 캘린더', path: '/community' },
   { label: '마이페이지', path: '/mypage' },
@@ -33,11 +35,36 @@ const navItems = [
 function NavMenu() {
   const navigate = useNavigate()
   const location = useLocation()
+  const { accessToken } = useAuth()
+  const searchingRef = useRef(false)
 
-  const handleNavClick = (item) => {
+  const handleNavClick = async (item) => {
     if (item.path === '/recommend' && readPersistedRecommendation()?.result) {
       navigate('/products')
       return
+    }
+
+    // 다시 로그인했거나 이번 탭에 결과가 없어도, 서버에 저장해 둔 입력 정보가 있으면 입력 없이 바로 결과를 보여준다.
+    // 이미 추천 입력 화면에 있을 때는 직접 입력하려는 것이므로 그대로 둔다.
+    if (item.path === '/recommend' && accessToken && location.pathname !== '/recommend') {
+      if (searchingRef.current) return
+      searchingRef.current = true
+      try {
+        const recommendation = await searchWithSavedProfile(accessToken)
+        if (recommendation?.result) {
+          navigate('/products', {
+            state: {
+              recommendationResult: recommendation.result,
+              recommendationRequest: recommendation.request,
+            },
+          })
+          return
+        }
+      } catch (e) {
+        console.error('저장된 입력 정보로 추천 결과를 불러오지 못했어요:', e)
+      } finally {
+        searchingRef.current = false
+      }
     }
     navigate(item.path)
   }
