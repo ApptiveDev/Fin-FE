@@ -164,7 +164,7 @@ export default function Recommend() {
   // 접는 애니메이션이 끝날 때까지 폼을 화면에 남겨 두기 위한 상태(isOpen은 이미 false).
   const [isClosing, setIsClosing] = useState(false);
   const closingTimerRef = useRef(null);
-  // 가구 소득 화면의 "다음 단계"는 직접 맨 위로 올리므로, 바로 이어지는 일반 단계 이동 스크롤은 한 번 건너뛴다.
+  // 가구 소득 화면의 "다음 단계"는 직접 검색창 위치로 올리므로, 바로 이어지는 일반 단계 이동 스크롤은 한 번 건너뛴다.
   const skipStepScrollRef = useRef(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisError, setAnalysisError] = useState("");
@@ -182,11 +182,6 @@ export default function Recommend() {
     if (!el) return;
     const targetTop = el.getBoundingClientRect().top + window.scrollY - SEARCH_BAR_TOP_OFFSET;
     window.scrollTo({ top: Math.max(0, targetTop), behavior: "smooth" });
-  }, []);
-
-  // 페이지 맨 위(제목 문구 "내게 딱 맞는 금융상품…"까지 보이는 위치)로 스크롤한다.
-  const scrollToPageTop = useCallback(() => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
   // 일반 단계 이동/열기에 쓰는 자동 스크롤은 스위치(RECOMMEND_AUTO_SCROLL)를 따른다.
@@ -283,7 +278,7 @@ export default function Recommend() {
     />,
     <StepPersonalInfo    data={formData} setData={setFormData}             onPrev={go(1)} onNext={go(3)} onSkip={startAnalysis} />,
     <StepRegion          data={formData} setData={setFormData} cats={cats} onPrev={go(2)} onNext={go(4)} onSkip={startAnalysis} />,
-    <StepHouseholdIncome data={formData} setData={setFormData} cats={cats} onPrev={go(3)} onNext={go(5)} onSkip={startAnalysis} onAfterNext={HOUSEHOLD_STEP_SCROLL ? () => { skipStepScrollRef.current = true; scrollToPageTop(); } : undefined} />,
+    <StepHouseholdIncome data={formData} setData={setFormData} cats={cats} onPrev={go(3)} onNext={go(5)} onSkip={startAnalysis} onAfterNext={HOUSEHOLD_STEP_SCROLL ? () => { skipStepScrollRef.current = true; forceScrollToSearchBar(); } : undefined} />,
     <StepHousing         data={formData} setData={setFormData}             onPrev={go(4)} onNext={go(6)} onSkip={startAnalysis} />,
     <StepEmployment      data={formData} setData={setFormData}             onPrev={go(5)} onNext={go(7)} onSkip={startAnalysis} />,
     <StepTransaction     data={formData} setData={setFormData} cats={cats} onPrev={go(6)} onSubmit={openProfileSaveConsent} onSkip={startAnalysis} onSubStepChange={scrollToSearchBar} />
