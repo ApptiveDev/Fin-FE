@@ -1,3 +1,5 @@
+import { clearFormDraft } from "./recommendFormDraft";
+import { clearProductListView } from "./productListView";
 import {
   interestTypeLabel,
   keywordLabel,
@@ -54,6 +56,13 @@ function formatContributionAmount(value) {
   }
 
   return `${formatNumber(won, 0)} `;
+}
+
+// 캡션의 원금 표기: 만원 단위면 "300만"(공백/원 없이), 아니면 "123,456원".
+function formatPrincipal(value) {
+  const won = toFiniteNumber(value);
+  if (won === null) return null;
+  return won % 10_000 === 0 ? `${formatNumber(won / 10_000, 0)}만` : `${formatNumber(won, 0)}원`;
 }
 
 function formatMonthlyDeposit(value) {
@@ -138,6 +147,8 @@ export function readPersistedRecommendation() {
 
 export function clearPersistedRecommendation() {
   if (typeof window === "undefined") return;
+  clearFormDraft(); // 로그아웃 시 이전 사용자가 입력하던 값이 남지 않게 함께 지운다.
+  clearProductListView();
 
   try {
     window.sessionStorage.removeItem(RECOMMENDATION_SESSION_KEY);
@@ -183,6 +194,9 @@ function buildIndices(result) {
     govRates: indexByProductId(result?.governmentRateRanked),
     bankRates: indexByProductId(result?.bankRateRanked),
     subscriptionRates: indexByProductId(result?.subscriptionProducts),
+    // 단기 예치(파킹통장, 단기 예·적금) 상품: 목록은 전용 빌더로 만들지만, 상세 화면은 같은 id로 찾을 수 있어야 한다.
+    parkingRates: indexByProductId(result?.parkingProducts),
+    depositRates: indexByProductId(result?.depositSavingsProducts),
     details: indexByProductId(result?.productDetails),
   };
 }
@@ -283,7 +297,8 @@ function buildProductView(id, indices, monthlySavingsGoal) {
   const { govMatches, bankMatches, govRates, bankRates, subscriptionRates, details } = indices;
 
   const match = govMatches.get(id) || bankMatches.get(id);
-  const rate = govRates.get(id) || bankRates.get(id) || subscriptionRates.get(id);
+  const rate = govRates.get(id) || bankRates.get(id) || subscriptionRates.get(id)
+    || indices.depositRates.get(id) || indices.parkingRates.get(id);
   const detail = details.get(id);
 
   const isSubscription = Boolean(rate?.isSubscription) || subscriptionRates.has(id);
@@ -298,7 +313,7 @@ function buildProductView(id, indices, monthlySavingsGoal) {
   const providerName = match?.providerName || rate?.providerName || detail?.providerName || "";
   const score = toFiniteNumber(match?.totalScore ?? detail?.matchScore);
   const baseRateNum = toFiniteNumber(rate?.baseRate ?? detail?.bank?.baseRate);
-  const maxRateNum = toFiniteNumber(detail?.bank?.maxRate) ?? baseRateNum;
+  const maxRateNum = toFiniteNumber(detail?.bank?.maxRate) ?? toFiniteNumber(rate?.maxRate) ?? baseRateNum;
   const achievableRateNum = toFiniteNumber(rate?.achievableRate ?? detail?.bank?.achievableRate);
 
   const government = detail?.government;
@@ -319,18 +334,38 @@ function buildProductView(id, indices, monthlySavingsGoal) {
     ? (bankSaveTrm % 12 === 0 ? `${bankSaveTrm / 12}년` : `${bankSaveTrm}개월`)
     : null;
   const bankCaption = !isGovernment && !isSubscription && bankMonthly
-    ? `원금 ${formatContributionAmount(bankPrincipal).replace(" ", "")} · 본인 월 ${formatMonthlyDeposit(bankMonthly)}, ${bankPeriodLabel} 납입 기준`
+    ? `원금 ${formatPrincipal(bankPrincipal)} · 본인 월 ${formatMonthlyDeposit(bankMonthly)}, ${bankPeriodLabel} 납입 기준`
     : null;
   const contributionCaption = monthlyDeposit && contributionPeriodLabel
     ? `${reserveTypeShortLabel(detail?.reserveType)} 매칭 · 본인 월 ${monthlyDeposit}, ${contributionPeriodLabel} 납입 기준`
     : bankCaption || rate?.subscriptionNote || null;
 
-  const tags = [
-    ...(score !== null ? [`적합도 ${Math.round(score)}%`] : []),
-    ...asArray(detail?.keywords)
-      .filter((code) => !code.startsWith("REGION_"))
-      .map(keywordLabel),
-  ];
+  // 키워드 태그: 지역/상품 종류(예적금·대출)는 보여주지 않는다. 핵심 혜택은 회색(benefit), 은행 우대 조건은 파랑(bank)으로
+  // 색이 정해진 태그로, 정부 지원금과 그 외(기간/신분 등)는 기존 문자열 태그 그대로 둔다.
+  const keywordTags = asArray(detail?.keywords)
+    .filter((code) => !code.startsWith("REGION_") && !code.startsWith("INTEREST_") && code !== "BANK_ETC")
+    .map((code) => {
+      if (code.startsWith("BANK_")) return { label: keywordLabel(code), kind: "bank" };
+      if (code.startsWith("BENEFIT_") && code !== "BENEFIT_GOV_SUBSIDY") return { label: keywordLabel(code), kind: "benefit" };
+      return keywordLabel(code);
+    });
+
+  // 적합도 태그: 정부 청년 상품은 기존 주황색 문자열 태그 그대로, 시중은행 상품은 보라색(suitabilityBank) 태그로 구분한다.
+  const isBankProduct = !isGovernment && !isSubscription;
+  const suitabilityLabel = `적합도 ${Math.round(score)}%`;
+  // 단기 예치(파킹통장, 단기 예·적금)에는 적합도 점수 개념이 없다(서버가 0을 줘서 "적합도 0%"로 보였다).
+  // 적합도 태그는 빼고, 파킹통장은 목록 카드와 같은 "예금자보호/이자 지급 방식" 태그를 보여준다.
+  const parkingItem = indices.parkingRates.get(id);
+  const isShortTermProduct = Boolean(parkingItem) || indices.depositRates.has(id);
+  const parkingTags = parkingItem
+    ? [parkingItem.depositProtection ? "예금자보호" : null, parkingItem.interestPaymentMethod].filter(Boolean)
+    : [];
+  const tags = isShortTermProduct
+    ? [...parkingTags, ...keywordTags]
+    : [
+      ...(score !== null ? [isBankProduct ? { label: suitabilityLabel, kind: "suitabilityBank" } : suitabilityLabel] : []),
+      ...keywordTags,
+    ];
 
   const filterTags = [
     detail?.productType ? productTypeLabel(detail.productType) : null,
@@ -357,6 +392,11 @@ function buildProductView(id, indices, monthlySavingsGoal) {
     baseRate: baseRateNum !== null ? formatRateValue(baseRateNum) : "0",
     maxRate: maxRateNum !== null ? formatRateValue(maxRateNum) : "0",
     myRate: achievableRateNum !== null ? formatRateValue(achievableRateNum) : "0",
+    // 파킹통장은 공시금리라 개인별 "내가 받을 수 있는 금리"가 없다. 상세 화면은 이 값이 있으면 금리 대신
+    // 목록과 같은 "최고금리 적용한도" 알약을 보여준다.
+    ratePill: indices.parkingRates.has(id)
+      ? { label: "최고금리 적용한도", value: buildMaxRateLimitCaption(indices.parkingRates.get(id)) ?? "정보 없음" }
+      : null,
     suitability: score ?? 0,
     tags: tags.length > 0 ? tags : ["추천 상품"],
     filterTags,
@@ -383,6 +423,8 @@ function buildProductView(id, indices, monthlySavingsGoal) {
     maxRateDisplay: maxRateNum !== null ? `${formatNumber(maxRateNum)}%` : "0.00%",
     rateNotice: RATE_NOTICE,
     rateConditions: buildRateConditionRows(detail?.bank, detail?.rateTable),
+    // 구조화된 우대금리 조건(충족/미충족 목록)이 없는 상품(파킹통장 등)은 서버가 주는 요약 문구로 대신 안내한다.
+    rateConditionSummary: detail?.contentSummary || null,
     recruitPeriod: detail?.recruitmentPeriod || "취급기관 상시 확인 필요",
     applyUrl: detail?.applyUrl || null,
     providerName: detail?.providerName || providerName || null,
@@ -418,7 +460,7 @@ function buildMaxRateLimitCaption(p) {
   return value;
 }
 
-function buildParkingProductView(p) {
+function buildParkingProductView(p, detail) {
   const limitCaption = buildMaxRateLimitCaption(p);
 
   return {
@@ -427,33 +469,67 @@ function buildParkingProductView(p) {
     category: "파킹통장",
     title: p.productName,
     institution: p.providerName,
-    subtitle: [p.providerName, p.interestPaymentMethod, p.depositProtection ? "예금자보호" : null]
+    // 부제목에서는 "예금자보호"를 보여주지 않는다(값은 depositProtection으로 그대로 보관).
+    subtitle: [p.providerName, p.interestPaymentMethod]
       .filter(Boolean)
       .join(" · "),
+    depositProtection: Boolean(p.depositProtection),
     baseRate: formatRateValue(toFiniteNumber(p.baseRate) ?? 0),
     maxRate: formatRateValue(toFiniteNumber(p.maxRate) ?? 0),
     myRate: formatRateValue(toFiniteNumber(p.maxRate) ?? 0),
     suitability: toFiniteNumber(p.maxRate) ?? 0,
-    tags: [p.depositProtection ? "예금자보호" : null, p.interestPaymentMethod].filter(Boolean),
+    // 단기 예적금과 같은 규칙: 이 상품이 가진 핵심 혜택(회색)/은행 우대(파랑) 키워드를 태그로 보여준다.
+    // 해당하는 키워드가 없거나 상세를 아직 못 받았으면 기존 태그(예금자보호/이자 지급 방식)로 대신한다.
+    tags: (() => {
+      const keywordTags = ownKeywordTags(detail);
+      return keywordTags.length > 0
+        ? keywordTags
+        : [p.depositProtection ? "예금자보호" : null, p.interestPaymentMethod].filter(Boolean);
+    })(),
     filterTags: ["예금"],
     applyUrl: p.applyUrl || null,
     // 파킹통장은 로그인 여부와 무관하게 공개되는 공시금리라 "내가 받을 금리" 대신
     // 최고금리가 실제로 적용되는 잔액 구간을 보여준다.
     ratePillLabel: "최고금리 적용한도",
-    ratePillValue: limitCaption ? `${limitCaption}` : null,
+    // 공시에 최고금리 적용 한도가 없는 상품(파킹통장 45개 중 26개)은 값이 비어 알약이 빈칸으로 보이므로 문구로 채운다.
+    ratePillValue: limitCaption ?? "정보 없음",
   };
 }
 
-function buildDepositSavingsProductView(p) {
+// 단기 예적금 카드의 "예상 세후 실수령액" 표기: 1만원 이상이면 "30.2만원", 그보다 작으면 "5,000원".
+function formatNetReturn(value) {
+  const won = toFiniteNumber(value);
+  if (won === null) return null;
+  return won >= 10_000 ? `${formatNumber(won / 10_000, 1)}만원` : `${formatNumber(won, 0)}원`;
+}
+
+// 단기 예적금 카드 태그: 사용자가 고른 키워드와 상관없이, 그 상품이 가진 핵심 혜택(BENEFIT_*, 회색)과
+// 은행 우대 조건(BANK_*, 파랑)을 상품 상세의 keywords에서 가져와 보여준다. 이름은 목돈 만들기 카드와 같은 키워드 이름을 쓴다.
+// 상세를 아직 못 받았거나 해당하는 키워드가 하나도 없는 상품만 예금/적금 구분 태그로 대신한다.
+function ownKeywordTags(detail) {
+  return asArray(detail?.keywords).flatMap((code) => {
+    if (code === "BANK_ETC") return [];
+    if (code.startsWith("BANK_")) return [{ label: keywordLabel(code), kind: "bank" }];
+    if (code.startsWith("BENEFIT_")) return [{ label: keywordLabel(code), kind: "benefit" }];
+    return [];
+  });
+}
+
+function depositKeywordTags(typeLabel, detail) {
+  const tags = ownKeywordTags(detail);
+  return tags.length > 0 ? tags : [typeLabel].filter(Boolean);
+}
+
+function buildDepositSavingsProductView(p, detail) {
   const typeLabel = productTypeLabel(p.productType) || null;
   const saveTrm = toFiniteNumber(p.saveTrm);
   const principal = toFiniteNumber(p.principal);
-  const principalLabel = formatContributionAmount(principal);
+  const principalLabel = formatPrincipal(principal);
   const monthlyAmount = p.productType === "SAVING" && saveTrm ? Math.round(principal / saveTrm) : null;
   const principalCaption = principalLabel && saveTrm
     ? (monthlyAmount
         ? `원금 ${principalLabel} · 본인 월 ${formatMonthlyDeposit(monthlyAmount)}, ${saveTrm}개월 납입 기준`
-        : `원금 ${principalLabel} · ${saveTrm}개월 예치 기준`)
+        : `원금 ${principalLabel} · 본인 ${saveTrm}개월 예치 기준`)
     : null;
 
   return {
@@ -467,7 +543,11 @@ function buildDepositSavingsProductView(p) {
     maxRate: formatRateValue(toFiniteNumber(p.achievableRate) ?? 0),
     myRate: formatRateValue(toFiniteNumber(p.achievableRate) ?? 0),
     suitability: toFiniteNumber(p.achievableRate) ?? 0,
-    tags: [typeLabel].filter(Boolean),
+    // 단기 예적금 카드는 예금/적금 구분 대신, 이 상품이 가진 핵심 혜택(회색)/은행 우대 조건(파랑) 키워드를 태그로 보여준다.
+    // 필터(예금/적금)는 filterTags로 그대로 동작한다.
+    tags: depositKeywordTags(typeLabel, detail),
+    // 카드 금리 영역에 "내가 받을 금리 / 예상 세후 실수령액"을 보여주기 위한 값(값이 없으면 빈 문자열이라 가려져 보인다).
+    netReturnDisplay: formatNetReturn(p.netReturn) ?? "",
     filterTags: [typeLabel].filter(Boolean),
     applyUrl: null,
     // 기존 "내가 받을 금리" 바는 그대로 두고, 그 아래에 원금·납입 조건을 추가로 보여준다.
@@ -479,14 +559,36 @@ function buildDepositSavingsProductView(p) {
 // 정부/은행 구분 없이 최고 금리 기준 하나의 목록으로만 보여준다.
 export function buildParkingProductListFromResult(result) {
   if (!result) return [];
-  return asArray(result.parkingProducts).map(buildParkingProductView).sort((a, b) => b.suitability - a.suitability);
+  const details = indexByProductId(result.productDetails);
+  return asArray(result.parkingProducts)
+    .map((p) => buildParkingProductView(p, details.get(String(p.productId))))
+    .sort((a, b) => b.suitability - a.suitability);
 }
 
 // 단기예치(SHORT_TERM)의 단기 예·적금(탭D) 전용 평면 목록. 마찬가지로 섹터 구분 없이
 // 세후 실수령액(achievableRate) 기준 하나의 목록으로만 보여준다.
 export function buildDepositSavingsProductListFromResult(result) {
   if (!result) return [];
-  return asArray(result.depositSavingsProducts).map(buildDepositSavingsProductView).sort((a, b) => b.suitability - a.suitability);
+  const details = indexByProductId(result.productDetails);
+  return asArray(result.depositSavingsProducts)
+    .map((p) => buildDepositSavingsProductView(p, details.get(String(p.productId))))
+    .sort((a, b) => b.suitability - a.suitability);
+}
+
+// 단기 예치 목록(파킹통장/단기 예·적금)에 있는 상품이면 그 항목을, 아니면 null.
+export function findShortTermListItem(result, productId) {
+  if (!result || productId === undefined || productId === null) return null;
+  const id = String(productId);
+  const indices = buildIndices(result);
+  return indices.parkingRates.get(id) || indices.depositRates.get(id) || null;
+}
+
+// 단기 예치 상품은 검색 응답에 상세(productDetails)가 없어서, 상세 화면이 따로 불러와야 하는지 알려준다.
+export function shortTermNeedsDetail(result, productId) {
+  const item = findShortTermListItem(result, productId);
+  if (!item) return null;
+  const hasDetail = buildIndices(result).details.has(String(productId));
+  return hasDetail ? null : item;
 }
 
 export function findProductViewById(result, productId) {
@@ -494,7 +596,8 @@ export function findProductViewById(result, productId) {
 
   const indices = buildIndices(result);
   const id = String(productId);
-  if (!collectAllIds(indices).has(id)) return null;
+  const known = collectAllIds(indices).has(id) || indices.parkingRates.has(id) || indices.depositRates.has(id);
+  if (!known) return null;
 
   return buildProductView(id, indices, result?.monthlySavingsGoal);
 }

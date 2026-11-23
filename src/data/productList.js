@@ -225,6 +225,8 @@ export const MOCK_LONG_TERM_RESULT = {
 // ProductList에서 임시로 원시 필드를 그대로 나열하는 용도로만 쓴다 (A2/A3에서 정식 컴포넌트로 교체 예정).
 export const MOCK_SHORT_TERM_RESULT = {
   category: "SHORT_TERM",
+  // 1단계에서 선택한 핵심 혜택/은행 우대 조건(단기 예적금 카드의 키워드 태그에 쓰인다).
+  selectedKeywords: { benefits: ["최고이율 중심", "비과세"], bankRelation: ["급여이체 우대"] },
   // 탭C=단기 예·적금(로그인 시 실수령액 정렬, 잠금 사유 있음), 탭D=파킹통장(항상 열림, 잠금 사유 필드 자체가 없음).
   // 실제 백엔드 응답(/search/products) 기준으로 확인한 매핑.
   tabs: {
@@ -242,7 +244,11 @@ export const MOCK_SHORT_TERM_RESULT = {
   governmentRateRanked: [],
   bankRateRanked: [],
   subscriptionProducts: [],
-  productDetails: [],
+  // 단기 예적금 카드 키워드 태그는 상품 상세의 keywords로 "이 상품에 해당하는 것만" 보여준다.
+  productDetails: [
+    { productId: 401, productPropertyId: 401, productName: "NH1934 월복리 적금", providerName: "NH농협은행", keywords: ["BENEFIT_MAX_INTEREST", "BENEFIT_TAX_FREE", "BANK_SALARY_TRANSFER"] },
+    { productId: 402, productPropertyId: 402, productName: "Y-Fin 단기 정기예금", providerName: "카카오뱅크", keywords: ["BENEFIT_MAX_INTEREST"] },
+  ],
   parkingProducts: [
     {
       productId: 301, productPropertyId: 301, productName: "매일이자 Wa파킹통장", providerName: "웰컴저축은행", providerCode: "WELCOME",

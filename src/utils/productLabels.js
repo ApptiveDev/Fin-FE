@@ -11,12 +11,29 @@ const KEYWORD_LABELS = {
   BENEFIT_GOV_SUBSIDY: "정부 지원금",
   INTEREST_SAVINGS: "예적금", INTEREST_LOAN: "대출",
   BANK_FIRST_TRANSACTION: "첫 거래", BANK_SALARY_TRANSFER: "급여 이체", BANK_CARD_USAGE: "카드 실적",
-  BANK_AUTO_TRANSFER: "자동이체", BANK_MARKETING: "마케팅 동의", BANK_REDEPOSIT: "재예치",
+  BANK_AUTO_TRANSFER: "자동이체", BANK_MARKETING: "마케팅 동의 OK", BANK_REDEPOSIT: "재예치",
   BANK_ONLINE_JOIN: "온라인 가입", BANK_AGE: "연령 우대", BANK_ETC: "기타 우대",
 };
 
+// 추천 입력에서 고르는 핵심 혜택/은행 우대 조건 옵션 이름 -> 상품이 가진 키워드 코드.
+// 옵션 자체에는 코드가 없어서 이름으로 맞춘다(서버 옵션 이름이 바뀌면 여기도 맞춰야 한다).
+const OPTION_KEYWORD_CODES = {
+  "최고이율 중심": "BENEFIT_MAX_INTEREST",
+  "비과세": "BENEFIT_TAX_FREE",
+  "우대조건 간편": "BENEFIT_EASY_CONDITION",
+  "정부기여금": "BENEFIT_GOV_SUBSIDY",
+  "급여이체 우대": "BANK_SALARY_TRANSFER",
+  "카드실적 우대": "BANK_CARD_USAGE",
+  "자동이체 우대": "BANK_AUTO_TRANSFER",
+  "마케팅동의 OK": "BANK_MARKETING",
+};
+
+export function optionKeywordCode(optionLabel) {
+  return OPTION_KEYWORD_CODES[optionLabel] ?? null;
+}
+
 const PRODUCT_TYPE_LABELS = {
-  DEPOSIT: "예금", SAVING: "적금", POLICY: "정책 상품", SUBSCRIPTION: "청약저축",
+  DEPOSIT: "예금", SAVING: "적금", POLICY: "정책 상품", SUBSCRIPTION: "청약저축", PARKING: "파킹통장",
 };
 
 const RESERVE_TYPE_LABELS = {

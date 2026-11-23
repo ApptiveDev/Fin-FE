@@ -5,7 +5,7 @@ import EditFieldModal from "../components/MyPageEditModals";
 import { MOCK_SAVINGS_GOALS } from "../data/mypage";
 import heartIcon from "../assets/green_heart.png";
 import { useAuth } from "../context/AuthContext";
-import { buildRecommendationRequestFromProfile } from "../utils/recommendationPayload";
+import { buildRecommendationRequestFromProfile, buildSelectedKeywordsFromProfile } from "../utils/recommendationPayload";
 import { runProductSearch } from "../utils/productSearch";
 import {
   categoryOfGoalKey,
@@ -775,7 +775,9 @@ export default function MyPage() {
     setResubmitting(true);
     try {
       const request = buildRecommendationRequestFromProfile(profile, categories);
-      const recommendation = await runProductSearch(request, accessToken);
+      const recommendation = await runProductSearch(request, accessToken, {
+        selectedKeywords: buildSelectedKeywordsFromProfile(profile, categories),
+      });
       navigate("/products", {
         state: {
           recommendationResult: recommendation.result,

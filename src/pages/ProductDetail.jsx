@@ -5,6 +5,8 @@ import client, { withAuth } from "../api/client";
 import {
   findProductViewById,
   getActiveRecommendationResult,
+  getPersistedRecommendationRequest,
+  shortTermNeedsDetail,
 } from "../utils/recommendationResult";
 import { getProductApplicationBadge, getProductApplicationBadgeVariant, getProductApplyUrl, getProductOfficialChannel, openOfficialChannel, openProductApplication } from "../utils/productApplyLink";
 import applicationFallbackSearchIcon from "../assets/application-fallback/search.svg";
@@ -91,16 +93,24 @@ function CalculatorIcon({ className = "" }) {
   );
 }
 
-function DetailBadge({ label }) {
+// tag는 문자열이거나, 카드와 같은 { label, kind } 키워드 태그(kind: benefit 회색 / bank 파랑).
+function DetailBadge({ tag }) {
+  const label = typeof tag === "string" ? tag : tag.label;
+  const isBankKeyword = typeof tag !== "string" && tag.kind === "bank";
+  const isBankSuitability = typeof tag !== "string" && tag.kind === "suitabilityBank";
   const isSuitability = label.includes("적합도");
   const isMint = label.includes("_ok") || label.includes("정부기여금") || label.includes("비과세 혜택");
 
   return (
     <span
       className={`flex h-[33px] items-center justify-center rounded-[6px] px-[13px] text-[16px] font-normal leading-[1.2] ${
-        isSuitability
+        isBankSuitability
+          ? "bg-[#FEE7FF] text-[#7A20A2]"
+          : isSuitability
           ? "bg-[#FFF4E0] text-[#E65200]"
-          : isMint
+          : isBankKeyword
+            ? "bg-[#E2F3FD] text-[#1664C0]"
+            : isMint
             ? "bg-[#E0FDF9] text-[#333333]"
             : "bg-[#F2F3F5] text-[#333333]"
       }`}
@@ -213,7 +223,7 @@ function RateConditionRow({ item }) {
 
 function RateInfoCard({ product }) {
   return (
-    <div className="rounded-[10px] border border-[#D5D5D5] px-6 py-8 lg:min-h-[530px] lg:px-[34px] lg:py-[30px]">
+    <div className="rounded-[10px] border border-[#D5D5D5] px-6 py-8 lg:px-[34px] lg:py-[30px]">
       <div className="flex w-full max-w-[736px] flex-col gap-[24px]">
         <RateTable product={product} />
         <div className="flex w-full max-w-[710px] flex-col gap-[16px]">
@@ -222,6 +232,14 @@ function RateInfoCard({ product }) {
             {product.rateConditions.map((item) => (
               <RateConditionRow key={`${item.label}-${item.value}`} item={item} />
             ))}
+            {product.rateConditions.length === 0 && (
+              <div className="rounded-[10px] bg-[#F7FFFE] px-[20px] py-[16px] text-[17px] font-normal leading-[1.5] text-[#454545]">
+                <p className="font-medium">조건별로 구분된 우대금리는 공시되지 않았어요.</p>
+                {product.rateConditionSummary && (
+                  <p className="mt-2 text-[16px] text-[#606060]">참고: {product.rateConditionSummary}</p>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -258,8 +276,17 @@ function BankRateSummary({ product, isLoggedIn }) {
         </div>
       </div>
       <div className="mt-[16px] flex h-[44px] w-full max-w-[461px] items-center justify-center gap-[22px] rounded-full border border-[#03BFA5] bg-[#EFFFFD] px-[26px] leading-[1.2] text-[#03BFA5]">
-        <span className="whitespace-nowrap text-center text-[16px] font-normal">내가 받을 수 있는 금리</span>
-        <span className="whitespace-nowrap text-center text-[24.37px] font-semibold">연 {isLoggedIn ? product.myRate : "???"} %</span>
+        {product.ratePill ? (
+          <>
+            <span className="whitespace-nowrap text-center text-[16px] font-normal">{product.ratePill.label}</span>
+            <span className="whitespace-nowrap text-center text-[24.37px] font-semibold">{product.ratePill.value}</span>
+          </>
+        ) : (
+          <>
+            <span className="whitespace-nowrap text-center text-[16px] font-normal">내가 받을 수 있는 금리</span>
+            <span className="whitespace-nowrap text-center text-[24.37px] font-semibold">연 {isLoggedIn ? product.myRate : "???"} %</span>
+          </>
+        )}
       </div>
     </div>
   );
@@ -469,7 +496,7 @@ function ProductHeader({ product }) {
     <div className="flex flex-col gap-[30px]">
       <div className="flex flex-wrap gap-[9px]">
         {product.tags.map((tag) => (
-          <DetailBadge key={tag} label={tag} />
+          <DetailBadge key={typeof tag === "string" ? tag : tag.label} tag={tag} />
         ))}
       </div>
 
@@ -530,15 +557,56 @@ export default function ProductDetail() {
   const { productId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const recommendationResult = useMemo(
+  const storedResult = useMemo(
     () => getActiveRecommendationResult(location),
     [location],
   );
+  // 단기 예치(파킹통장, 단기 예·적금) 상품은 검색 응답에 상세가 없어서, 상세 화면에 들어올 때 따로 불러와 합친다.
+  const [lazyDetails, setLazyDetails] = useState({});
+  const recommendationResult = useMemo(() => {
+    const extra = lazyDetails[productId];
+    if (!storedResult || !extra) return storedResult;
+    return { ...storedResult, productDetails: [...(storedResult.productDetails || []), extra] };
+  }, [storedResult, lazyDetails, productId]);
   const product = useMemo(
     () => findProductViewById(recommendationResult, productId),
     [recommendationResult, productId],
   );
   const { accessToken } = useAuth();
+
+  const pendingShortTermItem = useMemo(
+    () => (lazyDetails[productId] ? null : shortTermNeedsDetail(storedResult, productId)),
+    [storedResult, lazyDetails, productId],
+  );
+  useEffect(() => {
+    if (!pendingShortTermItem) return undefined;
+    let cancelled = false;
+
+    (async () => {
+      const request = getPersistedRecommendationRequest();
+      try {
+        const res = await client.post(
+          `/search/products/${pendingShortTermItem.productId}/detail`,
+          {
+            productPropertyId: pendingShortTermItem.productPropertyId ?? null,
+            options: request?.options ?? [],
+            detailedOptions: request?.detailedOptions ?? {},
+          },
+          withAuth(accessToken),
+        );
+        if (!cancelled && res.data) {
+          setLazyDetails((prev) => ({ ...prev, [productId]: res.data }));
+        }
+      } catch (e) {
+        console.error("상품 상세 정보를 불러오지 못했습니다:", e);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pendingShortTermItem, accessToken, productId]);
+
   const [isApplicationFallbackOpen, setIsApplicationFallbackOpen] = useState(false);
   const [isFavoriteLoginOpen, setIsFavoriteLoginOpen] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);

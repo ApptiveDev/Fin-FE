@@ -152,6 +152,16 @@ function selectedOptions(data, categoryIds) {
   });
 }
 
+// 저축 기간 옵션("3개월", "1년" 등)의 개월 수. 읽을 수 없으면 null.
+export function savingPeriodMonths(savingPeriodOption) {
+  const label = savingPeriodOption?.optionValue || "";
+  const months = Number(label.match(/(\d+)\s*개월/)?.[1]);
+  const years = Number(label.match(/(\d+)\s*년/)?.[1]);
+  if (Number.isFinite(months)) return months;
+  if (Number.isFinite(years)) return years * 12;
+  return null;
+}
+
 // 저축 기간 옵션("3개월", "1년" 등)으로 대분류를 가른다. 3개월 이하는 단기 예치("short"), 그 외는 목돈 만들기("goal").
 export function getSavingPlanType(savingPeriodOption) {
   const label = savingPeriodOption?.optionValue || "";
@@ -167,10 +177,12 @@ export function getSavingPlanType(savingPeriodOption) {
 }
 
 // 금액(원)은 대분류에 따라 다른 필드로 보낸다: 단기 예치 -> depositAmount(한 번에 예치), 목돈 만들기 -> monthlySavingsGoal(월 납입).
-function amountFieldsByPlanType(planType, won) {
-  return planType === "short"
-    ? { monthlySavingsGoal: null, depositAmount: won }
-    : { monthlySavingsGoal: won, depositAmount: null };
+// 단기 예치의 적금 상품은 서버가 월 납입액(monthlySavingsGoal)이 있어야 원금/실수령액을 계산해 주므로(없으면 null),
+// 예치 희망액을 저축 기간 개월 수로 나눈 값을 월 납입액으로 함께 보낸다. 예: 300만원, 3개월 -> 월 100만원(원금 300만원).
+export function amountFieldsByPlanType(planType, won, months = null) {
+  if (planType !== "short") return { monthlySavingsGoal: won, depositAmount: null };
+  const monthly = won !== null && months ? Math.round(won / months) : null;
+  return { monthlySavingsGoal: monthly, depositAmount: won };
 }
 
 export function buildRecommendationRequest(data, categories) {
@@ -196,12 +208,35 @@ export function buildRecommendationRequest(data, categories) {
             ? false
             : null,
       isHouseholder: data.isTenant ? true : null,
-      ...amountFieldsByPlanType(planType, toWonFromTenThousand(data.monthlyAmount)),
+      ...amountFieldsByPlanType(planType, toWonFromTenThousand(data.monthlyAmount), savingPeriodMonths(selectedPeriod)),
       neverUsedBanks: toBankCodes(data.firstBanks || []),
       maturedSavingBanks: toBankCodes(data.maturedBanks || []),
       selectedInterestRateOptions: [],
     },
   };
+}
+
+// 1단계에서 고른 핵심 혜택/은행 우대 조건의 표시 이름. 단기 예적금 카드의 키워드 태그에 쓴다.
+// 폼 입력(data)과 mapRecommendCategories 결과(cats)로 만든다.
+export function buildSelectedKeywordsFromForm(data, cats) {
+  const pick = (options, ids) =>
+    (options || []).filter((option) => (ids || []).includes(option.optionId)).map((option) => option.optionValue);
+
+  return {
+    benefits: pick(cats?.benefits, data?.benefits),
+    bankRelation: pick(cats?.bankRelation, data?.bankRelation),
+  };
+}
+
+// 저장된 프로필(selectedOptionIds)과 /api/categories 원본으로 같은 값을 만든다(마이페이지에서 다시 추천 받을 때).
+export function buildSelectedKeywordsFromProfile(profile, categories) {
+  const ids = profile?.selectedOptionIds || [];
+  const pick = (groupKey) =>
+    (findCategoryByGroup(categories, groupKey)?.options || [])
+      .filter((option) => ids.includes(option.optionId))
+      .map((option) => option.optionValue);
+
+  return { benefits: pick("benefits"), bankRelation: pick("bankRelation") };
 }
 
 export function buildRecommendationRequestFromProfile(profile, categories) {
@@ -234,7 +269,7 @@ export function buildRecommendationRequestFromProfile(profile, categories) {
       isFirstJob: profile?.isFirstJob ?? null,
       isHomeless: profile?.isHomeless ?? null,
       isHouseholder: profile?.isHouseholder ?? null,
-      ...amountFieldsByPlanType(planType, toWonFromTenThousand(profile?.monthlySavingsGoal)),
+      ...amountFieldsByPlanType(planType, toWonFromTenThousand(profile?.monthlySavingsGoal), savingPeriodMonths(selectedPeriod)),
       neverUsedBanks: toBankCodes(profile?.neverUsedBanks ?? []),
       maturedSavingBanks: toBankCodes(profile?.maturedSavingBanks ?? []),
       selectedInterestRateOptions: [],
@@ -256,7 +291,8 @@ export function buildProfileUpdateFromRequest(request) {
     isHomeless: detailed.isHomeless ?? null,
     isHouseholder: detailed.isHouseholder ?? null,
     // 프로필 API에는 depositAmount가 없어서, 단기 예치 금액도 기존처럼 monthlySavingsGoal 자리에 저장한다.
-    monthlySavingsGoal: toTenThousandFromWon(detailed.monthlySavingsGoal ?? detailed.depositAmount),
+    // (단기 예치 요청의 monthlySavingsGoal은 예치액을 개월 수로 나눈 값이라, 저장할 때는 예치액을 우선한다.)
+    monthlySavingsGoal: toTenThousandFromWon(detailed.depositAmount ?? detailed.monthlySavingsGoal),
     mainBanks: detailed.mainBanks ?? [],
     neverUsedBanks: fromBankCodes(detailed.neverUsedBanks ?? []),
     maturedSavingBanks: fromBankCodes(detailed.maturedSavingBanks ?? []),
