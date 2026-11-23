@@ -9,12 +9,17 @@ function handleCardKeyDown(event, onClick) {
 }
 
 function getTagStyle(tag) {
-  let tagStyle = "bg-[#F5F5F5] text-[#7A7A7A]";
-  if (tag.includes("적합도")) tagStyle = "bg-[#FFF4E6] text-[#FF8A00]";
-  if (tag.includes("정부기여금") || tag.includes("비과세") || tag.includes("우대")) tagStyle = "bg-[#F2FBF9] text-[#03BFA5]";
-  if (tag.includes("내집마련")) tagStyle = "bg-[#F0F2FF] text-[#6B4EFF]";
+  let tagStyle = "bg-[#F5F5F5] text-[#333333] font-medium";
+  if (tag.includes("적합도")) tagStyle = "bg-[#FFF4E0] text-[#E65200] font-medium";
+  if (tag.includes("정부기여금") || tag.includes("정부 지원금")) tagStyle = "bg-[#E0FDF9] text-[#333333] font-medium";
+  if (tag.includes("내집마련")) tagStyle = "bg-[#F0F2FF] text-[#6B4EFF] font-medium";
   return tagStyle;
 }
+
+// TOP 카드 알약: 기본은 카드 패딩 안쪽 폭(min-w-full)이지만, 글자가 길면 패딩(52px)을 침범해
+// 카드 테두리에서 12px 안쪽까지(좌우 42px씩 = 84px) 늘어나 되도록 한 줄로 보이게 한다.
+// (카드 패딩 52px + 테두리 2px - 여백 12px = 42px)
+const TOP_PILL_WIDTH = "shrink-0 min-w-full w-max max-w-[calc(100%+84px)]";
 
 // 상단 TOP 3 카드
 export function TopCard({
@@ -32,8 +37,12 @@ export function TopCard({
   maturityContribution,
   contributionCaption,
   showContribution = false,
+  ratePillLabel = "내가 받을 수 있는 금리",
+  ratePillValue,
 }) {
   const hasContribution = showContribution && contributionRate && maturityContribution;
+  const ratePillActive = ratePillValue !== undefined ? true : isLoggedIn;
+  const ratePillDisplay = ratePillValue !== undefined ? ratePillValue : (isLoggedIn ? `연 ${myRate}%` : "연 ??? %");
   const isInteractive = Boolean(onClick);
   const displayedContributionRate = contributionDisplayValue(contributionRate, isLoggedIn);
   const displayedMaturityContribution = contributionDisplayValue(
@@ -47,56 +56,68 @@ export function TopCard({
       tabIndex={isInteractive ? 0 : undefined}
       onClick={onClick}
       onKeyDown={(event) => handleCardKeyDown(event, onClick)}
-      className={`px-13 py-8 bg-white rounded-xl border-[2px] shadow-sm flex flex-col justify-between min-h-[300px] w-full transition-all ${
+      className={`px-13 py-8 bg-white rounded-xl border-[2px] shadow-sm flex flex-col justify-between min-h-[380px] w-full min-w-0 transition-all ${
         isInteractive ? "hover:shadow-md cursor-pointer" : ""
       } ${
         isBest ? "border-[#03BFA5]" : "border-[#E0DFDF] hover:border-[#03BFA5]"
       }`}
     >
       <div>
-        <h3 className="text-[24px] font-bold text-[#03BFA5] mb-2.5">TOP {rank}</h3>
-        <div className="flex gap-1.5 mb-6 flex-wrap">
+        <h3 className="text-[26px] font-semibold text-[#03BFA5] mb-2">TOP {rank}</h3>
+        <div className="flex gap-1.5 mb-5 flex-wrap">
           {tags.map((tag, i) => (
-            <span key={i} className={`px-2 py-0.5 rounded-sm text-[15px] shrink-0 ${getTagStyle(tag)}`}>{tag}</span>
+            <span key={i} className={`px-2 py-0.5 rounded-sm text-[16px] shrink-0 ${getTagStyle(tag)}`}>{tag}</span>
           ))}
         </div>
-        <h4 className="text-[28px] font-bold text-[#333333] mb-1 break-keep">{title}</h4>
-        <p className="text-[14px] text-[#333333] leading-normal mb-8">{subtitle}</p>
+        <h4 className="text-[30px] font-extrabold text-[#333333] mb-0.5 break-keep">{title}</h4>
+        <p className="text-[18px] text-[#333333] font-semibold leading-normal mb-4">{subtitle}</p>
       </div>
 
       {hasContribution ? (
         <div>
-          <div className="flex justify-between items-stretch px-2 mb-3">
+          <div className="flex justify-between items-stretch mb-3 pt-1">
             <div>
               <p className="text-[14px] text-[#7A7A7A]">기여금 환산 수익률</p>
-              <p className="text-[32px] font-bold text-[#454545]">{displayedContributionRate}</p>
+              <p className="text-[32px] font-bold text-[#181818] leading-none mt-[6px]">{displayedContributionRate}</p>
             </div>
             <div className="w-px bg-[#E0E0E0]" />
             <div>
               <p className="text-[14px] text-[#7A7A7A]">예상 만기 기여금 총액</p>
-              <p className="text-[32px] font-bold text-[#03BFA5]">{displayedMaturityContribution}</p>
+              <p className="text-[32px] font-bold text-[#03BFA5] leading-none mt-[6px]">{displayedMaturityContribution}</p>
             </div>
           </div>
-          <p className="text-[13px] text-[#7A7A7A] text-center mb-1">{contributionCaption}</p>
+          <div className="flex justify-center">
+            <div className={`${TOP_PILL_WIDTH} rounded-full border border-[#03BFA5] bg-[#EFFFFD] py-1 px-4 text-center text-[15px] text-[#03BFA5]`}>
+              {contributionCaption}
+            </div>
+          </div>
         </div>
       ) : (
         <div>
-          <div className="flex justify-between items-stretch px-2 mb-3">
+          <div className="flex justify-between items-stretch px-2 mb-3 pt-1">
             <div>
               <p className="text-[14px] text-[#7A7A7A]">기본 금리</p>
-              <p className="text-[32px] font-bold text-[#454545]">연 {baseRate}%</p>
+              <p className="text-[32px] font-bold text-[#454545] leading-none mt-[6px]">연 {baseRate}%</p>
             </div>
             <div className="w-px bg-[#E0E0E0]" />
             <div>
               <p className="text-[14px] text-[#7A7A7A]">최고 금리</p>
-              <p className="text-[32px] font-bold text-[#03BFA5]">연 {maxRate}%</p>
+              <p className="text-[32px] font-bold text-[#03BFA5] leading-none mt-[6px]">연 {maxRate}%</p>
             </div>
           </div>
-          {/* 💡 비로그인 시 회색 처리 오류 수정 반영 */}
-          <div className={`w-full py-1 rounded-full border text-center text-[15px] ${
-            isLoggedIn ? "border-[#03BFA5] text-[#03BFA5] bg-[#EFFFFD]" : "border-gray-300 text-gray-400 bg-white"
-          }`}>
-            내가 받을 수 있는 금리 <span className="ml-2 font-bold whitespace-nowrap">{isLoggedIn ? `연 ${myRate}%` : "연 ??? %"}</span>
+          <div className="flex justify-center">
+            {contributionCaption ? (
+              <div className={`${TOP_PILL_WIDTH} rounded-full border border-[#03BFA5] bg-[#EFFFFD] py-1 px-4 text-center text-[15px] text-[#03BFA5]`}>
+                {contributionCaption}
+              </div>
+            ) : (
+              /* 💡 비로그인 시 회색 처리 오류 수정 반영 */
+              <div className={`${TOP_PILL_WIDTH} py-1 rounded-full border text-center text-[15px] ${
+                ratePillActive ? "border-[#03BFA5] text-[#03BFA5] bg-[#EFFFFD]" : "border-gray-300 text-gray-400 bg-white"
+              }`}>
+                {ratePillLabel} <span className="ml-2 font-bold whitespace-nowrap">{ratePillDisplay}</span>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -118,6 +139,9 @@ export function ListItem({
   contributionRate,
   maturityContribution,
   contributionCaption,
+  rank,
+  ratePillLabel = "내가 받을 금리",
+  ratePillValue,
 }) {
   const isContribution = variant === "contribution";
   const isInteractive = Boolean(onClick);
@@ -126,6 +150,8 @@ export function ListItem({
     maturityContribution,
     isLoggedIn,
   );
+  const ratePillActive = ratePillValue !== undefined ? true : isLoggedIn;
+  const ratePillDisplay = ratePillValue !== undefined ? ratePillValue : `연 ${isLoggedIn ? `${myRate}%` : "???%"}`;
 
   return (
     <div
@@ -133,50 +159,71 @@ export function ListItem({
       tabIndex={isInteractive ? 0 : undefined}
       onClick={onClick}
       onKeyDown={(event) => handleCardKeyDown(event, onClick)}
-      className={`py-5 px-8 bg-white rounded-xl border-[2px] border-[#E0DFDF] mb-3 flex flex-col lg:flex-row lg:items-center justify-between transition-all gap-4 ${
-        isInteractive ? "hover:border-[#03BFA5] hover:shadow-md cursor-pointer" : ""
+      className={`px-2 py-[20px] bg-white flex flex-col lg:flex-row lg:items-center justify-between transition-all gap-4 ${
+        isInteractive ? "cursor-pointer" : ""
       }`}
     >
-      <div>
-        <div className="flex gap-2 mb-2 flex-wrap">
+      <div className={`grid ${rank !== undefined ? "grid-cols-[28px_1fr] gap-x-10" : "grid-cols-1"}`}>
+        <div className={`${rank !== undefined ? "col-start-2" : "col-start-1"} row-start-1 flex gap-2 mb-2 flex-wrap`}>
           {tags.map((tag, i) => (
             <span key={i} className={`px-2 py-0.5 rounded-[4px] text-[15px] ${getTagStyle(tag)}`}>{tag}</span>
           ))}
         </div>
-        <h4 className="text-[28px] font-bold text-[#333333] mb-1">{title}</h4>
-        <p className="text-[15px] text-[#7A7A7A]">{subtitle}</p>
+        {rank !== undefined && (
+          <span className={`col-start-1 row-start-2 self-center flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-[22px] font-bold ${
+            rank <= 3 ? "bg-[#F0FFFE] text-[#03BFA5]" : "bg-[#F2F3F5] text-[#797979]"
+          }`}>
+            {rank}
+          </span>
+        )}
+        <h4 className={`${rank !== undefined ? "col-start-2" : "col-start-1"} row-start-2 text-[27px] font-bold text-[#333333]`}>{title}</h4>
+        <p className={`${rank !== undefined ? "col-start-2" : "col-start-1"} row-start-3 mt-1 text-[15px] font-medium text-[#333333]`}>{subtitle}</p>
       </div>
 
       {isContribution ? (
-        <div className="flex flex-col items-end mb-3">
-          <div className="flex flex-row gap-10">
-            <div className="text-right">
-              <p className="text-[14px] text-[#7A7A7A] mb-0.5">기여금 환산 수익률</p>
-              <p className="text-[32px] font-bold text-[#454545] whitespace-nowrap">{displayedContributionRate}</p>
+        <div className="flex flex-col items-end mt-3">
+          <div className="flex items-stretch gap-7">
+            <div className="w-[115px] text-right">
+              <p className="text-[14px] text-[#7A7A7A] mb-0.5 whitespace-nowrap">기여금 환산 수익률</p>
+              <p className="text-[32px] font-bold text-[#454545] leading-none mt-[4px] whitespace-nowrap">{displayedContributionRate}</p>
             </div>
-            <div className="text-right">
-              <p className="text-[14px] text-[#7A7A7A] mb-0.5">예상 만기 기여금 총액</p>
-              <p className="text-[32px] font-bold text-[#03BFA5] whitespace-nowrap">{displayedMaturityContribution}</p>
+            <div className="w-px bg-[#E0E0E0]" />
+            <div className="w-[115px] text-right">
+              <p className="text-[14px] text-[#7A7A7A] mb-0.5 whitespace-nowrap">예상 만기 기여금 총액</p>
+              <p className="text-[32px] font-bold text-[#03BFA5] leading-none mt-[4px] whitespace-nowrap">{displayedMaturityContribution}</p>
             </div>
           </div>
-          <p className="text-[13px] text-[#7A7A7A] whitespace-nowrap">{contributionCaption}</p>
+          <div className="mt-4 w-full rounded-full border border-[#03BFA5] bg-[#EFFFFD] py-1 px-2 text-center text-[15px] text-[#03BFA5]">
+            {contributionCaption}
+          </div>
         </div>
       ) : (
-        <div className="flex flex-col items-end mb-3">
-          <div className="flex flex-row gap-10">
-            <div className="text-right">
-              <p className="text-[14px] text-[#7A7A7A] mb-0.5">기본 금리</p>
-              <p className="text-[32px] font-bold text-[#454545] whitespace-nowrap">연 {baseRate}%</p>
+        <div className="flex flex-col items-end mt-3">
+          <div className="flex items-stretch gap-7">
+            <div className="w-[115px] text-right">
+              <p className="text-[14px] text-[#7A7A7A] mb-0.5 whitespace-nowrap">기본 금리</p>
+              <p className="text-[32px] font-bold text-[#454545] leading-none mt-[4px] whitespace-nowrap">연 {baseRate}%</p>
             </div>
-            <div className="text-right">
-              <p className="text-[14px] text-[#7A7A7A] mb-0.5">최고 금리</p>
-              <p className="text-[32px] font-bold text-[#03BFA5] whitespace-nowrap">연 {maxRate}%</p>
+            <div className="w-px bg-[#E0E0E0]" />
+            <div className="w-[115px] text-right">
+              <p className="text-[14px] text-[#7A7A7A] mb-0.5 whitespace-nowrap">최고 금리</p>
+              <p className="text-[32px] font-bold text-[#03BFA5] leading-none mt-[4px] whitespace-nowrap">연 {maxRate}%</p>
             </div>
           </div>
-          <div className={`w-full py-1 rounded-full border text-center text-[15px] ${
-            isLoggedIn ? "border-[#03BFA5] text-[#03BFA5] bg-[#EFFFFD]" : "border-gray-300 text-gray-400 bg-white"
-          }`}>
-            내가 받을 수 있는 금리 <span className="ml-1 whitespace-nowrap">{isLoggedIn ? `연 ${myRate}%` : "연 ??? %"}</span>
+          {/* 금리 영역(115*2 + 1 + 28*2 = 287px)과 같은 폭의 박스 안에서 알약만 가운데 정렬 */}
+          <div className="mt-4 flex w-[287px] justify-center">
+            {contributionCaption ? (
+              <div className="shrink-0 min-w-[350px] rounded-full border border-[#03BFA5] bg-[#EFFFFD] py-1 px-4 text-center text-[15px] text-[#03BFA5]">
+                {contributionCaption}
+              </div>
+            ) : (
+              <div className={`shrink-0 min-w-[64px] py-0.5 px-10 rounded-full border flex items-center justify-between gap-4 font-normal text-[15px] ${
+                ratePillActive ? "border-[#03BFA5] text-[#03BFA5] bg-[#EFFFFD]" : "border-gray-300 text-gray-400 bg-white"
+              }`}>
+                <span>{ratePillLabel}</span>
+                <span className="min-w-[64px] text-[17px] text-right font-semibold whitespace-nowrap">{ratePillDisplay}</span>
+              </div>
+            )}
           </div>
         </div>
       )}
