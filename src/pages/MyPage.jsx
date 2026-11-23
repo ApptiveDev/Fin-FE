@@ -207,7 +207,7 @@ function LikedCard({ product, onRemove, onViewDetails, onNotify }) {
   const visibleTags = product.tags.slice(0, 3);
 
   return (
-    <article className="relative flex min-h-[444px] w-full flex-col gap-4 rounded-[20px] border border-[#E0DFDF] bg-white px-[40px] py-[35px]">
+    <article className="relative flex min-h-[380px] w-full flex-col gap-4 rounded-[20px] border border-[#E0DFDF] bg-white p-[28px]">
       <div className="flex flex-wrap items-center gap-2 pr-8">
         {visibleTags.map((tag) => (
           <span key={tag} className={`rounded-md px-3 py-1.5 text-[18px] font-medium ${getTagStyle(tag)}`}>
@@ -226,21 +226,21 @@ function LikedCard({ product, onRemove, onViewDetails, onNotify }) {
       </button>
 
       <div>
-        <h3 className="text-[32px] font-semibold leading-[1.2] text-[#181818]">{product.title}</h3>
+        <h3 className="text-[22px] font-semibold leading-[1.2] text-[#181818]">{product.title}</h3>
         <p className="mt-2 text-[18px] font-medium leading-snug text-[#726E6E]">{product.subtitle}</p>
       </div>
 
       {product.isContribution ? (
         <div className="flex flex-col items-center gap-2">
-          <div className="flex min-h-[119px] w-full items-stretch rounded-xl border border-[#EDF1EF]">
+          <div className="flex min-h-[100px] w-full items-stretch rounded-xl border border-[#EDF1EF]">
             <div className="flex min-w-0 flex-1 flex-col justify-center gap-2 px-5 py-3">
               <span className="text-[14px] text-[#8A928F]">기여금 환산 수익률</span>
-              <span className="text-[30px] font-bold text-[#26313A]">{product.contributionRate}</span>
+              <span className="text-[24px] font-bold text-[#26313A]">{product.contributionRate}</span>
             </div>
             <div className="w-px bg-[#EDF1EF]" />
             <div className="flex min-w-0 flex-1 flex-col justify-center gap-2 px-5 py-3">
               <span className="text-[14px] text-[#8A928F]">예상 만기 기여금 총액</span>
-              <span className="text-[30px] font-bold text-[#03BFA5]">{product.maturityContribution}</span>
+              <span className="text-[24px] font-bold text-[#03BFA5]">{product.maturityContribution}</span>
             </div>
           </div>
           {product.contributionCaption && (
@@ -249,15 +249,15 @@ function LikedCard({ product, onRemove, onViewDetails, onNotify }) {
         </div>
       ) : (
         <div className="flex flex-col items-center gap-2">
-          <div className="flex min-h-[119px] w-full items-stretch rounded-xl border border-[#EDF1EF]">
+          <div className="flex min-h-[100px] w-full items-stretch rounded-xl border border-[#EDF1EF]">
             <div className="flex min-w-0 flex-1 flex-col justify-center gap-2 px-5 py-3">
               <span className="text-[14px] text-[#8A928F]">기본 금리</span>
-              <span className="text-[30px] font-bold text-[#26313A]">{product.baseRate != null ? `연 ${product.baseRate}%` : "정보 없음"}</span>
+              <span className="text-[24px] font-bold text-[#26313A]">{product.baseRate != null ? `연 ${product.baseRate}%` : "정보 없음"}</span>
             </div>
             <div className="w-px bg-[#EDF1EF]" />
             <div className="flex min-w-0 flex-1 flex-col justify-center gap-2 px-5 py-3">
               <span className="text-[14px] text-[#8A928F]">최고 금리</span>
-              <span className="text-[30px] font-bold text-[#03BFA5]">{product.maxRate != null ? `연 ${product.maxRate}%` : "정보 없음"}</span>
+              <span className="text-[24px] font-bold text-[#03BFA5]">{product.maxRate != null ? `연 ${product.maxRate}%` : "정보 없음"}</span>
             </div>
           </div>
           <p className="mt-2 text-center text-[14px] text-[#A0A7A3]">상품별 금리 적용 조건은 상세 보기에서 확인해 주세요</p>
@@ -268,11 +268,11 @@ function LikedCard({ product, onRemove, onViewDetails, onNotify }) {
         <button
           type="button"
           onClick={() => onViewDetails(product)}
-          className="flex h-[60px] min-w-0 flex-1 items-center justify-center rounded-xl border border-[#E6E8EB] bg-white text-[20px] font-semibold text-[#3D3D3D] hover:border-[#03BFA5]"
+          className="flex h-[50px] min-w-0 flex-1 items-center justify-center rounded-xl border border-[#E6E8EB] bg-white text-[16px] font-semibold text-[#3D3D3D] hover:border-[#03BFA5]"
         >
           상세 보기
         </button>
-        <button type="button" onClick={() => product.isContribution ? onNotify(product) : window.dispatchEvent(new CustomEvent("fin:register-product", { detail: product.id }))} className={`flex h-[60px] min-w-0 flex-1 items-center justify-center rounded-xl text-[20px] font-semibold ${joined ? "border border-[#E6E8EB] bg-white text-[#7A20A2]" : "bg-[#03BFA5] text-white hover:bg-[#02A892]"}`}>{product.isContribution ? "♧ 알림 받기" : joined ? `가입함 · 만기 ${getNotificationDday(joined.endDate, new Date())}` : "가입했어요"}</button>
+        <button type="button" onClick={() => onNotify(product)} className="flex h-[50px] min-w-0 flex-1 items-center justify-center rounded-xl bg-[#03BFA5] text-[16px] font-semibold text-white hover:bg-[#02A892]">알림 보기</button>
       </div>
     </article>
   );
@@ -305,7 +305,7 @@ function LikedProductsCarousel({ products, onRemove, onViewDetails, onNotify }) 
           <span className="inline-block scale-y-180">&lt;</span>
         </button>
 
-        <div className="grid grid-cols-1 gap-5 py-2 sm:grid-cols-2 min-[1500px]:grid-cols-3">
+        <div className="grid grid-cols-1 gap-5 py-2 sm:grid-cols-2 lg:grid-cols-3">
           {visibleProducts.map((product) => (
             <LikedCard key={product.id} product={product} onRemove={onRemove} onViewDetails={onViewDetails} onNotify={onNotify} />
           ))}
