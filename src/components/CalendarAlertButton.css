@@ -19,13 +19,13 @@
 .b2-alert-modal-backdrop { position: fixed; inset: 0; z-index: 120; display: flex; align-items: center; justify-content: center; padding: 18px; background: #0005; }
 .b2-alert-modal { width: min(632px, 100%); max-height: min(92vh, 800px); overflow: auto; padding: 28px 30px 26px; border-radius: 20px; background: #fff; box-shadow: 0 14px 36px #0002; }
 .b2-alert-modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
-.b2-alert-modal-head h2 { margin: 0; font-size: 22px; }
+.b2-alert-modal-head h2 { margin: 0; font-size: 27px; }
 .b2-alert-modal-head button { display: inline-flex; width: 34px; height: 34px; align-items: center; justify-content: center; border: 0; background: transparent; color: #8b9098; font-size: 23px; cursor: pointer; }
 .b2-alert-target { margin-bottom: 14px; padding: 15px 16px; border: 1px solid #f0f1f3; border-radius: 13px; background: #fafafb; }
 .b2-alert-target-tags { display: flex; gap: 7px; margin-bottom: 8px; }
 .b2-alert-target-tags span { padding: 4px 9px; border-radius: 15px; color: #e55368; background: #fcf4f5; font-size: 12px; font-weight: 600; }
 .b2-alert-target-tags span + span { color: #4e5359; background: #f1f2f4; }
-.b2-alert-target strong { display: block; font-size: 16px; }
+.b2-alert-target strong { display: block; font-size: 21px; }
 .b2-alert-target small { display: block; margin-top: 4px; color: #8a8f99; font-size: 12px; }
 .b2-alert-dates { margin-bottom: 17px; padding: 15px 17px; border-radius: 13px; background: #effffd; }
 .b2-alert-dates > strong { display: block; margin-bottom: 9px; font-size: 14px; }
@@ -127,4 +127,34 @@
   .b2-subscription-grid { grid-template-columns: 1fr; }
   .b2-my-alerts-section { padding: 18px 16px; }
   .b2-my-alerts-subscriptions { padding: 0; }
+}
+
+/* 가입 등록은 Figma의 672px 모달을 기준으로 독립적으로 배치한다. */
+.joined-product-modal { width: min(672px, 100%); max-height: 92vh; padding: 36px 34px 34px; border-radius: 28px; font-size: 17px; line-height: 1.4; }
+.joined-product-modal .b2-alert-modal-head { margin-bottom: 24px; }
+.joined-product-modal .b2-alert-modal-head h2 { font-size: 28px; font-weight: 700; line-height: 1.32; }
+.joined-product-modal label { margin-bottom: 12px; font-size: 17px; font-weight: 600; }
+.joined-product-modal select, .joined-product-modal input { min-height: 60px; font-size: 18px; border-radius: 15px; }
+.joined-product-modal button[type="submit"], .joined-product-modal > button:last-child { min-height: 72px; font-size: 22px; border-radius: 14px; }
+@media (max-width: 760px) {
+  .joined-product-modal { padding: 26px 22px; border-radius: 20px; font-size: 16px; }
+  .joined-product-modal .b2-alert-modal-head h2 { font-size: 25px; }
+  .joined-product-modal label { font-size: 16px; }
+  .joined-product-modal select, .joined-product-modal input { min-height: 54px; font-size: 17px; }
+  .joined-product-modal > button:last-child { min-height: 58px; font-size: 19px; }
+}
+
+/* 캘린더 상세 카드와 동일한 본문·조작 크기 */
+.joined-product-modal { width: min(810px, 100%); padding: 50px 48px 48px; border-radius: 28px; font-size: 19px; }
+.joined-product-modal .b2-alert-modal-head h2 { font-size: 33px; }
+.joined-product-modal label { font-size: 19px; margin-bottom: 12px; }
+.joined-product-modal select, .joined-product-modal input { min-height: 72px; font-size: 21px; border-radius: 15px; }
+.joined-product-modal > button:last-child { min-height: 90px; font-size: 26px; border-radius: 14px; }
+
+@media (max-width: 760px) {
+  .joined-product-modal { width: 100%; padding: 26px 22px; font-size: 16px; }
+  .joined-product-modal .b2-alert-modal-head h2 { font-size: 25px; }
+  .joined-product-modal label { font-size: 16px; }
+  .joined-product-modal select, .joined-product-modal input { min-height: 54px; font-size: 17px; }
+  .joined-product-modal > button:last-child { min-height: 58px; font-size: 19px; }
 }

@@ -96,9 +96,8 @@ function Tabs({ active, onChange, likedCount }) {
 function AlertsTab({ alertState, onAlertStateChange, onSetup, onOff, onEmailEdit, onDetails }) {
   const [upcomingFilter, setUpcomingFilter] = useState("all");
   const subscriptions = alertState.subscriptions.filter((item) => item.status !== "off");
-  const upcoming = getUpcomingNotifications(alertState)
-    .filter((item) => upcomingFilter === "all" || item.subscription.type === "deadline")
-    .slice(0, 10);
+  const upcoming = getUpcomingNotifications(alertState).slice(0, 10);
+  const filteredSubscriptions = subscriptions.filter((item) => upcomingFilter === "all" || item.type === "deadline");
 
   const subscriptionProgram = (item) => ({
     ...item,
@@ -131,7 +130,7 @@ function AlertsTab({ alertState, onAlertStateChange, onSetup, onOff, onEmailEdit
       <section className="b2-my-alerts-section">
         <div className="b2-alerts-section-heading">
           <h2>다가오는 알림 <small>{upcoming.length}건 · 날짜순</small></h2>
-          <div className="b2-alerts-filters"><button type="button" className={upcomingFilter === "all" ? "is-active" : ""} onClick={() => setUpcomingFilter("all")}>전체</button><button type="button" className={upcomingFilter === "deadline" ? "is-active" : ""} onClick={() => setUpcomingFilter("deadline")}>마감 임박</button></div>
+
         </div>
         {upcoming.length ? <div className="b2-upcoming-list">{upcoming.map((item, index) => <div className="b2-upcoming-row" key={`${item.subscription.id}-${item.date}-${index}`}><span className="b2-upcoming-label">{formatNotificationDate(item.date)} 발송 예정</span><span className={`b2-upcoming-tag is-${item.subscription.type}`}>{item.label}</span><strong>{item.subscription.name}</strong><span className="b2-upcoming-time">09:00 발송 예정</span></div>)}</div> : <p className="b2-subscription-empty">다가오는 알림이 없어요.</p>}
       </section>
@@ -139,13 +138,14 @@ function AlertsTab({ alertState, onAlertStateChange, onSetup, onOff, onEmailEdit
       <section className="b2-my-alerts-section b2-my-alerts-subscriptions">
         <div className="b2-alerts-section-heading">
           <h2>설정해둔 알림 <b>{subscriptions.length}</b></h2>
+          <div className="b2-alerts-filters"><button type="button" className={upcomingFilter === "all" ? "is-active" : ""} onClick={() => setUpcomingFilter("all")}>전체 {subscriptions.length}</button><button type="button" className={upcomingFilter === "deadline" ? "is-active" : ""} onClick={() => setUpcomingFilter("deadline")}>마감 임박 {subscriptions.filter((item) => item.type === "deadline").length}</button></div>
           <span className="b2-alerts-limit">최대 30개</span>
         </div>
-        {subscriptions.length ? <div className="b2-subscription-grid">{subscriptions.map((item) => {
+        {filteredSubscriptions.length ? <div className="b2-subscription-grid">{filteredSubscriptions.map((item) => {
           const program = subscriptionProgram(item);
           const notificationState = alertState;
           return <article className="b2-subscription-card" key={item.id}>
-            <div className="b2-subscription-tags"><span className={item.type === "start" ? "is-start" : item.type === "maturity" ? "is-maturity" : ""}>{item.type === "start" ? `시작 ${getNotificationDday(item.eventDate)}` : item.type === "maturity" ? `만기 ${getNotificationDday(item.eventDate)}` : `마감 ${getNotificationDday(item.eventDate)}`}</span><span className={item.tier === 2 ? "is-policy" : "is-product"}>{item.tier === 2 ? "금융 지원 정책" : "Y-Fin"}</span></div>
+            <div className="b2-subscription-tags"><span className={item.type === "start" ? "is-start" : item.type === "maturity" ? "is-maturity" : ""}>{item.type === "start" ? `시작 ${getNotificationDday(item.eventDate, item.type === "maturity" ? new Date() : undefined)}` : item.type === "maturity" ? `만기 ${getNotificationDday(item.eventDate, item.type === "maturity" ? new Date() : undefined)}` : `마감 ${getNotificationDday(item.eventDate, item.type === "maturity" ? new Date() : undefined)}`}</span><span className={item.tier === 2 ? "is-policy" : "is-product"}>{item.tier === 2 ? "금융 지원 정책" : "Y-Fin"}</span></div>
             <strong>{item.name}</strong>
             <small>{item.period || item.institution}</small>
             <div className="b2-subscription-meta"><span>자동 알림</span>{(item.sendDates || []).map((date) => <span key={`${item.id}-${date.date}`}>{date.offset === 0 ? "당일" : `D-${date.offset}`}</span>)}</div>
@@ -260,7 +260,7 @@ function LikedCard({ product, onRemove, onViewDetails, onNotify }) {
               <span className="text-[30px] font-bold text-[#03BFA5]">{product.maxRate != null ? `연 ${product.maxRate}%` : "정보 없음"}</span>
             </div>
           </div>
-          <p className="mt-2 text-center text-[14px] text-[#A0A7A3]">정렬 매칭 · 월 50만 원 (3년 만기) 기준</p>
+          <p className="mt-2 text-center text-[14px] text-[#A0A7A3]">상품별 금리 적용 조건은 상세 보기에서 확인해 주세요</p>
         </div>
       )}
 
@@ -305,7 +305,7 @@ function LikedProductsCarousel({ products, onRemove, onViewDetails, onNotify }) 
           <span className="inline-block scale-y-180">&lt;</span>
         </button>
 
-        <div className="grid grid-cols-1 gap-5 py-2 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-5 py-2 sm:grid-cols-2 min-[1500px]:grid-cols-3">
           {visibleProducts.map((product) => (
             <LikedCard key={product.id} product={product} onRemove={onRemove} onViewDetails={onViewDetails} onNotify={onNotify} />
           ))}
