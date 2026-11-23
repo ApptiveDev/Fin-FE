@@ -1,3 +1,4 @@
+import JoinedProducts from "../components/JoinedProducts";
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import useMyPage, { findCategoryOptions } from "../hooks/UseMyPage";
@@ -196,59 +197,20 @@ function mapFavoriteItem(item) {
     maxRate: !isContribution && metrics.maxRate != null ? metrics.maxRate.toFixed(1) : null,
     myRate: !isContribution && metrics.achievableRate != null ? metrics.achievableRate.toFixed(1) : null,
     applyUrl: item.applyUrl,
+    endDate: item.endDate || item.applicationEndDate,
+    tier: 1,
   };
 }
 
-function FilterChip({ label, active, onClick }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`flex items-center justify-center rounded-lg border-2 py-1 px-3.5 pt-1.5 text-[16px] font-medium transition-colors ${
-        active ? "border-[#03BFA5] bg-[#EFFFFD] text-[#03BFA5]" : "border-[#E0DFDF] text-[#606060] hover:border-[#03BFA5] hover:bg-[#EFFFFD] hover:text-[#03BFA5]"
-      }`}
-    >
-      {label}
-    </button>
-  );
-}
-
-function SortDropdown() {
-  const [open, setOpen] = useState(false);
-
-  return (
-    <div className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen((prev) => !prev)}
-        className="flex items-center gap-1.5 rounded-lg border-2 border-[#E0DFDF] py-1 px-3.5 pt-1.5 text-[16px] font-medium text-[#606060] transition-colors hover:border-[#03BFA5] hover:text-[#03BFA5]"
-      >
-        찜 최신순
-        <ChevronDownIcon className="size-5" />
-      </button>
-      {open && (
-        <div className="absolute right-0 top-[calc(100%+6px)] z-10 w-32 overflow-hidden rounded-lg border border-[#EBEBEB] bg-white py-1 shadow-md">
-          <button
-            type="button"
-            onClick={() => setOpen(false)}
-            className="block w-full px-4 py-2 text-left text-[14px] font-medium text-[#03BFA5]"
-          >
-            찜 최신순
-          </button>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function LikedCard({ product, onRemove, onViewDetails }) {
+function LikedCard({ product, onRemove, onViewDetails, onNotify }) {
+  const joined = !product.isContribution && JSON.parse(localStorage.getItem("fin-joined-products") || "[]").find((item) => String(item.id) === `joined-${product.id}`);
   const visibleTags = product.tags.slice(0, 3);
 
   return (
-    <article className="relative flex min-h-[444px] w-full flex-col gap-4 rounded-[20px] border border-[#E0DFDF] bg-white px-8 py-7">
+    <article className="relative flex min-h-[444px] w-full flex-col gap-4 rounded-[20px] border border-[#E0DFDF] bg-white px-[40px] py-[35px]">
       <div className="flex flex-wrap items-center gap-2 pr-8">
         {visibleTags.map((tag) => (
-          <span key={tag} className={`rounded-md px-3 py-1.5 text-[16px] font-medium ${getTagStyle(tag)}`}>
+          <span key={tag} className={`rounded-md px-3 py-1.5 text-[18px] font-medium ${getTagStyle(tag)}`}>
             {tag}
           </span>
         ))}
@@ -258,27 +220,27 @@ function LikedCard({ product, onRemove, onViewDetails }) {
         type="button"
         onClick={() => onRemove(product.id)}
         aria-label="찜 해제"
-        className="absolute right-7 top-6 flex size-10 items-center justify-center rounded-full text-[30px] leading-none text-[#EF5B6E] hover:bg-[#FCF4F5]"
+        className="absolute right-7 top-6 flex size-10 items-center justify-center rounded-full text-[24px] leading-none text-[#EF5B6E] hover:bg-[#FCF4F5]"
       >
         <span aria-hidden="true">♥</span>
       </button>
 
       <div>
-        <h3 className="text-[28px] font-semibold leading-[1.2] text-[#181818]">{product.title}</h3>
-        <p className="mt-2 text-[16px] font-medium leading-snug text-[#726E6E]">{product.subtitle}</p>
+        <h3 className="text-[32px] font-semibold leading-[1.2] text-[#181818]">{product.title}</h3>
+        <p className="mt-2 text-[18px] font-medium leading-snug text-[#726E6E]">{product.subtitle}</p>
       </div>
 
       {product.isContribution ? (
         <div className="flex flex-col items-center gap-2">
-          <div className="flex min-h-[104px] w-full items-stretch rounded-xl border border-[#EDF1EF]">
+          <div className="flex min-h-[119px] w-full items-stretch rounded-xl border border-[#EDF1EF]">
             <div className="flex min-w-0 flex-1 flex-col justify-center gap-2 px-5 py-3">
-              <span className="text-[15px] text-[#8A928F]">기여금 환산 수익률</span>
-              <span className="text-[26px] font-bold text-[#26313A]">{product.contributionRate}</span>
+              <span className="text-[14px] text-[#8A928F]">기여금 환산 수익률</span>
+              <span className="text-[30px] font-bold text-[#26313A]">{product.contributionRate}</span>
             </div>
             <div className="w-px bg-[#EDF1EF]" />
             <div className="flex min-w-0 flex-1 flex-col justify-center gap-2 px-5 py-3">
-              <span className="text-[15px] text-[#8A928F]">예상 만기 기여금 총액</span>
-              <span className="text-[26px] font-bold text-[#03BFA5]">{product.maturityContribution}</span>
+              <span className="text-[14px] text-[#8A928F]">예상 만기 기여금 총액</span>
+              <span className="text-[30px] font-bold text-[#03BFA5]">{product.maturityContribution}</span>
             </div>
           </div>
           {product.contributionCaption && (
@@ -287,21 +249,18 @@ function LikedCard({ product, onRemove, onViewDetails }) {
         </div>
       ) : (
         <div className="flex flex-col items-center gap-2">
-          <div className="flex min-h-[104px] w-full items-stretch rounded-xl border border-[#EDF1EF]">
+          <div className="flex min-h-[119px] w-full items-stretch rounded-xl border border-[#EDF1EF]">
             <div className="flex min-w-0 flex-1 flex-col justify-center gap-2 px-5 py-3">
-              <span className="text-[15px] text-[#8A928F]">기본 금리</span>
-              <span className="text-[26px] font-bold text-[#26313A]">{product.baseRate != null ? `연 ${product.baseRate}%` : "정보 없음"}</span>
+              <span className="text-[14px] text-[#8A928F]">기본 금리</span>
+              <span className="text-[30px] font-bold text-[#26313A]">{product.baseRate != null ? `연 ${product.baseRate}%` : "정보 없음"}</span>
             </div>
             <div className="w-px bg-[#EDF1EF]" />
             <div className="flex min-w-0 flex-1 flex-col justify-center gap-2 px-5 py-3">
-              <span className="text-[15px] text-[#8A928F]">최고 금리</span>
-              <span className="text-[26px] font-bold text-[#03BFA5]">{product.maxRate != null ? `연 ${product.maxRate}%` : "정보 없음"}</span>
+              <span className="text-[14px] text-[#8A928F]">최고 금리</span>
+              <span className="text-[30px] font-bold text-[#03BFA5]">{product.maxRate != null ? `연 ${product.maxRate}%` : "정보 없음"}</span>
             </div>
           </div>
-          <div className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg bg-[#EFFFFD] py-2 text-[14px] text-[#03BFA5]">
-            <span>내가 받을 수 있는 금리</span>
-            <span className="font-semibold">{product.myRate != null ? `연 ${product.myRate}%` : "정보 없음"}</span>
-          </div>
+          <p className="mt-2 text-center text-[14px] text-[#A0A7A3]">정렬 매칭 · 월 50만 원 (3년 만기) 기준</p>
         </div>
       )}
 
@@ -309,19 +268,11 @@ function LikedCard({ product, onRemove, onViewDetails }) {
         <button
           type="button"
           onClick={() => onViewDetails(product)}
-          className="flex h-[54px] min-w-0 flex-1 items-center justify-center rounded-xl border border-[#E6E8EB] bg-white text-[18px] font-semibold text-[#3D3D3D] hover:border-[#03BFA5]"
+          className="flex h-[60px] min-w-0 flex-1 items-center justify-center rounded-xl border border-[#E6E8EB] bg-white text-[20px] font-semibold text-[#3D3D3D] hover:border-[#03BFA5]"
         >
           상세 보기
         </button>
-        <button
-          type="button"
-          onClick={() => {
-            if (product.applyUrl) window.open(product.applyUrl, "_blank", "noopener,noreferrer");
-          }}
-          className="flex h-[54px] min-w-0 flex-1 items-center justify-center rounded-xl bg-[#03BFA5] text-[18px] font-semibold text-white hover:bg-[#02A892]"
-        >
-          신청하러 가기
-        </button>
+        <button type="button" onClick={() => product.isContribution ? onNotify(product) : window.dispatchEvent(new CustomEvent("fin:register-product", { detail: product.id }))} className={`flex h-[60px] min-w-0 flex-1 items-center justify-center rounded-xl text-[20px] font-semibold ${joined ? "border border-[#E6E8EB] bg-white text-[#7A20A2]" : "bg-[#03BFA5] text-white hover:bg-[#02A892]"}`}>{product.isContribution ? "♧ 알림 받기" : joined ? `가입함 · 만기 ${getNotificationDday(joined.endDate, new Date())}` : "가입했어요"}</button>
       </div>
     </article>
   );
@@ -329,7 +280,7 @@ function LikedCard({ product, onRemove, onViewDetails }) {
 
 const LIKED_PAGE_SIZE = 3;
 
-function LikedProductsCarousel({ products, onRemove, onViewDetails }) {
+function LikedProductsCarousel({ products, onRemove, onViewDetails, onNotify }) {
   const [page, setPage] = useState(0);
 
   const totalPages = Math.max(1, Math.ceil(products.length / LIKED_PAGE_SIZE));
@@ -356,7 +307,7 @@ function LikedProductsCarousel({ products, onRemove, onViewDetails }) {
 
         <div className="grid grid-cols-1 gap-5 py-2 sm:grid-cols-2 lg:grid-cols-3">
           {visibleProducts.map((product) => (
-            <LikedCard key={product.id} product={product} onRemove={onRemove} onViewDetails={onViewDetails} />
+            <LikedCard key={product.id} product={product} onRemove={onRemove} onViewDetails={onViewDetails} onNotify={onNotify} />
           ))}
         </div>
 
@@ -416,36 +367,16 @@ function EmptyLikedState({ onGoRecommend }) {
   );
 }
 
-function LikedTab({ favorites, showComparisonNotice, onRemove, onGoRecommend, onViewDetails }) {
-  const [filter, setFilter] = useState("all");
-
-  const govCount = favorites.filter(isGovernmentItem).length;
-  const bankCount = favorites.length - govCount;
-
-  const filtered = favorites.filter((item) => {
-    if (filter === "gov") return isGovernmentItem(item);
-    if (filter === "bank") return !isGovernmentItem(item);
-    return true;
-  });
-
-  const mappedProducts = useMemo(() => filtered.map(mapFavoriteItem), [filtered]);
+function LikedTab({ favorites, showComparisonNotice, onRemove, onGoRecommend, onViewDetails, onRegister, onNotify }) {
+  const mappedProducts = useMemo(() => favorites.map(mapFavoriteItem), [favorites]);
 
   if (favorites.length === 0) {
-    return <EmptyLikedState onGoRecommend={onGoRecommend} />;
+    return <><EmptyLikedState onGoRecommend={onGoRecommend} /><JoinedProducts favorites={favorites} onRegister={onRegister} onRecommend={onGoRecommend} /></>;
   }
 
   return (
     <section>
       <h1 className="mb-5 text-[28px] font-bold text-[#222222]">찜해둔 Fin. <span className="text-[#03BFA5]">{favorites.length}</span></h1>
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap gap-2">
-          <FilterChip label="전체" active={filter === "all"} onClick={() => setFilter("all")} />
-          <FilterChip label={`정부 지원 ${govCount}`} active={filter === "gov"} onClick={() => setFilter("gov")} />
-          <FilterChip label={`은행 예·적금 ${bankCount}`} active={filter === "bank"} onClick={() => setFilter("bank")} />
-        </div>
-        <SortDropdown />
-      </div>
-
       {showComparisonNotice && (
         <div className="mb-3 rounded-lg border border-[#03BFA5] bg-[#EFFFFD] px-6 py-3 text-center text-[17px] text-[#0C7C6E]">
           정부 상품의 기여금 환산 수익률과 은행 상품의 달성 가능 금리는 산정 기준이 달라 수치를 직접 비교할 수 없어요.
@@ -453,7 +384,7 @@ function LikedTab({ favorites, showComparisonNotice, onRemove, onGoRecommend, on
       )}
 
       {mappedProducts.length > 0 ? (
-        <LikedProductsCarousel products={mappedProducts} onRemove={onRemove} onViewDetails={onViewDetails} />
+        <LikedProductsCarousel products={mappedProducts} onRemove={onRemove} onViewDetails={onViewDetails} onNotify={onNotify} />
       ) : (
         <p className="rounded-[10px] border border-dashed border-[#D5D5D5] py-16 text-center text-[#8A8A8A]">
           해당 조건의 찜한 상품이 없어요.
@@ -463,6 +394,7 @@ function LikedTab({ favorites, showComparisonNotice, onRemove, onGoRecommend, on
       <p className="mt-7 text-center text-[14px] text-[#626866]">
         Y-Fin은 해당 상품의 판매·중개 주체가 아니며, 신청은 기관 공식 페이지에서 진행됩니다.
       </p>
+      <JoinedProducts favorites={favorites} onRegister={onRegister} onRecommend={onGoRecommend} />
     </section>
   );
 }
@@ -898,13 +830,13 @@ export default function MyPage() {
   return (
     <div className="flex min-h-screen flex-col bg-white font-pretendard">
       <div className="border border-[#EBEBEB]">
-        <div className="mx-auto max-w-400 px-12 py-0.5">
+        <div className="mx-auto w-full max-w-[1920px] px-[clamp(24px,5.625vw,108px)] py-0.5">
           <Tabs active={activeTab} onChange={setActiveTab} likedCount={favorites.length} />
         </div>
       </div>
 
       <div className="flex-1 bg-[#F8FAF9]">
-        <main className="mx-auto max-w-400 px-12 py-8">
+        <main className="mx-auto w-full max-w-[1920px] px-[clamp(24px,5.625vw,108px)] py-8">
           {loading ? (
             <p className="py-24 text-center text-[#8A8A8A]">불러오는 중이에요...</p>
           ) : activeTab === "liked" ? (
@@ -913,6 +845,22 @@ export default function MyPage() {
               showComparisonNotice={showComparisonNotice}
               onRemove={removeFavorite}
               onGoRecommend={() => navigate("/recommend")}
+              onNotify={(product) => {
+                if (!product.endDate) {
+                  window.alert("이 상품의 모집 일정이 아직 연결되지 않았어요. 캘린더에서 일정을 확인해 주세요.");
+                  return;
+                }
+                setAlertSetup({ ...product, id: product.productId ?? product.id, name: product.title, type: "deadline" });
+                setAlertEmail(alertState.email);
+              }}
+              onRegister={(program) => {
+                const subscription = makeCalendarSubscription(program, "maturity", alertState.emailVerified);
+                setAlertState((previous) => ({ ...previous, subscriptions: [...previous.subscriptions.filter((item) => item.id !== subscription.id), subscription] }));
+                if (!alertState.emailVerified) {
+                  setAlertSetup({ ...program, type: "maturity" });
+                  setAlertEmail(alertState.email);
+                }
+              }}
               onViewDetails={(product) => {
                 if (product.productId != null) {
                   navigate(`/products/${product.productId}`);
