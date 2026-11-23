@@ -14,9 +14,10 @@ import {
   persistRecommendation,
   readRecommendationCache,
 } from "../utils/recommendationResult";
-import { findCategoryByGroup } from "../utils/recommendationPayload";
+import { amountFieldsByPlanType, findCategoryByGroup, savingPeriodMonths } from "../utils/recommendationPayload";
 import { runProductSearch } from "../utils/productSearch";
 import { goalKeyOfCategory, loadSavingsGoals, saveSavingsGoals } from "../utils/savingsGoals";
+import { loadProductListView, saveProductListView } from "../utils/productListView";
 import { MOCK_LONG_TERM_RESULT, MOCK_SHORT_TERM_RESULT } from "../data/productList";
 
 const LONG_TERM_SECTIONS = [
@@ -79,9 +80,11 @@ export default function ProductList() {
   const [categorySwitchError, setCategorySwitchError] = useState(null);
   const [goalModalCategory, setGoalModalCategory] = useState(null); // 목표가 없을 때 입력받을 대분류
   const [goalCategories, setGoalCategories] = useState(null); // /api/categories (저축 기간 옵션 목록)
-  const displayResult = mockMode
+  const baseDisplayResult = mockMode
     ? (activeCategory === "SHORT_TERM" ? MOCK_SHORT_TERM_RESULT : MOCK_LONG_TERM_RESULT)
     : (resultOverride ?? recommendationResult);
+
+  const displayResult = baseDisplayResult;
 
   const isShortTerm = activeCategory === "SHORT_TERM";
   // 실제 백엔드 응답으로 확인: 단기예치는 탭C가 단기 예·적금(로그인 시 실수령액 정렬 가능, 잠금 사유 있음),
@@ -102,10 +105,14 @@ export default function ProductList() {
     }
   }, [mockMode, liveRecommendationResult, navigate]);
 
-  const [searchTerm, setSearchTerm] = useState("");
-  const [activeTab, setActiveTab] = useState(SUITABILITY_TAB);
-  const [shortTermTab, setShortTermTab] = useState(PARKING_TAB);
-  const [activeFilter, setActiveFilter] = useState("전체");
+  // 상품 상세에 들어갔다 돌아와도 보던 탭/필터/검색어가 그대로 보이도록 sessionStorage에서 복원한다.
+  const [searchTerm, setSearchTerm] = useState(() => loadProductListView()?.searchTerm ?? "");
+  const [activeTab, setActiveTab] = useState(() => loadProductListView()?.activeTab ?? SUITABILITY_TAB);
+  const [shortTermTab, setShortTermTab] = useState(() => loadProductListView()?.shortTermTab ?? PARKING_TAB);
+  const [activeFilter, setActiveFilter] = useState(() => loadProductListView()?.activeFilter ?? "전체");
+  useEffect(() => {
+    saveProductListView({ searchTerm, activeTab, shortTermTab, activeFilter });
+  }, [searchTerm, activeTab, shortTermTab, activeFilter]);
   const [blockedModalReason, setBlockedModalReason] = useState(null); // "login" | "profile" | null
   const effectiveActiveTab = !rateTabEnabled && activeTab === NET_RETURN_TAB ? SUITABILITY_TAB : activeTab;
   const SECTIONS = LONG_TERM_SECTIONS;
@@ -122,7 +129,13 @@ export default function ProductList() {
   // recommendationProducts: 그중 조건을 충족해 실제로 추천 목록에 포함된 상품 수.
   // eligibleProductCount가 응답에 없으면 추천 개수를 총 개수로 대체해 미충족 0개로 표시한다.
   const recommendationCount = displayResult ? recommendationProducts.length : null;
-  const totalCandidateCount = displayResult?.eligibleProductCount ?? recommendationCount;
+  // 서버의 eligibleProductCount는 "검토한 전체 후보 수"가 아니라 자격을 충족한 상품 수라서 추천된 상품 수와 같고,
+  // 그대로 쓰면 "미충족 0개"가 된다. 서버가 전체 후보 수를 주기 전까지, 상품 이름 검색 API로 센 값을 임시로 쓴다.
+  // 전체 상품 162개 중 파킹통장 45개(단기 예치 전용)를 뺀 117개가 목돈 만들기 후보다(2026-11-16 기준, 상품이 바뀌면 달라진다).
+  const LONG_TERM_CANDIDATE_COUNT = 117;
+  const totalCandidateCount = recommendationCount === null
+    ? null
+    : Math.max(LONG_TERM_CANDIDATE_COUNT, recommendationCount);
   const excludedCount = totalCandidateCount !== null && recommendationCount !== null
     ? Math.max(0, totalCandidateCount - recommendationCount)
     : null;
@@ -186,14 +199,20 @@ export default function ProductList() {
       ],
       detailedOptions: {
         ...baseRequest.detailedOptions,
-        monthlySavingsGoal: category === "LONG_TERM" ? won : null,
-        depositAmount: category === "SHORT_TERM" ? won : null,
+        ...amountFieldsByPlanType(
+          category === "SHORT_TERM" ? "short" : "goal",
+          won,
+          savingPeriodMonths(savingPeriodCategory.options?.find((option) => option.optionId === goal.savingPeriodOptionId)),
+        ),
       },
     };
 
     setCategorySwitching(true);
     try {
-      const recommendation = await runProductSearch(request, accessToken, { preserveCache: true });
+      const recommendation = await runProductSearch(request, accessToken, {
+        preserveCache: true,
+        selectedKeywords: (displayResult ?? recommendationResult)?.selectedKeywords ?? null,
+      });
       applyCategoryResult(category, recommendation);
     } catch (error) {
       setCategorySwitchError(error.message || "추천 결과를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.");
@@ -407,7 +426,7 @@ export default function ProductList() {
                     실수령액순
                     {effectiveActiveTab === NET_RETURN_TAB && (
                       <>
-                        <span className="ml-1"><InfoIcon /></span>
+                        <InfoIcon />
                         <span className="absolute inset-x-0 bottom-[-1.5px] h-[3px] bg-[#03BFA5]" />
                       </>
                     )}
@@ -505,6 +524,7 @@ export default function ProductList() {
                     showContribution={product.category === "정부 청년 상품"}
                     ratePillLabel={product.ratePillLabel}
                     ratePillValue={product.ratePillValue}
+                    netReturnDisplay={isShortTerm && shortTermTab === DEPOSIT_TAB ? product.netReturnDisplay : undefined}
                     onClick={() => goToProductDetail(product.id)}
                   />
                 ))}
@@ -545,6 +565,7 @@ export default function ProductList() {
                         contributionCaption={product.contributionCaption}
                         ratePillLabel={product.ratePillLabel}
                         ratePillValue={product.ratePillValue}
+                        netReturnDisplay={shortTermTab === DEPOSIT_TAB ? product.netReturnDisplay : undefined}
                         onClick={() => goToProductDetail(product.id)}
                       />
                     ))}
@@ -588,7 +609,7 @@ export default function ProductList() {
                             baseRate={product.baseRate}
                             maxRate={product.maxRate}
                             myRate={product.myRate}
-                            tags={isNetReturnTab ? product.tags.filter((tag) => !tag.startsWith("적합도")) : product.tags}
+                            tags={isNetReturnTab ? product.tags.filter((tag) => !(typeof tag === "string" ? tag : tag.label).startsWith("적합도")) : product.tags}
                             isLoggedIn={rateTabEnabled}
                             variant={sec.name === "정부 청년 상품" ? "contribution" : "rate"}
                             contributionRate={product.contributionRate}
