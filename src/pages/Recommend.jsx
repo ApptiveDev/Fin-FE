@@ -14,6 +14,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { readPersistedRecommendation } from "../utils/recommendationResult";
 import { useAuth } from "../context/AuthContext";
+import { HOUSEHOLD_STEP_SCROLL, RECOMMEND_AUTO_SCROLL } from "../utils/recommendScroll";
 
 // 정보 입력창이 펼쳐지고 접히는 애니메이션 시간(ms). index.css의 step-reveal/step-collapse(300ms)와 맞춘다.
 const FORM_ANIMATION_MS = 300;
@@ -163,6 +164,8 @@ export default function Recommend() {
   // 접는 애니메이션이 끝날 때까지 폼을 화면에 남겨 두기 위한 상태(isOpen은 이미 false).
   const [isClosing, setIsClosing] = useState(false);
   const closingTimerRef = useRef(null);
+  // 가구 소득 화면의 "다음 단계"는 직접 맨 위로 올리므로, 바로 이어지는 일반 단계 이동 스크롤은 한 번 건너뛴다.
+  const skipStepScrollRef = useRef(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisError, setAnalysisError] = useState("");
   const [analysisResult, setAnalysisResult] = useState(null);
@@ -173,18 +176,30 @@ export default function Recommend() {
   const hasPreviousRecommendation = Boolean(readPersistedRecommendation()?.result);
   const isLoggedIn = Boolean(accessToken);
 
-  const scrollToSearchBar = useCallback(() => {
+  // 스위치와 상관없이 검색바가 화면 위쪽에 오도록 스크롤한다.
+  const forceScrollToSearchBar = useCallback(() => {
     const el = searchBarRef.current;
     if (!el) return;
     const targetTop = el.getBoundingClientRect().top + window.scrollY - SEARCH_BAR_TOP_OFFSET;
     window.scrollTo({ top: Math.max(0, targetTop), behavior: "smooth" });
   }, []);
 
+  // 페이지 맨 위(제목 문구 "내게 딱 맞는 금융상품…"까지 보이는 위치)로 스크롤한다.
+  const scrollToPageTop = useCallback(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
+
+  // 일반 단계 이동/열기에 쓰는 자동 스크롤은 스위치(RECOMMEND_AUTO_SCROLL)를 따른다.
+  const scrollToSearchBar = useCallback(() => {
+    if (!RECOMMEND_AUTO_SCROLL) return;
+    forceScrollToSearchBar();
+  }, [forceScrollToSearchBar]);
+
   // 검색창을 다시 눌러 접을 때는 페이지 맨 위로 스크롤한다(열 때는 아래 effect가 검색창 위치로 맞춘다).
   const toggleOpen = () => {
     clearTimeout(closingTimerRef.current);
     if (isOpen) {
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      if (RECOMMEND_AUTO_SCROLL) window.scrollTo({ top: 0, behavior: "smooth" });
       setIsClosing(true);
       closingTimerRef.current = setTimeout(() => setIsClosing(false), FORM_ANIMATION_MS);
     } else {
@@ -198,6 +213,10 @@ export default function Recommend() {
   // 검색창을 열거나(눌렀을 때) 단계가 바뀔 때마다 검색창이 항상 같은 위치로 오도록 스크롤
   useEffect(() => {
     if (!isOpen) return undefined;
+    if (skipStepScrollRef.current) {
+      skipStepScrollRef.current = false;
+      return undefined;
+    }
     scrollToSearchBar();
     // 폼이 펼쳐지며 페이지 높이가 늘어나는 동안 스크롤이 중간에 멈출 수 있어, 애니메이션이 끝난 뒤 한 번 더 맞춘다.
     const timer = setTimeout(scrollToSearchBar, FORM_ANIMATION_MS + 50);
@@ -205,6 +224,8 @@ export default function Recommend() {
   }, [isOpen, step, scrollToSearchBar]);
 
   const startAnalysis = ({ saveProfile = false } = {}) => {
+    // 분석 중 모달이 뜨는 동안 뒤의 화면(제목/문구)이 다 보이도록 페이지 맨 위로 올린다.
+    window.scrollTo({ top: 0, behavior: "smooth" });
     setAnalysisError("");
     setIsOpen(false);
     setIsAnalyzing(true);
@@ -262,7 +283,7 @@ export default function Recommend() {
     />,
     <StepPersonalInfo    data={formData} setData={setFormData}             onPrev={go(1)} onNext={go(3)} onSkip={startAnalysis} />,
     <StepRegion          data={formData} setData={setFormData} cats={cats} onPrev={go(2)} onNext={go(4)} onSkip={startAnalysis} />,
-    <StepHouseholdIncome data={formData} setData={setFormData} cats={cats} onPrev={go(3)} onNext={go(5)} onSkip={startAnalysis} />,
+    <StepHouseholdIncome data={formData} setData={setFormData} cats={cats} onPrev={go(3)} onNext={go(5)} onSkip={startAnalysis} onAfterNext={HOUSEHOLD_STEP_SCROLL ? () => { skipStepScrollRef.current = true; scrollToPageTop(); } : undefined} />,
     <StepHousing         data={formData} setData={setFormData}             onPrev={go(4)} onNext={go(6)} onSkip={startAnalysis} />,
     <StepEmployment      data={formData} setData={setFormData}             onPrev={go(5)} onNext={go(7)} onSkip={startAnalysis} />,
     <StepTransaction     data={formData} setData={setFormData} cats={cats} onPrev={go(6)} onSubmit={openProfileSaveConsent} onSkip={startAnalysis} onSubStepChange={scrollToSearchBar} />

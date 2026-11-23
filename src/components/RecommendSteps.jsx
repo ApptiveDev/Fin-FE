@@ -7,6 +7,7 @@ import { DropdownSelect, FormInput } from "./FormFields";
 import { BirthdateFields, RegionSelect, TenureMonthsField } from "./ProfileFields";
 import { toggleField } from "../utils/toggleField";
 import { getSavingPlanType } from "../utils/recommendationPayload";
+import { HOUSEHOLD_STEP_SCROLL } from "../utils/recommendScroll";
 import { useState, useEffect, useRef } from "react";
 
 function FieldHeader({
@@ -437,6 +438,7 @@ export function StepRegion({ data, setData, cats, onNext, onPrev, onSkip }) {
 // 카드(폼) 맨 아래가 화면 아래로 벗어나 있으면, 벗어난 만큼만(여백 24px 포함) 부드럽게 내려서 보이게 한다.
 // 단, 방금 누른 항목이 화면 위로 사라지지 않도록(헤더 높이 96px 아래 유지) 내리는 양을 제한한다.
 function scrollCardBottomIntoView(inputElement) {
+  if (!HOUSEHOLD_STEP_SCROLL) return;
   // 체크박스 input은 display:none이라 위치를 잴 수 없으므로, 눈에 보이는 label 기준으로 계산한다.
   const fromElement = inputElement?.closest("label") ?? inputElement;
   const card = fromElement?.closest("[data-recommend-card]");
@@ -452,7 +454,7 @@ function scrollCardBottomIntoView(inputElement) {
   });
 }
 
-export function StepHouseholdIncome({ data, setData, cats, onPrev, onNext, onSkip }) {
+export function StepHouseholdIncome({ data, setData, cats, onPrev, onNext, onSkip, onAfterNext }) {
   const count = data.householdCount || 1;
   // 2단계를 건너뛴 게 아니라 이 화면까지 실제로 들어왔다면, 화면에 보이는 "1인"이
   // 곧 사용자가 확인한 값이므로 state에도 반영한다. 이미 값이 있으면(스테퍼 조작 또는
@@ -528,7 +530,15 @@ export function StepHouseholdIncome({ data, setData, cats, onPrev, onNext, onSki
             </InfoBox>
           </div>
         </div>
-        <NavButtons onPrev={onPrev} onNext={onNext} isLast={false} disabled={!data.incomeLevel}/>
+        <NavButtons
+          onPrev={onPrev}
+          onNext={() => {
+            onNext();
+            onAfterNext?.();
+          }}
+          isLast={false}
+          disabled={!data.incomeLevel}
+        />
       </StepLayout>
   );
 }
